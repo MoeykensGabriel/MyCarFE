@@ -1,0 +1,56 @@
+import { NextRequest, NextResponse } from "next/server";
+
+const PUBLIC_ROUTES = ["/login", "/approve"];
+
+export function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Rutas públicas: siempre pasan
+  if (PUBLIC_ROUTES.some((route) => pathname.startsWith(route))) {
+    return NextResponse.next();
+  }
+
+  // El token y role los guardamos en cookies para que el proxy
+  // (que corre en Edge) los pueda leer sin acceso a localStorage
+  const token = request.cookies.get("token")?.value;
+  const role = request.cookies.get("role")?.value;
+
+  // Sin token → login
+  if (!token) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  // Rutas admin: solo Admin
+  if (pathname.startsWith("/admin") && role !== "Admin") {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  // Rutas mechanic: solo Mechanic
+  if (pathname.startsWith("/mechanic") && role !== "Mechanic") {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  // Rutas customer: solo Customer
+  if (
+    (pathname.startsWith("/my-orders") ||
+      pathname.startsWith("/my-vehicles") ||
+      pathname.startsWith("/my-fleet") ||
+      pathname.startsWith("/my-account")) &&
+    role !== "Customer"
+  ) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: [
+    /*
+     * Aplica a todas las rutas EXCEPTO:
+     * - _next/static, _next/image (assets internos de Next.js)
+     * - favicon.ico, archivos con extensión (imágenes, fuentes, etc.)
+     */
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff|woff2)).*)",
+  ],
+};
