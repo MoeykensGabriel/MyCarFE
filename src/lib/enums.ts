@@ -59,6 +59,7 @@ export enum UserRole {
   Admin = "Admin",
   Customer = "Customer",
   Mechanic = "Mechanic",
+  Receptionist = "Receptionist",
 }
 
 // ─── Asignación de servicio a mecánico ─────────────────────────────────────────

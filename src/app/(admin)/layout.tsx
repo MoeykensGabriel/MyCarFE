@@ -15,6 +15,7 @@ import {
   Plus,
   Menu,
   X,
+  ConciergeBell,
   type LucideIcon,
 } from "lucide-react";
 
@@ -27,8 +28,9 @@ const NAV_ITEMS: { href: string; label: string; Icon: LucideIcon }[] = [
   { href: "/admin/customers",   label: "Clientes",           Icon: Users           },
   { href: "/admin/vehicles",    label: "Vehículos",          Icon: Car             },
   { href: "/admin/fleets",      label: "Flotas",             Icon: Truck           },
-  { href: "/admin/mechanics",   label: "Mecánicos",          Icon: Wrench          },
-  { href: "/admin/services",    label: "Servicios",          Icon: ListChecks      },
+  { href: "/admin/mechanics",      label: "Mecánicos",          Icon: Wrench          },
+  { href: "/admin/receptionists",  label: "Recepcionistas",     Icon: ConciergeBell   },
+  { href: "/admin/services",       label: "Servicios",          Icon: ListChecks      },
   { href: "/admin/settings",    label: "Configuración",      Icon: Settings        },
 ];
 

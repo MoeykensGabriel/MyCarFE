@@ -49,10 +49,11 @@ export default function LoginPage() {
       document.cookie = `role=${response.role}; path=/; samesite=strict`;
 
       const target =
-        response.role === "Admin"     ? "/admin/dashboard"
-      : response.role === "Mechanic"  ? "/mechanic/tasks"
-      : response.fleetId              ? "/my-fleet"
-      :                                 "/my-orders";
+        response.role === "Admin"        ? "/admin/dashboard"
+      : response.role === "Mechanic"     ? "/mechanic/tasks"
+      : response.role === "Receptionist" ? "/reception/intake"
+      : response.fleetId                 ? "/my-fleet"
+      :                                    "/my-orders";
 
       console.log("[login] redirecting →", target);
       window.location.href = target;

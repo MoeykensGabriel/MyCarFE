@@ -30,6 +30,11 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
+  // Rutas reception: solo Receptionist
+  if (pathname.startsWith("/reception") && role !== "Receptionist") {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
   // Rutas customer: solo Customer
   if (
     (pathname.startsWith("/my-orders") ||

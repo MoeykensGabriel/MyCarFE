@@ -240,6 +240,32 @@ export interface UpdateMechanicRequest extends Partial<CreateMechanicRequest> {
   isActive?: boolean;
 }
 
+// ─── Receptionist ─────────────────────────────────────────────────────────────
+
+export interface Receptionist {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  isActive: boolean;
+  applicationUserId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateReceptionistRequest {
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
+export interface UpdateReceptionistRequest {
+  id: string;
+  firstName: string;
+  lastName: string;
+  isActive: boolean;
+}
+
 export interface MechanicTask {
   workOrderServiceId: string;
   workOrderId: string;

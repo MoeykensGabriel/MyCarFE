@@ -21,6 +21,8 @@ interface Props {
   fleetAndContact?:  FleetAndContactDraft;
   vehicleDraft:      VehicleDraft;
   onBack:            () => void;
+  /** Builder del href post-creación. Si no se provee, va al detalle de admin. */
+  successHref?:      (orderId: string) => string;
 }
 
 export function StepConfirm({
@@ -30,6 +32,7 @@ export function StepConfirm({
   fleetAndContact,
   vehicleDraft,
   onBack,
+  successHref,
 }: Props) {
   const router  = useRouter();
   const [loading,      setLoading]      = useState(false);
@@ -98,7 +101,7 @@ export function StepConfirm({
           contactPersonPhone: vehicleDraft.contactPersonPhone?.trim() || undefined,
         });
         toast.success("Orden de trabajo creada correctamente");
-        router.push(`/admin/work-orders/${order.id}`);
+        router.push(successHref ? successHref(order.id) : `/admin/work-orders/${order.id}`);
       } catch {
         setPartialError({
           message: "El vehículo fue registrado pero no se pudo abrir la orden de trabajo.",
