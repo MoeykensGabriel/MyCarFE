@@ -36,7 +36,8 @@ apiClient.interceptors.response.use(
     if (
       error.response?.status === 401 &&
       typeof window !== "undefined" &&
-      !isLoginRequest
+      !isLoginRequest &&
+      error.config?.headers?.["X-Skip-Auth-Redirect"] !== "true"
     ) {
       // Sesión expirada → limpiamos estado y redirigimos
       localStorage.removeItem("token");

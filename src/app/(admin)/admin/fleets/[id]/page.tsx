@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ChevronRight, Plus } from "lucide-react";
+import { ChevronRight, Plus, Building2, Car, User, Mail, Phone } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -126,19 +126,40 @@ export default function FleetDetailPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
+      <div className="space-y-3">
         <BackButton href="/admin/fleets" label="Flotas" />
-        <div className="mt-2 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">{fleet.companyName}</h1>
-            {fleet.taxId && (
-              <p className="text-sm text-muted-foreground mt-0.5">CUIT {fleet.taxId}</p>
-            )}
+        
+        <div className="bg-white rounded-xl border border-[#c4c6cd] border-l-4 border-l-[#041627] shadow-sm p-5 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all duration-300 hover:shadow-md">
+          <div className="flex items-start md:items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-200/60 flex items-center justify-center text-[#041627] shrink-0 shadow-inner">
+              <Building2 className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-3">
+                <h1 className="text-xl md:text-2xl font-black text-slate-900 leading-none">
+                  {fleet.companyName}
+                </h1>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 text-xs md:text-sm text-slate-500 font-bold mt-1.5 leading-none">
+                <span>Ficha de Flota / Empresa</span>
+                {fleet.taxId && (
+                  <>
+                    <span className="text-slate-300 font-normal select-none">•</span>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-700 font-mono font-semibold uppercase text-[11px] tracking-wide">
+                      CUIT {fleet.taxId}
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
           {!editing && (
-            <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
+            <button
+              onClick={() => setEditing(true)}
+              className="px-4 py-2 rounded-lg border border-[#c4c6cd] hover:border-[#041627] text-sm font-semibold text-[#041627] hover:bg-[#eefcfd] transition-all shrink-0 shadow-sm"
+            >
               Editar
-            </Button>
+            </button>
           )}
         </div>
       </div>
@@ -188,37 +209,57 @@ export default function FleetDetailPage() {
           {/* Contactos */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">
-                Contactos
-                <span className="ml-2 text-xs font-normal text-muted-foreground">
-                  ({fleet.contacts.length})
+              <CardTitle className="text-base flex items-center gap-2">
+                <span>Contactos</span>
+                <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-slate-600 text-xs font-bold font-mono">
+                  {fleet.contacts.length}
                 </span>
               </CardTitle>
             </CardHeader>
             <CardContent>
               {fleet.contacts.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Sin contactos registrados.</p>
+                <p className="text-sm text-muted-foreground text-center py-6">Sin contactos registrados.</p>
               ) : (
-                <div className="divide-y">
+                <div className="space-y-3">
                   {fleet.contacts.map((c) => (
-                    <div key={c.id} className="py-3 flex items-center justify-between">
-                      <div className="text-sm">
-                        <p className="font-medium text-gray-900">
-                          {c.firstName} {c.lastName}
-                        </p>
-                        <p className="text-muted-foreground">{c.email}</p>
-                        {c.phone && (
-                          <p className="text-xs text-muted-foreground">{c.phone}</p>
-                        )}
-                        <p className="text-xs text-muted-foreground">
-                          {DocumentTypeLabel[c.documentType]} {c.documentNumber}
-                        </p>
+                    <div
+                      key={c.id}
+                      className="flex items-center justify-between gap-3 p-3.5 bg-slate-50/50 rounded-xl border border-slate-200/40 hover:border-[#041627]/20 hover:bg-[#eefcfd]/10 transition-all duration-200 group"
+                    >
+                      <div className="flex items-center gap-3.5 min-w-0">
+                        <div className="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-500 shrink-0 group-hover:text-[#041627] group-hover:bg-[#eefcfd]/20 transition-all shadow-sm">
+                          <User className="w-5 h-5" />
+                        </div>
+                        <div className="min-w-0 text-sm">
+                          <p className="font-bold text-slate-800 truncate leading-tight group-hover:text-[#041627] transition-colors">
+                            {c.firstName} {c.lastName}
+                          </p>
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1 text-xs text-slate-500 font-medium">
+                            <span className="inline-flex items-center gap-1">
+                              <Mail className="w-3.5 h-3.5 text-slate-400" />
+                              {c.email}
+                            </span>
+                            {c.phone && (
+                              <>
+                                <span className="text-slate-300 select-none font-normal">•</span>
+                                <span className="inline-flex items-center gap-1">
+                                  <Phone className="w-3.5 h-3.5 text-slate-400" />
+                                  {c.phone}
+                                </span>
+                              </>
+                            )}
+                            <span className="text-slate-300 select-none font-normal">•</span>
+                            <span className="text-[11px] font-mono text-slate-400">
+                              {DocumentTypeLabel[c.documentType]} {c.documentNumber}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                       <Link
                         href={`/admin/customers/${c.id}`}
-                        className="inline-flex items-center gap-0.5 text-sm text-blue-600 hover:underline shrink-0"
+                        className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-[#041627] hover:bg-white border border-transparent hover:border-slate-200 transition-all shadow-none hover:shadow-sm"
                       >
-                        Ver <ChevronRight className="w-3.5 h-3.5" />
+                        <ChevronRight className="w-5 h-5" />
                       </Link>
                     </div>
                   ))}
@@ -234,10 +275,10 @@ export default function FleetDetailPage() {
           {/* Vehículos de la flota */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-base">
-                Vehículos
-                <span className="ml-2 text-xs font-normal text-muted-foreground">
-                  ({fleet.vehicles.length})
+              <CardTitle className="text-base flex items-center gap-2">
+                <span>Vehículos</span>
+                <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-slate-600 text-xs font-bold font-mono">
+                  {fleet.vehicles.length}
                 </span>
               </CardTitle>
               <Link
@@ -248,39 +289,52 @@ export default function FleetDetailPage() {
                 Nuevo vehículo
               </Link>
             </CardHeader>
-            <CardContent className="space-y-2">
+            <CardContent className="pt-2">
               {fleet.vehicles.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Sin vehículos.</p>
+                <p className="text-sm text-muted-foreground text-center py-6">Sin vehículos asignados.</p>
               ) : (
-                <>
-                  <div className="divide-y">
+                <div className="space-y-3">
+                  <div className="space-y-2">
                     {fleet.vehicles.map((v) => (
-                      <div key={v.id} className="py-2 flex items-center justify-between">
-                        <div className="text-sm">
-                          <p className="font-medium text-gray-900">
-                            {v.brand} {v.model} ({v.year})
-                          </p>
-                          <p className="text-xs font-mono text-muted-foreground">
-                            {v.licensePlate}
-                          </p>
+                      <div
+                        key={v.id}
+                        className="flex items-center justify-between gap-3 p-3 bg-[#eefcfd]/20 rounded-xl border border-slate-200/30 hover:border-[#041627]/20 hover:bg-[#eefcfd]/50 transition-all duration-200 group"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-9 h-9 rounded-lg bg-white border border-slate-200/50 flex items-center justify-center text-slate-500 shrink-0 group-hover:text-[#041627] transition-all shadow-sm">
+                            <Car className="w-4.5 h-4.5" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold text-slate-800 truncate leading-tight group-hover:text-[#041627] transition-colors">
+                              {v.brand} {v.model}
+                            </p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-[10px] text-slate-400 font-bold">{v.year}</span>
+                              <span className="text-slate-300 font-normal select-none text-[10px]">•</span>
+                              <span className="inline-flex items-center px-1.5 py-0.2 rounded bg-slate-100 border border-slate-200 text-slate-700 font-mono text-[9px] font-semibold uppercase tracking-wider">
+                                {v.licensePlate}
+                              </span>
+                            </div>
+                          </div>
                         </div>
                         <Link
                           href={`/admin/vehicles/${v.id}`}
-                          className="inline-flex items-center gap-0.5 text-sm text-blue-600 hover:underline shrink-0"
+                          className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-[#041627] hover:bg-white border border-transparent hover:border-slate-250 transition-all shadow-none hover:shadow-sm"
                         >
-                          Ver <ChevronRight className="w-3.5 h-3.5" />
+                          <ChevronRight className="w-4 h-4" />
                         </Link>
                       </div>
                     ))}
                   </div>
+                  
                   <Link
                     href={`/admin/vehicles?fleetId=${fleet.id}`}
-                    className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline pt-1"
+                    className="inline-flex items-center gap-1 text-xs text-[#041627] font-bold hover:text-[#fea520] transition-colors pt-1"
                   >
                     Ver todos los vehículos
                     <ChevronRight className="w-3.5 h-3.5" />
                   </Link>
-                </>
+                </div>
               )}
             </CardContent>
           </Card>

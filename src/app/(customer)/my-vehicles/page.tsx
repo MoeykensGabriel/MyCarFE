@@ -1,18 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { Car, Tag, Gauge, ChevronRight, Fuel } from "lucide-react";
+import { Car, Tag, Gauge, ChevronRight, Fuel, ShieldAlert } from "lucide-react";
 
 import { FuelTypeLabel, VehicleBodyTypeLabel } from "@/lib/enums";
 import { useVehicles } from "@/hooks/useVehicles";
 import { useAuthStore } from "@/store/auth.store";
 import { Vehicle } from "@/types/api.types";
+import { UpcomingExpirationsBanner } from "@/components/vehicle-documents/UpcomingExpirationsBanner";
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
 function VehicleCardSkeleton() {
   return (
-    <div className="bg-white rounded-2xl border border-[#c4c6cd]/60 shadow-sm p-4 space-y-3 animate-pulse">
+    <div className="bg-white rounded-2xl border border-[#041627]/10 shadow-sm p-4 space-y-3 animate-pulse">
       <div className="flex items-center gap-3">
         <div className="w-12 h-12 rounded-xl bg-[#c4c6cd]/30 shrink-0" />
         <div className="space-y-2 flex-1">
@@ -36,41 +37,41 @@ function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
   return (
     <Link
       href={`/my-vehicles/${vehicle.id}`}
-      className="flex items-center gap-4 bg-white rounded-2xl border border-[#c4c6cd]/60 shadow-sm p-4 transition-all active:scale-[0.98] hover:border-[#fea520]/60 hover:shadow-md"
+      className="flex items-center gap-4 bg-white rounded-2xl border border-[#041627]/10 shadow-sm p-4 transition-all duration-300 active:scale-[0.98] hover:border-[#fea520]/60 hover:shadow-md group"
     >
-      {/* Avatar */}
-      <div className="w-12 h-12 rounded-xl bg-[#041627] text-white flex items-center justify-center font-bold text-base shrink-0">
+      {/* Avatar circular con gradiente corporativo premium */}
+      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#041627] to-[#0a2540] text-[#fea520] flex items-center justify-center font-black text-sm shrink-0 shadow-md shadow-[#041627]/10 group-hover:scale-105 transition-transform duration-300 border border-[#fea520]/20">
         {initials}
       </div>
 
       {/* Info */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-bold text-[#041627] truncate">
-          {vehicle.brand} {vehicle.model} <span className="font-normal text-[#44474c]">({vehicle.year})</span>
+        <p className="text-sm font-extrabold text-[#041627] truncate leading-tight">
+          {vehicle.brand} {vehicle.model} <span className="font-semibold text-[#44474c]/70 text-xs">({vehicle.year})</span>
         </p>
 
-        <span className="inline-flex items-center gap-1 text-xs font-mono text-[#44474c] mt-0.5">
-          <Tag className="w-3 h-3 text-[#44474c]/50" />
+        <span className="inline-flex items-center gap-1 text-[11px] font-bold font-mono text-[#44474c] mt-1 bg-[#f4f6f8] px-2 py-0.5 rounded-md border border-[#041627]/5">
+          <Tag className="w-3.5 h-3.5 text-[#44474c]/50" />
           {vehicle.licensePlate}
         </span>
 
         {/* Chips */}
-        <div className="flex items-center gap-2 mt-2 flex-wrap">
-          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#44474c] bg-[#eefcfd] border border-[#c4c6cd]/60 rounded-full px-2 py-0.5">
-            <Gauge className="w-3 h-3" />
+        <div className="flex items-center gap-1.5 mt-2.5 flex-wrap">
+          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#041627] bg-[#eefcfd] border border-[#041627]/5 rounded-full px-2.5 py-0.5">
+            <Gauge className="w-3 h-3 text-[#fea520]" />
             {vehicle.currentMileage.toLocaleString("es-AR")} km
           </span>
-          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#44474c] bg-[#eefcfd] border border-[#c4c6cd]/60 rounded-full px-2 py-0.5">
-            <Fuel className="w-3 h-3" />
+          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#041627] bg-[#eefcfd] border border-[#041627]/5 rounded-full px-2.5 py-0.5">
+            <Fuel className="w-3 h-3 text-[#fea520]" />
             {FuelTypeLabel[vehicle.fuelType]}
           </span>
-          <span className="text-[10px] font-semibold text-[#44474c] bg-[#eefcfd] border border-[#c4c6cd]/60 rounded-full px-2 py-0.5">
+          <span className="text-[10px] font-bold text-[#041627] bg-[#eefcfd]/50 border border-[#041627]/5 rounded-full px-2.5 py-0.5">
             {VehicleBodyTypeLabel[vehicle.vehicleBodyType]}
           </span>
         </div>
       </div>
 
-      <ChevronRight className="w-4 h-4 text-[#c4c6cd] shrink-0" />
+      <ChevronRight className="w-4 h-4 text-[#c4c6cd] group-hover:text-[#fea520] group-hover:translate-x-0.5 transition-all shrink-0" />
     </Link>
   );
 }
@@ -89,19 +90,32 @@ export default function MyVehiclesPage() {
   const items = data?.items ?? [];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
 
-      {/* ── Título ──────────────────────────────────────────────────────────── */}
-      <div>
-        <h1 className="text-xl font-bold text-[#041627]">Mis vehículos</h1>
-        {!isLoading && (
-          <p className="text-sm text-[#44474c] mt-0.5">
-            {items.length === 0
-              ? "Sin vehículos registrados"
-              : `${items.length} vehículo${items.length !== 1 ? "s" : ""} registrado${items.length !== 1 ? "s" : ""}`}
-          </p>
-        )}
+      {/* ── Título y Header Premium ─────────────────────────────────────────── */}
+      <div className="bg-[#041627] text-white rounded-2xl p-5 shadow-md shadow-[#041627]/10 relative overflow-hidden">
+        {/* Decoración circular de fondo */}
+        <div className="absolute -right-10 -bottom-10 w-28 h-28 rounded-full bg-white/5 pointer-events-none" />
+        <div className="relative z-10">
+          <div className="flex items-center gap-2.5">
+            <Car className="w-5 h-5 text-[#fea520]" />
+            <h1 className="text-lg font-extrabold tracking-wide">Mis Vehículos</h1>
+          </div>
+          {!isLoading && (
+            <div className="mt-3 pt-3 border-t border-white/10">
+              <p className="text-[10px] text-white/50 font-bold uppercase tracking-wider">
+                Vehículos Registrados
+              </p>
+              <p className="text-xl font-black text-[#fea520] mt-0.5">
+                {items.length === 0 ? "0" : `${items.length} unidad${items.length !== 1 ? "es" : ""}`}
+              </p>
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* ── Banner de vencimientos próximos / vencidos ──────────────────────── */}
+      <UpcomingExpirationsBanner />
 
       {/* ── Estados ─────────────────────────────────────────────────────────── */}
       {isLoading && (
@@ -111,18 +125,20 @@ export default function MyVehiclesPage() {
       )}
 
       {isError && (
-        <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-center">
-          <p className="text-sm text-red-600 font-medium">No pudimos cargar tus vehículos.</p>
-          <p className="text-xs text-red-400 mt-0.5">Intentá recargar la página.</p>
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-5 text-center shadow-sm">
+          <p className="text-sm text-red-600 font-bold">No pudimos cargar tus vehículos.</p>
+          <p className="text-xs text-red-400 mt-1">Por favor, intentá de nuevo recargando la página.</p>
         </div>
       )}
 
       {!isLoading && !isError && items.length === 0 && (
-        <div className="flex flex-col items-center gap-3 py-16 text-center">
-          <Car className="w-12 h-12 text-[#c4c6cd]" />
-          <p className="text-sm font-semibold text-[#041627]">Sin vehículos todavía</p>
-          <p className="text-xs text-[#44474c] max-w-xs">
-            Cuando registres un vehículo en el taller, aparecerá acá.
+        <div className="flex flex-col items-center gap-3 py-16 px-4 text-center bg-white border border-[#041627]/10 rounded-2xl shadow-sm">
+          <div className="w-14 h-14 rounded-2xl bg-[#eefcfd] flex items-center justify-center">
+            <Car className="w-6 h-6 text-[#041627]" />
+          </div>
+          <p className="text-sm font-extrabold text-[#041627]">Sin vehículos registrados</p>
+          <p className="text-xs text-[#44474c]/85 max-w-xs leading-relaxed">
+            Cuando traigas tu primer vehículo a nuestro taller o lo dejes para service, lo registraremos y aparecerá automáticamente acá.
           </p>
         </div>
       )}
@@ -130,7 +146,12 @@ export default function MyVehiclesPage() {
       {/* ── Lista ───────────────────────────────────────────────────────────── */}
       {items.length > 0 && (
         <div className="space-y-3">
-          {items.map((v) => <VehicleCard key={v.id} vehicle={v} />)}
+          <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#44474c] bg-[#eefcfd] border border-[#c4c6cd]/40 w-fit px-2.5 py-0.5 rounded-full shadow-sm">
+            Tus autos registrados
+          </p>
+          <div className="space-y-3 animate-[fadeIn_0.2s_ease-out]">
+            {items.map((v) => <VehicleCard key={v.id} vehicle={v} />)}
+          </div>
         </div>
       )}
 

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronRight, ClipboardPlus } from "lucide-react";
+import { ChevronRight, ClipboardPlus, Car } from "lucide-react";
 import { toast } from "sonner";
 
 import { BackButton } from "@/components/shared/BackButton";
@@ -105,15 +105,33 @@ export default function VehicleDetailPage() {
       )}
 
       {/* Header */}
-      <div>
+      <div className="space-y-3">
         <BackButton href="/admin/vehicles" label="Vehículos" />
-        <div className="mt-2">
-          <h1 className="text-2xl font-bold text-gray-900">
-            {vehicle.brand} {vehicle.model}
-          </h1>
-          <p className="text-muted-foreground font-mono mt-0.5">
-            {vehicle.licensePlate}
-          </p>
+        
+        <div className="bg-white rounded-xl border border-[#c4c6cd] border-l-4 border-l-[#041627] shadow-sm p-5 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all duration-300 hover:shadow-md">
+          <div className="flex items-start md:items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-200/60 flex items-center justify-center text-[#041627] shrink-0 shadow-inner">
+              <Car className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-3">
+                <h1 className="text-xl md:text-2xl font-black text-slate-900 leading-none">
+                  {vehicle.brand} {vehicle.model}
+                </h1>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 text-xs md:text-sm text-slate-500 font-bold mt-1.5 leading-none">
+                <span>Ficha de Vehículo</span>
+                {vehicle.licensePlate && (
+                  <>
+                    <span className="text-slate-300 font-normal select-none">•</span>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-700 font-mono font-semibold uppercase text-[11px] tracking-wide">
+                      {vehicle.licensePlate}
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

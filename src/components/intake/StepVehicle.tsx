@@ -51,6 +51,10 @@ const vehicleDraftSchema = z
     customerNote:        z.string().optional(),
     contactPersonName:   z.string().optional(),
     contactPersonPhone:  optionalPhoneSchema,
+    serviceReason:       z
+      .string()
+      .min(1, "Indicá por qué viene el vehículo")
+      .max(2000, "Máximo 2000 caracteres"),
   })
   .superRefine((data, ctx) => {
     if (
@@ -348,17 +352,37 @@ export function StepVehicle({
         )}
       </Section>
 
-      <Section title="Motivo de ingreso">
+      <Section title="Motivo de visita">
         <div className="space-y-1.5">
           <label className="text-[11px] font-bold uppercase tracking-widest text-[#041627]">
-            ¿Por qué trae el vehículo?{" "}
+            ¿Por qué trae el vehículo? <span className="text-red-500 normal-case">*</span>
+          </label>
+          <textarea
+            rows={3}
+            placeholder="Ej: Escucha un ruido en el motor al arrancar en frío. Pide revisión del tren delantero porque siente vibración a alta velocidad."
+            className={`w-full px-3 py-2.5 text-sm rounded-lg border text-[#041627] placeholder:text-[#44474c]/40 focus:outline-none focus:ring-2 focus:ring-[#041627]/20 focus:border-[#041627] resize-none transition-all ${
+              errors.serviceReason ? "border-red-400 focus:ring-red-200" : "border-[#c4c6cd]"
+            }`}
+            {...register("serviceReason")}
+          />
+          {errors.serviceReason && (
+            <p className="text-xs text-red-500">{errors.serviceReason.message}</p>
+          )}
+          <p className="text-[10px] text-[#44474c]/60">
+            Este texto guía a los mecánicos durante la inspección colectiva.
+          </p>
+        </div>
+
+        <div className="space-y-1.5 mt-4">
+          <label className="text-[11px] font-bold uppercase tracking-widest text-[#041627]">
+            Nota adicional{" "}
             <span className="font-normal normal-case tracking-normal text-[#44474c]/50">
               (opcional)
             </span>
           </label>
           <textarea
-            rows={3}
-            placeholder="Ej: Escuché un ruido en el motor al arrancar en frío..."
+            rows={2}
+            placeholder="Comentarios internos, observaciones del cliente, etc."
             className="w-full px-3 py-2.5 text-sm rounded-lg border border-[#c4c6cd] text-[#041627] placeholder:text-[#44474c]/40 focus:outline-none focus:ring-2 focus:ring-[#041627]/20 focus:border-[#041627] resize-none transition-all"
             {...register("customerNote")}
           />

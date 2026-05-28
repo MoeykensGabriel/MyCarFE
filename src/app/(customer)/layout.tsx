@@ -9,7 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useAuthStore } from "@/store/auth.store";
 import { useSessionSync } from "@/hooks/useSessionSync";
 
-// ─── Íconos de la barra inferior ──────────────────────────────────────────────
+// ─── Íconos de la barra inferior (BottomNav) ────────────────────────────────────────
 
 function BottomNav({ isFleet }: { isFleet: boolean }) {
   const pathname = usePathname();
@@ -22,20 +22,30 @@ function BottomNav({ isFleet }: { isFleet: boolean }) {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-20 bg-white border-t border-[#c4c6cd]/60 safe-area-pb">
-      <div className="flex max-w-lg mx-auto">
+    <nav className="fixed bottom-0 left-0 right-0 z-20 bg-white/90 backdrop-blur-md border-t border-[#c4c6cd]/40 safe-area-pb shadow-[0_-8px_30px_rgba(4,22,39,0.06)]">
+      <div className="flex max-w-lg mx-auto px-4 justify-around items-center h-16">
         {tabs.map(({ href, label, Icon }) => {
           const active = pathname === href || pathname.startsWith(href + "/");
           return (
             <Link
               key={href}
               href={href}
-              className={`flex-1 flex flex-col items-center justify-center gap-1 py-2.5 text-[10px] font-bold uppercase tracking-wider transition-colors ${
-                active ? "text-[#fea520]" : "text-[#44474c]/60 hover:text-[#041627]"
+              className={`relative flex flex-col items-center justify-center py-1 px-3 rounded-2xl transition-all duration-300 ${
+                active ? "text-[#fea520]" : "text-[#44474c]/70 hover:text-[#041627]"
               }`}
             >
-              <Icon className={`w-5 h-5 ${active ? "text-[#fea520]" : ""}`} strokeWidth={active ? 2.5 : 1.75} />
-              {label}
+              <div className={`flex flex-col items-center gap-0.5 transition-all duration-300 ${active ? "scale-105" : "active:scale-95"}`}>
+                <Icon 
+                  className={`w-5 h-5 transition-colors duration-300 ${active ? "text-[#fea520]" : "text-[#44474c]/70"}`} 
+                  strokeWidth={active ? 2.5 : 1.75} 
+                />
+                <span className={`text-[9px] font-extrabold uppercase tracking-widest transition-colors duration-300 ${active ? "text-[#041627]" : "text-[#44474c]/60"}`}>
+                  {label}
+                </span>
+              </div>
+              {active && (
+                <span className="absolute -bottom-1.5 w-1.5 h-1.5 rounded-full bg-[#fea520] shadow-[0_0_8px_#fea520]" />
+              )}
             </Link>
           );
         })}
@@ -60,23 +70,23 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-[#f4f6f8] flex flex-col">
 
       {/* ── Header ──────────────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-10 bg-[#041627] text-white shadow-md">
+      <header className="sticky top-0 z-30 bg-[#041627] text-white border-b border-[#fea520]/20 shadow-[0_4px_20px_rgba(4,22,39,0.15)]">
         <div className="flex items-center justify-between px-4 h-14 max-w-lg mx-auto">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-[#fea520] flex items-center justify-center shrink-0">
-              <Car className="w-4 h-4 text-[#041627]" strokeWidth={2.5} />
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#fea520] to-[#fec15d] flex items-center justify-center shrink-0 shadow-md shadow-[#fea520]/20">
+              <Car className="w-4.5 h-4.5 text-[#041627]" strokeWidth={2.5} />
             </div>
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-widest text-[#fea520] leading-none">MyCarApp</p>
-              <p className="text-xs text-white/70 leading-none mt-0.5">{greeting}</p>
+              <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#fea520] leading-none">MyCarApp</p>
+              <p className="text-xs font-semibold text-white/80 leading-none mt-1">{greeting}</p>
             </div>
           </div>
 
           <button
             onClick={logout}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/20 text-white/80 text-xs font-semibold hover:bg-white/10 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 text-white/90 text-xs font-bold hover:bg-white/10 active:scale-[0.97] transition-all shadow-sm"
           >
-            <LogOut className="w-3.5 h-3.5" />
+            <LogOut className="w-3.5 h-3.5 text-[#fea520]" />
             Salir
           </button>
         </div>

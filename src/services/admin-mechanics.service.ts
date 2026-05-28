@@ -52,4 +52,13 @@ export const adminMechanicsService = {
   deactivate: async (id: string): Promise<void> => {
     await apiClient.delete(`/api/mechanics/${id}`);
   },
+
+  /**
+   * Sincroniza las áreas de un mecánico (PUT semantics: reemplazo total).
+   * Pasar lista vacía deja al mecánico sin áreas asignadas.
+   */
+  assignAreas: async (id: string, areaIds: string[]): Promise<Mechanic> => {
+    const response = await apiClient.put<Mechanic>(`/api/mechanics/${id}/areas`, { areaIds });
+    return response.data;
+  },
 };

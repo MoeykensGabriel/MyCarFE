@@ -19,6 +19,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AxiosError } from "axios";
 
+import { PageHeader } from "@/components/shared/PageHeader";
 import { Pagination } from "@/components/shared/Pagination";
 import { ResetPasswordButton } from "@/components/shared/ResetPasswordButton";
 import { SearchInput } from "@/components/shared/SearchInput";
@@ -360,42 +361,39 @@ export default function ReceptionistsPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-[#041627]">Recepcionistas</h1>
-          {data && (
-            <p className="text-sm text-[#44474c] mt-0.5">
-              {data.totalCount.toLocaleString("es-AR")} registrados
-            </p>
-          )}
-        </div>
+      {/* Header */}
+      <PageHeader
+        title="Recepcionistas"
+        subtitle={data ? `${data.totalCount.toLocaleString("es-AR")} registrados` : "Cargando recepcionistas..."}
+        Icon={ConciergeBell}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex bg-white border border-[#c4c6cd] p-1 rounded-lg gap-0.5">
+              {ACTIVE_TABS.map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => { setActiveFilter(key); setPage(1); setSelectedId(null); }}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${
+                    activeFilter === key
+                      ? "bg-[#041627] text-white"
+                      : "text-[#44474c] hover:bg-[#eefcfd]"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex bg-white border border-[#c4c6cd] p-1 rounded-lg gap-0.5">
-            {ACTIVE_TABS.map(({ key, label }) => (
-              <button
-                key={key}
-                onClick={() => { setActiveFilter(key); setPage(1); setSelectedId(null); }}
-                className={`px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${
-                  activeFilter === key
-                    ? "bg-[#041627] text-white"
-                    : "text-[#44474c] hover:bg-[#eefcfd]"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
+            <button
+              onClick={() => setShowCreate(true)}
+              className="flex items-center gap-1.5 px-4 py-2 bg-[#fea520] text-[#041627] text-sm font-bold rounded-lg hover:bg-[#865300] hover:text-white shadow-sm transition-all"
+            >
+              <UserRoundPlus className="w-4 h-4" />
+              Nuevo recepcionista
+            </button>
           </div>
-
-          <button
-            onClick={() => setShowCreate(true)}
-            className="flex items-center gap-1.5 px-4 py-2 bg-[#fea520] text-[#041627] text-sm font-bold rounded-lg hover:bg-[#865300] hover:text-white shadow-sm transition-all"
-          >
-            <UserRoundPlus className="w-4 h-4" />
-            Nuevo recepcionista
-          </button>
-        </div>
-      </div>
+        }
+      />
 
       <SearchInput
         placeholder="Buscar nombre o email..."

@@ -34,8 +34,8 @@ export const vehiclesService = {
     return response.data;
   },
 
-  create: async (data: CreateVehicleRequest): Promise<{ id: string }> => {
-    const response = await apiClient.post<{ id: string } | string>("/api/vehicles", data);
+  create: async (data: CreateVehicleRequest, config?: any): Promise<{ id: string }> => {
+    const response = await apiClient.post<{ id: string } | string>("/api/vehicles", data, config);
     const raw = response.data;
     return typeof raw === "string" ? { id: raw } : raw;
   },

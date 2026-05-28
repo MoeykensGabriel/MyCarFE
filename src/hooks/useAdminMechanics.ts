@@ -76,3 +76,24 @@ export function useDeactivateMechanic() {
     },
   });
 }
+
+/**
+ * Sincroniza las áreas (especialidades) de un mecánico — PUT semantics.
+ * Invalida el listado para reflejar el cambio en los chips/badges.
+ */
+export function useAssignMechanicAreas() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, areaIds }: { id: string; areaIds: string[] }) =>
+      adminMechanicsService.assignAreas(id, areaIds),
+    onSuccess: (_data, vars) => {
+      queryClient.invalidateQueries({ queryKey: mechanicAdminKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: mechanicAdminKeys.detail(vars.id) });
+      toast.success("Áreas actualizadas");
+    },
+    onError: () => {
+      toast.error("No se pudieron actualizar las áreas");
+    },
+  });
+}

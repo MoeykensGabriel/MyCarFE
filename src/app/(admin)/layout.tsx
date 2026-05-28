@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import {
   Wrench,
@@ -16,21 +16,42 @@ import {
   Menu,
   X,
   ConciergeBell,
+  Layers,
+  Package,
+  CalendarDays,
+  Building2,
+  ChevronDown,
   type LucideIcon,
 } from "lucide-react";
 
 import { SessionGuard } from "@/components/shared/SessionGuard";
 import { useAuth } from "@/hooks/useAuth";
 
-const NAV_ITEMS: { href: string; label: string; Icon: LucideIcon }[] = [
+interface NavItem {
+  href?: string;
+  label: string;
+  Icon: LucideIcon;
+  subItems?: { href: string; label: string; Icon: LucideIcon }[];
+}
+
+const NAV_ITEMS: NavItem[] = [
   { href: "/admin/dashboard",   label: "Dashboard",          Icon: LayoutDashboard },
   { href: "/admin/work-orders", label: "Órdenes de trabajo", Icon: ClipboardList   },
+  { href: "/admin/calendar",    label: "Calendario",         Icon: CalendarDays    },
   { href: "/admin/customers",   label: "Clientes",           Icon: Users           },
   { href: "/admin/vehicles",    label: "Vehículos",          Icon: Car             },
   { href: "/admin/fleets",      label: "Flotas",             Icon: Truck           },
-  { href: "/admin/mechanics",      label: "Mecánicos",          Icon: Wrench          },
-  { href: "/admin/receptionists",  label: "Recepcionistas",     Icon: ConciergeBell   },
-  { href: "/admin/services",       label: "Servicios",          Icon: ListChecks      },
+  {
+    label: "Empresa",
+    Icon: Building2,
+    subItems: [
+      { href: "/admin/areas",          label: "Áreas",              Icon: Layers          },
+      { href: "/admin/mechanics",      label: "Mecánicos",          Icon: Wrench          },
+      { href: "/admin/receptionists",  label: "Recepcionistas",     Icon: ConciergeBell   },
+      { href: "/admin/services",       label: "Servicios",          Icon: ListChecks      },
+    ]
+  },
+  { href: "/admin/stock",          label: "Stock",              Icon: Package         },
   { href: "/admin/settings",    label: "Configuración",      Icon: Settings        },
 ];
 
@@ -41,6 +62,44 @@ const INTAKE_HREF = "/admin/intake";
 function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
   const pathname = usePathname();
   const { logout } = useAuth();
+
+  const [openMenus, setOpenMenus] = useState<Record<string, boolean>>(() => {
+    const initial: Record<string, boolean> = {};
+    NAV_ITEMS.forEach((item) => {
+      if (item.subItems) {
+        const hasActiveSubItem = item.subItems.some(
+          (sub) => pathname === sub.href || pathname.startsWith(sub.href + "/")
+        );
+        initial[item.label] = hasActiveSubItem;
+      }
+    });
+    return initial;
+  });
+
+  useEffect(() => {
+    NAV_ITEMS.forEach((item) => {
+      if (item.subItems) {
+        const hasActiveSubItem = item.subItems.some(
+          (sub) => pathname === sub.href || pathname.startsWith(sub.href + "/")
+        );
+        if (hasActiveSubItem) {
+          setOpenMenus((prev) => {
+            if (!prev[item.label]) {
+              return { ...prev, [item.label]: true };
+            }
+            return prev;
+          });
+        }
+      }
+    });
+  }, [pathname]);
+
+  const toggleMenu = (label: string) => {
+    setOpenMenus((prev) => ({
+      ...prev,
+      [label]: !prev[label],
+    }));
+  };
 
   return (
     <>
@@ -66,22 +125,79 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 space-y-0.5">
-        {NAV_ITEMS.map(({ href, label, Icon }) => {
-          const isActive = pathname === href || pathname.startsWith(href + "/");
+      <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
+        {NAV_ITEMS.map((item) => {
+          if (item.subItems) {
+            const isOpen = !!openMenus[item.label];
+            const isAnySubActive = item.subItems.some(
+              (sub) => pathname === sub.href || pathname.startsWith(sub.href + "/")
+            );
+
+            return (
+              <div key={item.label} className="space-y-0.5">
+                <button
+                  onClick={() => toggleMenu(item.label)}
+                  className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${
+                    isAnySubActive
+                      ? "bg-white/5 text-white"
+                      : "text-white/60 hover:bg-white/7 hover:text-white/90"
+                  }`}
+                >
+                  <item.Icon className="w-4 h-4 shrink-0 text-white/70" />
+                  <span className="flex-1 text-left">{item.label}</span>
+                  <ChevronDown
+                    className={`w-4 h-4 transition-transform duration-200 shrink-0 ${
+                      isOpen ? "rotate-180 text-white" : "text-white/40"
+                    }`}
+                  />
+                </button>
+
+                {/* Submenu with height transition */}
+                <div
+                  className={`overflow-hidden transition-all duration-300 ease-in-out pl-3 ml-5 border-l border-white/10 space-y-0.5 ${
+                    isOpen ? "max-h-48 opacity-100 py-1" : "max-h-0 opacity-0 pointer-events-none"
+                  }`}
+                >
+                  {item.subItems.map((sub) => {
+                    const isSubActive = pathname === sub.href || pathname.startsWith(sub.href + "/");
+                    return (
+                      <Link
+                        key={sub.href}
+                        href={sub.href}
+                        onClick={onNavClick}
+                        className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-medium transition-colors ${
+                          isSubActive
+                            ? "bg-white/10 text-white font-semibold"
+                            : "text-white/50 hover:bg-white/5 hover:text-white/80"
+                        }`}
+                      >
+                        <sub.Icon className="w-3.5 h-3.5 shrink-0" />
+                        <span>{sub.label}</span>
+                        {isSubActive && (
+                          <span className="ml-auto w-1 h-3 rounded-full bg-[#fea520] shrink-0" />
+                        )}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          }
+
+          const isActive = item.href && (pathname === item.href || pathname.startsWith(item.href + "/"));
           return (
             <Link
-              key={href}
-              href={href}
+              key={item.href}
+              href={item.href || "#"}
               onClick={onNavClick}
-              className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${
                 isActive
                   ? "bg-white/10 text-white"
                   : "text-white/60 hover:bg-white/7 hover:text-white/90"
               }`}
             >
-              <Icon className="w-4 h-4 shrink-0" />
-              {label}
+              <item.Icon className="w-4 h-4 shrink-0 text-white/70" />
+              <span className="flex-1 text-left">{item.label}</span>
               {isActive && (
                 <span className="ml-auto w-1 h-4 rounded-full bg-[#fea520] shrink-0" />
               )}

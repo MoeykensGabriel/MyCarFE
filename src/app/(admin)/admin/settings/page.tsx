@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Building2, Car, Save, Settings as SettingsIcon } from "lucide-react";
 
+import { PageHeader } from "@/components/shared/PageHeader";
 import { useWorkshopSettings, useUpdateWorkshopSettings } from "@/hooks/useSettings";
 import { M } from "@/lib/form-messages";
 
@@ -51,12 +52,11 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6 max-w-3xl">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-[#041627]">Configuración</h1>
-        <p className="text-sm text-[#44474c] mt-0.5">
-          Ajustes globales del taller. Los cambios afectan al instante.
-        </p>
-      </div>
+      <PageHeader
+        title="Configuración"
+        subtitle="Ajustes globales del taller. Los cambios afectan al instante."
+        Icon={SettingsIcon}
+      />
 
       {/* Card: Taller */}
       <section className="bg-white rounded-xl border border-[#c4c6cd] shadow-sm overflow-hidden">

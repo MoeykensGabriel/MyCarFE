@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PhotoType, PhotoTypeLabel } from "@/lib/enums";
+import { resolveAssetUrl } from "@/lib/asset-url";
 import { WorkOrderPhoto } from "@/types/api.types";
 
 interface PhotosCardProps {
@@ -7,8 +8,11 @@ interface PhotosCardProps {
 }
 
 export function PhotosCard({ photos }: PhotosCardProps) {
-  const before = photos.filter((p) => Number(p.photoType) === PhotoType.Before);
-  const after = photos.filter((p) => Number(p.photoType) === PhotoType.After);
+  // Solo fotos del vehículo (sin servicio ni reporte de inspección asociado). Las otras
+  // se muestran en sus propias cards (inspecciones / servicios del mecánico).
+  const vehiclePhotos = photos.filter((p) => !p.workOrderServiceId && !p.inspectionReportId);
+  const before = vehiclePhotos.filter((p) => Number(p.photoType) === PhotoType.Before);
+  const after  = vehiclePhotos.filter((p) => Number(p.photoType) === PhotoType.After);
 
   return (
     <Card>
@@ -33,14 +37,14 @@ export function PhotosCard({ photos }: PhotosCardProps) {
                     {items.map((photo) => (
                       <a
                         key={photo.id}
-                        href={photo.url}
+                        href={resolveAssetUrl(photo.url)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="block"
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                          src={photo.url}
+                          src={resolveAssetUrl(photo.url)}
                           alt={label}
                           className="h-24 w-24 object-cover rounded-md border hover:opacity-90 transition-opacity"
                         />

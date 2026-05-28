@@ -14,19 +14,23 @@ import {
   BadgeX,
   Eye,
   EyeOff,
+  Layers,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AxiosError } from "axios";
 
+import { PageHeader } from "@/components/shared/PageHeader";
 import { Pagination } from "@/components/shared/Pagination";
 import { ResetPasswordButton } from "@/components/shared/ResetPasswordButton";
 import { SearchInput } from "@/components/shared/SearchInput";
+import { AreaMultiSelectField } from "@/components/shared/AreaMultiSelectField";
 import { optionalPhoneSchema } from "@/lib/argentina-validation";
 import { formatDate } from "@/lib/format";
 import {
   useAdminMechanics,
+  useAssignMechanicAreas,
   useCreateMechanic,
   useUpdateMechanic,
 } from "@/hooks/useAdminMechanics";
@@ -87,7 +91,8 @@ function DetailPanel({
   mechanic: Mechanic;
   onClose: () => void;
 }) {
-  const [showToggle, setShowToggle] = useState(false);
+  const [showToggle, setShowToggle]       = useState(false);
+  const [showAreasEdit, setShowAreasEdit] = useState(false);
   const updateMechanic = useUpdateMechanic();
 
   function handleToggleActive() {
@@ -98,6 +103,13 @@ function DetailPanel({
   }
 
   return (
+    <>
+    {showAreasEdit && (
+      <EditMechanicAreasModal
+        mechanic={mechanic}
+        onClose={() => setShowAreasEdit(false)}
+      />
+    )}
     <aside className="w-full lg:w-80 shrink-0 bg-white rounded-xl border border-[#c4c6cd] shadow-sm overflow-hidden flex flex-col self-start lg:sticky lg:top-0">
       {/* Header */}
       <div className="border-b border-[#c4c6cd]/60 px-5 py-4">
@@ -143,6 +155,36 @@ function DetailPanel({
             <Wrench className="w-4 h-4 text-[#44474c]/50 shrink-0" />
             <span>{mechanic.specialty}</span>
           </div>
+        )}
+      </div>
+
+      {/* Áreas asignadas */}
+      <div className="border-t border-[#c4c6cd]/60 px-5 py-4">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-[#44474c]/70">
+            <Layers className="w-3 h-3" />
+            Áreas
+          </div>
+          <button
+            onClick={() => setShowAreasEdit(true)}
+            className="text-[10px] font-bold uppercase tracking-widest text-[#041627] hover:text-[#fea520] transition-colors"
+          >
+            Editar
+          </button>
+        </div>
+        {mechanic.areas && mechanic.areas.length > 0 ? (
+          <div className="flex flex-wrap gap-1">
+            {mechanic.areas.map((area) => (
+              <span
+                key={area.id}
+                className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-[#eefcfd] border border-[#c4c6cd] text-[#041627]"
+              >
+                {area.name}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-[#44474c]/60 italic">Sin áreas asignadas</p>
         )}
       </div>
 
@@ -207,6 +249,74 @@ function DetailPanel({
         />
       </div>
     </aside>
+    </>
+  );
+}
+
+// ─── Edit Areas Modal ─────────────────────────────────────────────────────────
+
+function EditMechanicAreasModal({
+  mechanic,
+  onClose,
+}: {
+  mechanic: Mechanic;
+  onClose: () => void;
+}) {
+  const assignAreas = useAssignMechanicAreas();
+  const [selected, setSelected] = useState<string[]>(
+    (mechanic.areas ?? []).map((a) => a.id)
+  );
+
+  function handleSave() {
+    assignAreas.mutate(
+      { id: mechanic.id, areaIds: selected },
+      { onSuccess: () => onClose() }
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#c4c6cd]/60">
+          <div className="flex items-center gap-2">
+            <Layers className="w-4 h-4 text-[#fea520]" />
+            <h2 className="text-base font-bold text-[#041627]">
+              Áreas de {mechanic.firstName}
+            </h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-md text-[#44474c] hover:bg-[#eefcfd] transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="px-6 py-5 space-y-4">
+          <AreaMultiSelectField
+            value={selected}
+            onChange={setSelected}
+            includeInactive
+          />
+
+          <div className="flex gap-2">
+            <button
+              onClick={onClose}
+              className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-[#eefcfd] text-[#041627] border border-[#c4c6cd] hover:bg-[#c4c6cd]/30 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={assignAreas.isPending}
+              className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-[#fea520] text-[#041627] hover:bg-[#e8951d] transition-all disabled:opacity-50"
+            >
+              {assignAreas.isPending ? "Guardando..." : "Guardar"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -214,8 +324,10 @@ function DetailPanel({
 
 function CreateMechanicModal({ onClose }: { onClose: () => void }) {
   const createMechanic = useCreateMechanic();
-  const [serverError, setServerError] = useState<string | null>(null);
-  const [tempPassword, setTempPassword] = useState<string | null>(null);
+  const assignAreas    = useAssignMechanicAreas();
+  const [serverError, setServerError]       = useState<string | null>(null);
+  const [tempPassword, setTempPassword]     = useState<string | null>(null);
+  const [selectedAreaIds, setSelectedAreaIds] = useState<string[]>([]);
 
   const {
     register,
@@ -226,7 +338,16 @@ function CreateMechanicModal({ onClose }: { onClose: () => void }) {
   const onSubmit = async (data: MechanicForm) => {
     setServerError(null);
     createMechanic.mutate(data, {
-      onSuccess: (res) => {
+      onSuccess: async (res) => {
+        // Si el admin seleccionó áreas, las asignamos en una segunda llamada.
+        // Si falla, la creación ya sucedió — el admin puede reintentar desde el detalle.
+        if (selectedAreaIds.length > 0) {
+          try {
+            await assignAreas.mutateAsync({ id: res.mechanic.id, areaIds: selectedAreaIds });
+          } catch {
+            // Toast del hook ya cubre el error; el mecánico queda creado sin áreas
+          }
+        }
         setTempPassword(res.tempPassword);
       },
       onError: (err) => {
@@ -359,10 +480,10 @@ function CreateMechanicModal({ onClose }: { onClose: () => void }) {
                 />
               </div>
 
-              {/* Especialidad */}
+              {/* Especialidad (texto libre — legado) */}
               <div className="space-y-1">
                 <label className="text-[11px] font-bold uppercase tracking-widest text-[#041627]">
-                  Especialidad <span className="font-normal text-[#44474c]/50">(opcional)</span>
+                  Especialidad <span className="font-normal text-[#44474c]/50">(opcional, texto libre)</span>
                 </label>
                 <input
                   type="text"
@@ -370,6 +491,20 @@ function CreateMechanicModal({ onClose }: { onClose: () => void }) {
                   className="w-full px-3 py-2.5 text-sm rounded-xl border border-[#c4c6cd] bg-white text-[#041627] placeholder:text-[#44474c]/40 focus:outline-none focus:ring-2 focus:ring-[#041627]/20 focus:border-[#041627] transition-all"
                   {...register("specialty")}
                 />
+              </div>
+
+              {/* Áreas (M-a-N — para inspecciones) */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold uppercase tracking-widest text-[#041627]">
+                  Áreas asignadas <span className="font-normal text-[#44474c]/50">(opcional)</span>
+                </label>
+                <AreaMultiSelectField
+                  value={selectedAreaIds}
+                  onChange={setSelectedAreaIds}
+                />
+                <p className="text-[10px] text-[#44474c]/60 mt-1">
+                  El mecánico podrá reportar en las áreas que selecciones durante la fase de inspección.
+                </p>
               </div>
 
               {/* Error servidor */}
@@ -441,43 +576,39 @@ export default function MechanicsPage() {
     <div className="space-y-5">
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-[#041627]">Mecánicos</h1>
-          {data && (
-            <p className="text-sm text-[#44474c] mt-0.5">
-              {data.totalCount.toLocaleString("es-AR")} registrados
-            </p>
-          )}
-        </div>
+      <PageHeader
+        title="Mecánicos"
+        subtitle={data ? `${data.totalCount.toLocaleString("es-AR")} registrados` : "Cargando mecánicos..."}
+        Icon={Wrench}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Tabs activo/inactivo */}
+            <div className="flex bg-white border border-[#c4c6cd] p-1 rounded-lg gap-0.5">
+              {ACTIVE_TABS.map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => { setActiveFilter(key); setPage(1); setSelectedId(null); }}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${
+                    activeFilter === key
+                      ? "bg-[#041627] text-white"
+                      : "text-[#44474c] hover:bg-[#eefcfd]"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Tabs activo/inactivo */}
-          <div className="flex bg-white border border-[#c4c6cd] p-1 rounded-lg gap-0.5">
-            {ACTIVE_TABS.map(({ key, label }) => (
-              <button
-                key={key}
-                onClick={() => { setActiveFilter(key); setPage(1); setSelectedId(null); }}
-                className={`px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${
-                  activeFilter === key
-                    ? "bg-[#041627] text-white"
-                    : "text-[#44474c] hover:bg-[#eefcfd]"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
+            <button
+              onClick={() => setShowCreate(true)}
+              className="flex items-center gap-1.5 px-4 py-2 bg-[#fea520] text-[#041627] text-sm font-bold rounded-lg hover:bg-[#865300] hover:text-white shadow-sm transition-all"
+            >
+              <UserRoundPlus className="w-4 h-4" />
+              Nuevo mecánico
+            </button>
           </div>
-
-          <button
-            onClick={() => setShowCreate(true)}
-            className="flex items-center gap-1.5 px-4 py-2 bg-[#fea520] text-[#041627] text-sm font-bold rounded-lg hover:bg-[#865300] hover:text-white shadow-sm transition-all"
-          >
-            <UserRoundPlus className="w-4 h-4" />
-            Nuevo mecánico
-          </button>
-        </div>
-      </div>
+        }
+      />
 
       {/* ── Búsqueda ───────────────────────────────────────────────────────── */}
       <SearchInput

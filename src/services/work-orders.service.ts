@@ -2,11 +2,14 @@ import axios from "axios";
 import apiClient from "@/lib/axios";
 import {
   AddAdHocWorkOrderServiceRequest,
+  AddWorkOrderPartRequest,
   AddWorkOrderServiceRequest,
+  ApproveQuotePayload,
   ApproveQuotePreview,
   CreateWorkOrderRequest,
   PagedResult,
   UpdateWorkOrderNotesRequest,
+  UpdateWorkOrderPartRequest,
   UpdateWorkOrderStatusRequest,
   WorkOrder,
 } from "@/types/api.types";
@@ -64,13 +67,13 @@ export const workOrdersService = {
     };
   },
 
-  getById: async (id: string): Promise<WorkOrder> => {
-    const response = await apiClient.get<WorkOrder>(`/api/work-orders/${id}`);
+  getById: async (id: string, config?: any): Promise<WorkOrder> => {
+    const response = await apiClient.get<WorkOrder>(`/api/work-orders/${id}`, config);
     return normalizeWorkOrder(response.data);
   },
 
-  create: async (data: CreateWorkOrderRequest): Promise<{ id: string }> => {
-    const response = await apiClient.post<{ id: string } | string>("/api/work-orders", data);
+  create: async (data: CreateWorkOrderRequest, config?: any): Promise<{ id: string }> => {
+    const response = await apiClient.post<{ id: string } | string>("/api/work-orders", data, config);
     const raw = response.data;
     return typeof raw === "string" ? { id: raw } : raw;
   },
@@ -94,6 +97,59 @@ export const workOrdersService = {
 
   removeService: async (id: string, serviceId: string): Promise<void> => {
     await apiClient.delete(`/api/work-orders/${id}/services/${serviceId}`);
+  },
+
+  // ─── Repuestos (parts) ───────────────────────────────────────────────────
+  // Los tres endpoints devuelven el WorkOrderDetail completo, pero acá tipamos
+  // como WorkOrder porque los hooks invalidan la query y vuelven a leer el detalle.
+
+  addPart: async (id: string, data: AddWorkOrderPartRequest): Promise<WorkOrder> => {
+    const response = await apiClient.post<WorkOrder>(`/api/work-orders/${id}/parts`, data);
+    return normalizeWorkOrder(response.data);
+  },
+
+  updatePart: async (
+    id: string,
+    partId: string,
+    data: UpdateWorkOrderPartRequest,
+  ): Promise<WorkOrder> => {
+    const response = await apiClient.patch<WorkOrder>(
+      `/api/work-orders/${id}/parts/${partId}`,
+      data,
+    );
+    return normalizeWorkOrder(response.data);
+  },
+
+  removePart: async (id: string, partId: string): Promise<WorkOrder> => {
+    const response = await apiClient.delete<WorkOrder>(
+      `/api/work-orders/${id}/parts/${partId}`,
+    );
+    return normalizeWorkOrder(response.data);
+  },
+
+  /**
+   * Convierte propuestas de mecánicos (proposed services/parts en inspection reports)
+   * en items reales del presupuesto. Solo Admin, solo en Diagnosing.
+   */
+  convertProposals: async (
+    id: string,
+    data: { proposedServiceIds: string[]; proposedPartIds: string[] },
+  ): Promise<WorkOrder> => {
+    const response = await apiClient.post<WorkOrder>(
+      `/api/work-orders/${id}/convert-proposals`,
+      { workOrderId: id, ...data },
+    );
+    return normalizeWorkOrder(response.data);
+  },
+
+  /**
+   * Envía el presupuesto al cliente.
+   * Congela los items, genera token, transiciona a AwaitingApproval y dispara email.
+   * Solo válido desde Diagnosing.
+   */
+  sendQuote: async (id: string): Promise<WorkOrder> => {
+    const response = await apiClient.post<WorkOrder>(`/api/work-orders/${id}/send-quote`);
+    return normalizeWorkOrder(response.data);
   },
 
   addPhoto: async (id: string, formData: FormData): Promise<void> => {
@@ -123,16 +179,21 @@ export const workOrdersService = {
     return response.data;
   },
 
-  approveQuote: async (token: string): Promise<void> => {
-    await publicClient.post("/api/work-orders/approve", null, {
-      params: { token },
+  approveQuote: async (token: string, payload: ApproveQuotePayload): Promise<void> => {
+    await publicClient.post("/api/work-orders/approve", {
+      token,
+      ...payload,
     });
   },
 
   // ─── Aprobación desde el panel del cliente logueado ─────────────────────
-  approveAsCustomer: async (workOrderId: string): Promise<WorkOrder> => {
+  approveAsCustomer: async (
+    workOrderId: string,
+    payload: ApproveQuotePayload,
+  ): Promise<WorkOrder> => {
     const response = await apiClient.post<WorkOrder>(
-      `/api/work-orders/${workOrderId}/approve-as-customer`
+      `/api/work-orders/${workOrderId}/approve-as-customer`,
+      { workOrderId, ...payload },
     );
     return normalizeWorkOrder(response.data);
   },

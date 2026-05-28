@@ -38,8 +38,8 @@ export const fleetsService = {
     return response.data;
   },
 
-  create: async (data: CreateFleetRequest): Promise<string> => {
-    const response = await apiClient.post<string | { id: string }>("/api/fleets", data);
+  create: async (data: CreateFleetRequest, config?: any): Promise<string> => {
+    const response = await apiClient.post<string | { id: string }>("/api/fleets", data, config);
     const raw = response.data;
     return typeof raw === "string" ? raw : raw.id;
   },

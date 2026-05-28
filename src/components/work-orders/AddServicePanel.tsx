@@ -8,11 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatCurrency } from "@/lib/format";
 import { useCatalogServices } from "@/hooks/useCatalog";
-import {
-  useAddWorkOrderService,
-  useAddAdHocWorkOrderService,
-} from "@/hooks/useWorkOrders";
+import { useAddWorkOrderService } from "@/hooks/useWorkOrders";
 import { CatalogService } from "@/types/api.types";
+import { AdHocServiceForm } from "./AdHocServiceForm";
 
 interface AddServicePanelProps {
   workOrderId: string;
@@ -55,7 +53,7 @@ export function AddServicePanel({ workOrderId }: AddServicePanelProps) {
 
       {tab === "catalog"
         ? <CatalogForm workOrderId={workOrderId} />
-        : <AdHocForm workOrderId={workOrderId} />}
+        : <AdHocServiceForm workOrderId={workOrderId} />}
     </div>
   );
 }
@@ -65,7 +63,7 @@ export function AddServicePanel({ workOrderId }: AddServicePanelProps) {
 function CatalogForm({ workOrderId }: { workOrderId: string }) {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<CatalogService | null>(null);
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState("1");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
@@ -97,17 +95,20 @@ function CatalogForm({ workOrderId }: { workOrderId: string }) {
 
   function handleClear() {
     setSelected(null);
-    setQuantity(1);
+    setQuantity("1");
   }
 
+  const parsedQty = parseInt(quantity, 10);
+  const canAdd = selected && !isPending && !isNaN(parsedQty) && parsedQty >= 1;
+
   function handleAdd() {
-    if (!selected) return;
+    if (!canAdd) return;
     addService(
-      { workOrderId, catalogServiceId: selected.id, quantity },
+      { workOrderId, catalogServiceId: selected.id, quantity: parsedQty },
       {
         onSuccess: () => {
           setSelected(null);
-          setQuantity(1);
+          setQuantity("1");
           setSearch("");
         },
       },
@@ -180,14 +181,14 @@ function CatalogForm({ workOrderId }: { workOrderId: string }) {
             min={1}
             max={999}
             value={quantity}
-            onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+            onChange={(e) => setQuantity(e.target.value)}
             className="w-24"
           />
         </div>
         <Button
           size="sm"
           onClick={handleAdd}
-          disabled={!selected || isPending}
+          disabled={!canAdd}
           className="mb-0.5"
         >
           {isPending ? "Agregando..." : "Agregar"}
@@ -197,111 +198,3 @@ function CatalogForm({ workOrderId }: { workOrderId: string }) {
   );
 }
 
-// ─── Form: servicio puntual (ad-hoc) ─────────────────────────────────────────
-
-function AdHocForm({ workOrderId }: { workOrderId: string }) {
-  const [name, setName]                 = useState("");
-  const [description, setDescription]   = useState("");
-  const [price, setPrice]               = useState<number>(0);
-  const [duration, setDuration]         = useState<number>(0);
-  const [quantity, setQuantity]         = useState(1);
-
-  const { mutate: addAdHoc, isPending } = useAddAdHocWorkOrderService(workOrderId);
-
-  const canSubmit = name.trim().length > 0 && price >= 0 && quantity >= 1;
-
-  function handleAdd() {
-    if (!canSubmit) return;
-    addAdHoc(
-      {
-        workOrderId,
-        name:                     name.trim(),
-        description:              description.trim(),
-        price,
-        estimatedDurationMinutes: duration,
-        quantity,
-      },
-      {
-        onSuccess: () => {
-          setName("");
-          setDescription("");
-          setPrice(0);
-          setDuration(0);
-          setQuantity(1);
-        },
-      },
-    );
-  }
-
-  return (
-    <div className="space-y-3">
-      <p className="text-[11px] text-muted-foreground leading-relaxed">
-        Para trabajos puntuales que <strong>no</strong> tiene sentido sumar al catálogo permanente.
-        Solo se guarda en esta orden.
-      </p>
-
-      <div className="space-y-1.5">
-        <Label className="text-xs">Nombre <span className="text-red-500">*</span></Label>
-        <Input
-          placeholder="Ej: Soldadura del soporte del escape"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          maxLength={200}
-        />
-      </div>
-
-      <div className="space-y-1.5">
-        <Label className="text-xs">Descripción (opcional)</Label>
-        <textarea
-          rows={2}
-          placeholder="Detalle del trabajo realizado..."
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          maxLength={1000}
-          className="w-full px-3 py-2 text-sm rounded-md border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-        />
-      </div>
-
-      <div className="grid grid-cols-3 gap-3">
-        <div className="space-y-1.5">
-          <Label className="text-xs">Precio (ARS) <span className="text-red-500">*</span></Label>
-          <Input
-            type="number"
-            min={0}
-            step={0.01}
-            value={price}
-            onChange={(e) => setPrice(Math.max(0, parseFloat(e.target.value) || 0))}
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label className="text-xs">Duración (min)</Label>
-          <Input
-            type="number"
-            min={0}
-            max={1440}
-            value={duration}
-            onChange={(e) => setDuration(Math.max(0, parseInt(e.target.value) || 0))}
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label className="text-xs">Cantidad</Label>
-          <Input
-            type="number"
-            min={1}
-            max={999}
-            value={quantity}
-            onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-          />
-        </div>
-      </div>
-
-      <Button
-        size="sm"
-        onClick={handleAdd}
-        disabled={!canSubmit || isPending}
-      >
-        {isPending ? "Agregando..." : "Agregar servicio puntual"}
-      </Button>
-    </div>
-  );
-}

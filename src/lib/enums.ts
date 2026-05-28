@@ -12,6 +12,11 @@ export enum WorkOrderStatus {
    * Numerado al final para no romper datos existentes en BD.
    */
   Approved = 7,
+  /**
+   * Fase de inspección colectiva: mecánicos de cada área reportan sobre el vehículo.
+   * Estado inicial de nuevas órdenes a partir de S3-06.
+   */
+  UnderInspection = 8,
 }
 
 export enum FuelType {
@@ -53,6 +58,7 @@ export enum DocumentType {
 export enum PhotoType {
   Before = 0,
   After = 1,
+  Inspection = 2,
 }
 
 export enum UserRole {
@@ -75,6 +81,81 @@ export const AssignmentStatusLabel: Record<WorkOrderServiceAssignmentStatus, str
   [WorkOrderServiceAssignmentStatus.Pending]:    "Asignado",
   [WorkOrderServiceAssignmentStatus.Accepted]:   "En curso",
   [WorkOrderServiceAssignmentStatus.Completed]:  "Finalizado",
+};
+
+// ─── Repuestos / Cotización item-por-item ──────────────────────────────────────
+
+export enum WorkOrderPartTier {
+  Generic     = 0,
+  Aftermarket = 1,
+  Original    = 2,
+  Custom      = 3,
+}
+
+export const WorkOrderPartTierLabel: Record<WorkOrderPartTier, string> = {
+  [WorkOrderPartTier.Generic]:     "Genérico",
+  [WorkOrderPartTier.Aftermarket]: "Aftermarket",
+  [WorkOrderPartTier.Original]:    "Original",
+  [WorkOrderPartTier.Custom]:      "Custom",
+};
+
+export enum QuoteItemApprovalStatus {
+  Pending  = 0,
+  Approved = 1,
+  Rejected = 2,
+}
+
+export const QuoteItemApprovalStatusLabel: Record<QuoteItemApprovalStatus, string> = {
+  [QuoteItemApprovalStatus.Pending]:  "Pendiente",
+  [QuoteItemApprovalStatus.Approved]: "Aprobado",
+  [QuoteItemApprovalStatus.Rejected]: "Rechazado",
+};
+
+// ─── Integración con Sistema de Stock (GestionPGB) ──────────────────────────
+
+export enum StockRequestStatus {
+  PendingReview = 0,
+  HasShortages  = 1,
+  InProgress    = 2,
+  Ready         = 3,
+}
+
+export const StockRequestStatusLabel: Record<StockRequestStatus, string> = {
+  [StockRequestStatus.PendingReview]: "Pendiente de revisión",
+  [StockRequestStatus.HasShortages]:  "Con faltantes",
+  [StockRequestStatus.InProgress]:    "Comprado / En viaje",
+  [StockRequestStatus.Ready]:         "Listo / Entregado",
+};
+
+export const StockRequestStatusColor: Record<StockRequestStatus, string> = {
+  [StockRequestStatus.PendingReview]: "gray",
+  [StockRequestStatus.HasShortages]:  "red",
+  [StockRequestStatus.InProgress]:    "blue",
+  [StockRequestStatus.Ready]:         "green",
+};
+
+export enum StockRequestItemStatus {
+  PendingReview = 0,
+  Available     = 1,
+  Missing       = 2,
+  InTransit     = 3,
+  Delivered     = 4,
+}
+
+export const StockRequestItemStatusLabel: Record<StockRequestItemStatus, string> = {
+  [StockRequestItemStatus.PendingReview]: "Pendiente de revisión",
+  [StockRequestItemStatus.Available]:     "Disponible en depósito",
+  [StockRequestItemStatus.Missing]:       "Falta — a comprar",
+  [StockRequestItemStatus.InTransit]:     "En camino",
+  [StockRequestItemStatus.Delivered]:     "Entregado al mecánico",
+};
+
+export const StockRequestItemStatusColor: Record<StockRequestItemStatus, string> = {
+  [StockRequestItemStatus.PendingReview]: "gray",
+  [StockRequestItemStatus.Available]:     "indigo",
+  [StockRequestItemStatus.Missing]:       "red",
+  [StockRequestItemStatus.InTransit]:     "yellow",
+  [StockRequestItemStatus.Delivered]:     "green",
 };
 
 // ─── Labels de UI ──────────────────────────────────────────────────────────────
@@ -120,6 +201,12 @@ export const WorkOrderStatusConfig: Record<
     label: "Cancelado",
     color: "red",
   },
+  [WorkOrderStatus.UnderInspection]: {
+    label: "En inspección",
+    color: "amber",
+    customerHint:
+      "Los mecánicos del taller están revisando tu vehículo por áreas. Pronto recibirás el detalle de lo encontrado.",
+  },
 };
 
 export const FuelTypeLabel: Record<FuelType, string> = {
@@ -161,16 +248,23 @@ export const DocumentTypeLabel: Record<DocumentType, string> = {
 export const PhotoTypeLabel: Record<PhotoType, string> = {
   [PhotoType.Before]: "Antes",
   [PhotoType.After]: "Después",
+  [PhotoType.Inspection]: "Inspección",
 };
 
-/** Transiciones válidas por estado — para deshabilitar opciones en el modal */
+/**
+ * Transiciones válidas por estado — para el modal genérico de "Cambiar estado".
+ *
+ * Excepción importante: Diagnosing → AwaitingApproval NO aparece acá a propósito.
+ * Esa transición debe ir vía POST /api/work-orders/{id}/send-quote (botón
+ * "Enviar presupuesto") porque tiene side effects propios (congelar items,
+ * setear QuoteExpiresAt, generar token, mandar email).
+ */
 export const ValidTransitions: Record<WorkOrderStatus, WorkOrderStatus[]> = {
   [WorkOrderStatus.Received]: [
     WorkOrderStatus.Diagnosing,
     WorkOrderStatus.Cancelled,
   ],
   [WorkOrderStatus.Diagnosing]: [
-    WorkOrderStatus.AwaitingApproval,
     WorkOrderStatus.Cancelled,
   ],
   [WorkOrderStatus.AwaitingApproval]: [
@@ -192,6 +286,10 @@ export const ValidTransitions: Record<WorkOrderStatus, WorkOrderStatus[]> = {
   ],
   [WorkOrderStatus.Delivered]: [],
   [WorkOrderStatus.Cancelled]: [],
+  [WorkOrderStatus.UnderInspection]: [
+    WorkOrderStatus.Diagnosing,
+    WorkOrderStatus.Cancelled,
+  ],
 };
 
 /**
@@ -209,3 +307,45 @@ export function getWorkOrderStatusConfig(status: WorkOrderStatus | number | stri
 export function toWorkOrderStatus(value: unknown): WorkOrderStatus {
   return Number(value) as WorkOrderStatus;
 }
+
+// ─── VehicleDocument ─────────────────────────────────────────────────────────
+
+export enum VehicleDocumentType {
+  TechnicalInspection = 0,
+  Insurance           = 1,
+  Registration        = 2,
+  EmissionTest        = 3,
+  Other               = 99,
+}
+
+export const VehicleDocumentTypeLabel: Record<VehicleDocumentType, string> = {
+  [VehicleDocumentType.TechnicalInspection]: "VTV / Verificación técnica",
+  [VehicleDocumentType.Insurance]:           "Seguro / Póliza",
+  [VehicleDocumentType.Registration]:        "Patente / Impuesto automotor",
+  [VehicleDocumentType.EmissionTest]:        "Revisión de emisiones",
+  [VehicleDocumentType.Other]:               "Otro",
+};
+
+export const VehicleDocumentTypeShort: Record<VehicleDocumentType, string> = {
+  [VehicleDocumentType.TechnicalInspection]: "VTV",
+  [VehicleDocumentType.Insurance]:           "Seguro",
+  [VehicleDocumentType.Registration]:        "Patente",
+  [VehicleDocumentType.EmissionTest]:        "Emisiones",
+  [VehicleDocumentType.Other]:               "Otro",
+};
+
+// ─── VehicleTrip ─────────────────────────────────────────────────────────────
+
+export enum VehicleTripStatus {
+  Open            = 0,
+  Closed          = 1,
+  AutoClosed      = 2,
+  ClosedByContact = 3,
+}
+
+export const VehicleTripStatusLabel: Record<VehicleTripStatus, string> = {
+  [VehicleTripStatus.Open]:            "En curso",
+  [VehicleTripStatus.Closed]:          "Cerrado",
+  [VehicleTripStatus.AutoClosed]:      "Cerrado automáticamente",
+  [VehicleTripStatus.ClosedByContact]: "Cerrado por el encargado",
+};

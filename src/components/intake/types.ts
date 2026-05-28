@@ -8,6 +8,8 @@ export type VehicleDraft  = Omit<CreateVehicleRequest, "customerId" | "fleetId">
   customerNote?:       string;
   contactPersonName?:  string;
   contactPersonPhone?: string;
+  /** Motivo por el que el cliente trae el vehículo. Obligatorio en S3-14. */
+  serviceReason:       string;
 };
 
 export interface FleetAndContactDraft {

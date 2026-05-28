@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useDebouncedCallback } from "use-debounce";
 import { ClipboardList, ChevronRight, Tag, User } from "lucide-react";
 
+import { PageHeader } from "@/components/shared/PageHeader";
 import { BackButton } from "@/components/shared/BackButton";
 import { Pagination } from "@/components/shared/Pagination";
 import { SearchInput } from "@/components/shared/SearchInput";
@@ -60,20 +61,15 @@ export default function WorkOrdersPage() {
     <div className="space-y-5">
 
       {/* ── Header ──────────────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-        <div>
-          {backLink && (
-            <div className="mb-2">
-              <BackButton href={backLink.href} label={backLink.label} />
-            </div>
-          )}
-          <h1 className="text-2xl font-bold text-[#041627]">Órdenes de trabajo</h1>
-          {data && (
-            <p className="text-sm text-[#44474c] mt-0.5">
-              {data.totalCount.toLocaleString("es-AR")} órdenes en total
-            </p>
-          )}
-        </div>
+      <div className="space-y-3">
+        {backLink && (
+          <BackButton href={backLink.href} label={backLink.label} />
+        )}
+        <PageHeader
+          title="Órdenes de trabajo"
+          subtitle={data ? `${data.totalCount.toLocaleString("es-AR")} órdenes en total` : "Cargando órdenes..."}
+          Icon={ClipboardList}
+        />
       </div>
 
       {/* ── Filtros ─────────────────────────────────────────────────────────── */}

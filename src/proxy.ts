@@ -30,8 +30,8 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // Rutas reception: solo Receptionist
-  if (pathname.startsWith("/reception") && role !== "Receptionist") {
+  // Rutas reception: solo Receptionist y Admin
+  if (pathname.startsWith("/reception") && role !== "Receptionist" && role !== "Admin") {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 

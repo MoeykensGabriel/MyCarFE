@@ -145,6 +145,7 @@ export default function IntakePage() {
                   fleetAndContact={fleetAndContact}
                   vehicleDraft={vehicleDraft}
                   onBack={() => setStep(2)}
+                  successHref={(orderId) => `/admin/intake/created/${orderId}`}
                 />
               )}
             </div>

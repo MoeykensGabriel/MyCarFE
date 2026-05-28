@@ -13,9 +13,11 @@ import {
   Clock,
   DollarSign,
   PackageOpen,
+  ListChecks,
 } from "lucide-react";
 
 import { formatCurrency } from "@/lib/format";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { SearchInput } from "@/components/shared/SearchInput";
 import {
   useCatalogServices,
@@ -298,24 +300,20 @@ export default function ServicesPage() {
     <div className="space-y-5">
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-[#041627]">Servicios</h1>
-          {!isLoading && (
-            <p className="text-sm text-[#44474c] mt-0.5">
-              {services.length} servicio{services.length !== 1 ? "s" : ""} en el catálogo
-            </p>
-          )}
-        </div>
-
-        <button
-          onClick={() => setPanel({ mode: "create" })}
-          className="flex items-center gap-1.5 px-4 py-2 bg-[#fea520] text-[#041627] text-sm font-bold rounded-lg hover:bg-[#865300] hover:text-white shadow-sm transition-all shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          Nuevo servicio
-        </button>
-      </div>
+      <PageHeader
+        title="Servicios"
+        subtitle={!isLoading ? `${services.length} servicio${services.length !== 1 ? "s" : ""} en el catálogo` : "Cargando catálogo..."}
+        Icon={ListChecks}
+        actions={
+          <button
+            onClick={() => setPanel({ mode: "create" })}
+            className="flex items-center gap-1.5 px-4 py-2 bg-[#fea520] text-[#041627] text-sm font-bold rounded-lg hover:bg-[#865300] hover:text-white shadow-sm transition-all shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            Nuevo servicio
+          </button>
+        }
+      />
 
       {/* ── Búsqueda ───────────────────────────────────────────────────────── */}
       <SearchInput

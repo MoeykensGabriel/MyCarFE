@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 
 import { BackButton } from "@/components/shared/BackButton";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { Pagination } from "@/components/shared/Pagination";
 import { SearchInput } from "@/components/shared/SearchInput";
 import { OpenOrderModal } from "@/components/shared/OpenOrderModal";
@@ -216,21 +217,19 @@ export default function VehiclesPage() {
       )}
 
       {/* ── Header ──────────────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-        <div>
-          {customerId && (
-            <div className="mb-2">
-              <BackButton href={`/admin/customers/${customerId}`} label="Volver al cliente" />
-            </div>
-          )}
-          <h1 className="text-2xl font-bold text-[#041627]">Vehículos</h1>
-          {data && (
-            <p className="text-sm text-[#44474c] mt-0.5">
-              {data.totalCount.toLocaleString("es-AR")} vehículos registrados
-              {customerId && " para este cliente"}
-            </p>
-          )}
-        </div>
+      <div className="space-y-3">
+        {customerId && (
+          <BackButton href={`/admin/customers/${customerId}`} label="Volver al cliente" />
+        )}
+        <PageHeader
+          title="Vehículos"
+          subtitle={
+            data
+              ? `${data.totalCount.toLocaleString("es-AR")} vehículos registrados${customerId ? " para este cliente" : ""}`
+              : "Cargando vehículos..."
+          }
+          Icon={Car}
+        />
       </div>
 
       {/* ── Búsqueda ────────────────────────────────────────────────────────── */}

@@ -36,8 +36,8 @@ export const customersService = {
     return response.data;
   },
 
-  create: async (data: CreateCustomerRequest): Promise<CreateCustomerResponse> => {
-    const response = await apiClient.post<CreateCustomerResponse>("/api/customers", data);
+  create: async (data: CreateCustomerRequest, config?: any): Promise<CreateCustomerResponse> => {
+    const response = await apiClient.post<CreateCustomerResponse>("/api/customers", data, config);
     return response.data;
   },
 

@@ -8,7 +8,10 @@ import {
   Calendar,
   CalendarDays,
   ChevronRight,
+  LayoutDashboard,
 } from "lucide-react";
+
+import { PageHeader } from "@/components/shared/PageHeader";
 
 import { StatusBadge } from "@/components/work-orders/StatusBadge";
 import { WorkshopLoadCard } from "@/components/dashboard/WorkshopLoadCard";
@@ -107,10 +110,11 @@ export default function DashboardPage() {
     <div className="space-y-6 w-full max-w-7xl">
 
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-[#041627]">Dashboard</h1>
-        <p className="text-sm text-[#44474c] mt-0.5 capitalize">{today}</p>
-      </div>
+      <PageHeader
+        title="Dashboard"
+        subtitle={today}
+        Icon={LayoutDashboard}
+      />
 
       {/* Alerta: aprobaciones pendientes (full width) */}
       {!isLoading && (data?.pendingApprovals ?? 0) > 0 && (

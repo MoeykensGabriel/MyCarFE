@@ -9,9 +9,12 @@ import {
 import { workOrderServicesService } from "@/services/work-order-services.service";
 import {
   AddAdHocWorkOrderServiceRequest,
+  AddWorkOrderPartRequest,
   AddWorkOrderServiceRequest,
+  ApproveQuotePayload,
   CreateWorkOrderRequest,
   ProblemDetails,
+  UpdateWorkOrderPartRequest,
   UpdateWorkOrderStatusRequest,
 } from "@/types/api.types";
 
@@ -128,6 +131,99 @@ export function useRemoveWorkOrderService(workOrderId: string) {
   });
 }
 
+// ─── Repuestos (parts) ────────────────────────────────────────────────────────
+// Patrón: el BE devuelve el WorkOrderDetail completo, así que actualizamos la cache
+// directamente con setQueryData para evitar un refetch innecesario. Si falla, igual
+// invalidamos para resync.
+
+export function useAddWorkOrderPart(workOrderId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: AddWorkOrderPartRequest) =>
+      workOrdersService.addPart(workOrderId, data),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(workOrderKeys.detail(workOrderId), updated);
+      queryClient.invalidateQueries({ queryKey: workOrderKeys.lists() });
+      toast.success("Repuesto agregado");
+    },
+    onError: (err) => {
+      toast.error(extractError(err, "No se pudo agregar el repuesto"));
+    },
+  });
+}
+
+export function useUpdateWorkOrderPart(workOrderId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      partId,
+      data,
+    }: {
+      partId: string;
+      data: UpdateWorkOrderPartRequest;
+    }) => workOrdersService.updatePart(workOrderId, partId, data),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(workOrderKeys.detail(workOrderId), updated);
+      queryClient.invalidateQueries({ queryKey: workOrderKeys.lists() });
+      toast.success("Repuesto actualizado");
+    },
+    onError: (err) => {
+      toast.error(extractError(err, "No se pudo actualizar el repuesto"));
+    },
+  });
+}
+
+export function useRemoveWorkOrderPart(workOrderId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (partId: string) => workOrdersService.removePart(workOrderId, partId),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(workOrderKeys.detail(workOrderId), updated);
+      queryClient.invalidateQueries({ queryKey: workOrderKeys.lists() });
+      toast.success("Repuesto eliminado");
+    },
+    onError: (err) => {
+      toast.error(extractError(err, "No se pudo eliminar el repuesto"));
+    },
+  });
+}
+
+export function useConvertProposals(workOrderId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { proposedServiceIds: string[]; proposedPartIds: string[] }) =>
+      workOrdersService.convertProposals(workOrderId, data),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(workOrderKeys.detail(workOrderId), updated);
+      queryClient.invalidateQueries({ queryKey: workOrderKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: ["inspections", "by-work-order", workOrderId] });
+      toast.success("Propuestas agregadas al presupuesto");
+    },
+    onError: (err) => {
+      toast.error(extractError(err, "No se pudieron agregar las propuestas"));
+    },
+  });
+}
+
+/**
+ * Envía el presupuesto al cliente. Mutation con efectos: congela items, genera token,
+ * transiciona a AwaitingApproval, dispara email.
+ */
+export function useSendQuote(workOrderId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => workOrdersService.sendQuote(workOrderId),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(workOrderKeys.detail(workOrderId), updated);
+      queryClient.invalidateQueries({ queryKey: workOrderKeys.lists() });
+      toast.success("Presupuesto enviado al cliente");
+    },
+    onError: (err) => {
+      toast.error(extractError(err, "No se pudo enviar el presupuesto"));
+    },
+  });
+}
+
 export function useAssignMechanic(workOrderId: string) {
   const queryClient = useQueryClient();
 
@@ -169,7 +265,8 @@ export function useApproveAsCustomer(workOrderId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => workOrdersService.approveAsCustomer(workOrderId),
+    mutationFn: (payload: ApproveQuotePayload) =>
+      workOrdersService.approveAsCustomer(workOrderId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: workOrderKeys.detail(workOrderId) });
       queryClient.invalidateQueries({ queryKey: workOrderKeys.lists() });

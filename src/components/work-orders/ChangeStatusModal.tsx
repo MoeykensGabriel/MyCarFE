@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -18,9 +19,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ValidTransitions, WorkOrderStatus, WorkOrderStatusConfig } from "@/lib/enums";
+import { ValidTransitions, WorkOrderStatus, WorkOrderStatusConfig, PhotoType } from "@/lib/enums";
 import { WorkOrder } from "@/types/api.types";
-import { useUpdateWorkOrderStatus } from "@/hooks/useWorkOrders";
+import { useUpdateWorkOrderStatus, workOrderKeys } from "@/hooks/useWorkOrders";
+import { AfterPhotosUploader } from "./AfterPhotosUploader";
 
 interface ChangeStatusModalProps {
   workOrder: WorkOrder;
@@ -34,13 +36,24 @@ export function ChangeStatusModal({ workOrder, open, onClose }: ChangeStatusModa
   const [selectedStatus, setSelectedStatus] = useState<WorkOrderStatus | "">("");
   const [note, setNote] = useState("");
 
+  const queryClient = useQueryClient();
   const { mutate: updateStatus, isPending } = useUpdateWorkOrderStatus(workOrder.id);
 
+  const isDelivered = selectedStatus === WorkOrderStatus.Delivered;
   const isCancelling = selectedStatus === WorkOrderStatus.Cancelled;
   const noteRequired = isCancelling;
+
+  const hasAfterPhotos = (workOrder.photos?.filter(
+    (p) =>
+      Number(p.photoType) === PhotoType.After &&
+      !p.workOrderServiceId &&
+      !p.inspectionReportId
+  ) ?? []).length > 0;
+
   const canSubmit =
     selectedStatus !== "" &&
-    (!noteRequired || note.trim().length > 0);
+    (!noteRequired || note.trim().length > 0) &&
+    (!isDelivered || hasAfterPhotos);
 
   const handleSubmit = () => {
     if (selectedStatus === "") return;
@@ -62,7 +75,9 @@ export function ChangeStatusModal({ workOrder, open, onClose }: ChangeStatusModa
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className={`transition-all duration-300 max-h-[90vh] overflow-y-auto ${
+        selectedStatus === WorkOrderStatus.Delivered ? "sm:max-w-xl" : "sm:max-w-md"
+      }`}>
         <DialogHeader>
           <DialogTitle>Cambiar estado</DialogTitle>
         </DialogHeader>
@@ -113,6 +128,24 @@ export function ChangeStatusModal({ workOrder, open, onClose }: ChangeStatusModa
               />
               {noteRequired && note.trim().length === 0 && (
                 <p className="text-xs text-red-500">La nota es obligatoria para cancelar.</p>
+              )}
+            </div>
+          )}
+
+          {/* Cargador Estructurado de Fotos para Entrega */}
+          {selectedStatus === WorkOrderStatus.Delivered && (
+            <div className="border-t border-slate-100 pt-4 mt-2">
+              <AfterPhotosUploader
+                workOrderId={workOrder.id}
+                allPhotos={workOrder.photos ?? []}
+                onUploaded={() => {
+                  queryClient.invalidateQueries({ queryKey: workOrderKeys.detail(workOrder.id) });
+                }}
+              />
+              {!hasAfterPhotos && (
+                <p className="text-xs text-amber-600 font-medium mt-2">
+                  ⚠️ Debes subir al menos una foto de entrega para confirmar el cambio.
+                </p>
               )}
             </div>
           )}

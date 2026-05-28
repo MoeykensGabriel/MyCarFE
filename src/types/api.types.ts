@@ -2,8 +2,12 @@ import {
   DocumentType,
   FuelType,
   PhotoType,
+  QuoteItemApprovalStatus,
   VehicleBodyType,
+  VehicleDocumentType,
+  VehicleTripStatus,
   VehicleUseType,
+  WorkOrderPartTier,
   WorkOrderServiceAssignmentStatus,
   WorkOrderStatus,
 } from "@/lib/enums";
@@ -138,6 +142,8 @@ export interface Vehicle {
   // Propietario en el sistema
   customerId?: string | null;
   fleetId?: string | null;
+  /** Token público de la estación de viajes (QR). Solo para flota. */
+  tripToken?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -211,6 +217,135 @@ export interface WorkOrderService {
   completedAt?: string | null;
   mechanicNotes?: string | null;
   mechanicFindings?: string | null;
+
+  /** Área del taller a la que pertenece. Para emparejar foto antes/después por área. */
+  areaId?: string | null;
+  areaName?: string | null;
+
+  // Cotización item-by-item (S4-04+)
+  approvalStatus?: QuoteItemApprovalStatus;
+  alternativeGroupId?: string | null;
+  frozenAt?: string | null;
+}
+
+// ─── Area ─────────────────────────────────────────────────────────────────────
+
+export interface Area {
+  id: string;
+  name: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface CreateAreaRequest {
+  name: string;
+}
+
+export interface UpdateAreaRequest {
+  id: string;
+  name: string;
+  isActive: boolean;
+}
+
+export interface AssignAreasToMechanicRequest {
+  areaIds: string[];
+}
+
+// ─── InspectionReport ─────────────────────────────────────────────────────────
+
+export interface InspectionReportPhoto {
+  id: string;
+  url: string;
+  caption?: string | null;
+  takenAt: string;
+}
+
+export interface InspectionReportProposedService {
+  id: string;
+  name: string;
+  description?: string | null;
+  estimatedLaborCost: number;
+  estimatedDays?: number | null;
+}
+
+export interface InspectionReportProposedPart {
+  id: string;
+  name: string;
+  quantity: number;
+  productCode?: string | null;
+  estimatedUnitPrice?: number | null;
+}
+
+export interface ProposedServiceInput {
+  name: string;
+  description?: string | null;
+  estimatedLaborCost: number;
+  estimatedDays?: number | null;
+}
+
+export interface ProposedPartInput {
+  name: string;
+  quantity: number;
+  productCode?: string | null;
+  estimatedUnitPrice?: number | null;
+}
+
+export interface InspectionReport {
+  id: string;
+  workOrderId: string;
+  areaId: string;
+  areaName: string;
+  mechanicId?: string | null;
+  mechanicFullName?: string | null;
+  findings?: string | null;
+  hasIssue: boolean;
+  /** true = el admin marcó el área como "sin hallazgos" (no hay reporte de mecánico) */
+  isNoFindings: boolean;
+  createdAt: string;
+  updatedAt: string;
+  photos: InspectionReportPhoto[];
+  proposedServices: InspectionReportProposedService[];
+  proposedParts: InspectionReportProposedPart[];
+}
+
+export interface CreateInspectionReportRequest {
+  workOrderId: string;
+  areaId: string;
+  findings?: string;
+  hasIssue: boolean;
+  proposedServices?: ProposedServiceInput[];
+  proposedParts?: ProposedPartInput[];
+}
+
+export interface UpdateInspectionReportRequest {
+  id: string;
+  findings?: string;
+  hasIssue: boolean;
+  proposedServices?: ProposedServiceInput[];
+  proposedParts?: ProposedPartInput[];
+}
+
+export interface MarkAreaNoFindingsRequest {
+  areaId: string;
+}
+
+// ─── PendingInspection (vista del mecánico) ───────────────────────────────────
+
+export interface PendingInspectionArea {
+  areaId: string;
+  areaName: string;
+}
+
+export interface PendingInspection {
+  workOrderId: string;
+  workOrderCreatedAt: string;
+  serviceReason?: string | null;
+  vehicleId: string;
+  vehicleBrand: string;
+  vehicleModel: string;
+  vehicleLicensePlate: string;
+  ownerName?: string | null;
+  pendingAreas: PendingInspectionArea[];
 }
 
 // ─── Mechanic ─────────────────────────────────────────────────────────────────
@@ -221,11 +356,14 @@ export interface Mechanic {
   lastName: string;
   email: string;
   phone?: string | null;
+  /** @deprecated Usar `areas` en su lugar. Se conserva por compatibilidad. */
   specialty?: string | null;
   isActive: boolean;
   applicationUserId: string;
   createdAt: string;
   updatedAt: string;
+  /** Áreas de especialidad asignadas (M-a-N). Puede venir vacío si el admin no las asignó. */
+  areas: Area[];
 }
 
 export interface CreateMechanicRequest {
@@ -302,11 +440,42 @@ export interface CompleteServiceRequest {
   findings?: string;
 }
 
+/**
+ * Un servicio del pool de trabajos disponibles para el mecánico.
+ * Se devuelve desde GET /api/mechanics/me/available-services y se usa en
+ * la pantalla /mecanico/disponibles para que el mecánico se auto-asigne.
+ */
+export interface AvailableService {
+  workOrderServiceId: string;
+  workOrderId: string;
+
+  serviceName: string;
+  serviceDescription?: string | null;
+  quantity: number;
+  priceSnapshot: number;
+  estimatedDurationMinutes: number;
+
+  createdAt: string;
+
+  vehicleId: string;
+  vehicleBrand: string;
+  vehicleModel: string;
+  vehicleLicensePlate: string;
+
+  ownerName?: string | null;
+}
+
 export interface WorkOrderPhoto {
   id: string;
   url: string;
   photoType: PhotoType;
-  uploadedAt: string;
+  /** Texto libre que describe la foto. En las 6 fotos del intake = nombre del slot (Frente, Trasera, etc.). */
+  caption: string | null;
+  takenAt: string;
+  /** Si está presente, la foto pertenece a un servicio puntual (subida por el mecánico al cerrar). */
+  workOrderServiceId: string | null;
+  /** Si está presente, la foto pertenece a un reporte de inspección. */
+  inspectionReportId: string | null;
 }
 
 /** Entrada del timeline real del backend */
@@ -335,20 +504,77 @@ export interface WorkOrder {
   totalAmount: number;
   customerNote?: string | null;
   technicianNote?: string | null;
+  /** Motivo por el que el cliente trae el vehículo (texto libre). Obligatorio a partir de S3-14. */
+  serviceReason?: string | null;
   // Persona que trajo el vehículo (solo para flotas)
   contactPersonName?: string | null;
   contactPersonPhone?: string | null;
   services?: WorkOrderService[];
+  parts?: WorkOrderPart[];
   photos?: WorkOrderPhoto[];
   timeline?: WorkOrderTimelineEntry[];
+  /** Reports de inspección (vista liviana) — sirve para emparejar fotos por área. */
+  inspectionReports?: WorkOrderInspectionReportLite[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface WorkOrderInspectionReportLite {
+  id: string;
+  areaId: string;
+  areaName: string;
+  mechanicId?: string | null;
+  mechanicFullName?: string | null;
+  hasIssue: boolean;
+}
+
+// ─── Repuestos (parts) ────────────────────────────────────────────────────────
+
+export interface WorkOrderPart {
+  id: string;
+  /** Código de proveedor en GestionPGB. Null = repuesto custom (no va al depósito). */
+  productCode: string | null;
+  name: string;
+  unitPrice: number;
+  quantity: number;
+  subtotal: number;
+  tier: WorkOrderPartTier;
+  /** Si tiene valor, este repuesto pertenece a un grupo de alternativas (cliente elige uno). */
+  alternativeGroupId: string | null;
+  approvalStatus: QuoteItemApprovalStatus;
+  /** Si tiene valor, el repuesto fue congelado al enviar el presupuesto y no es editable. */
+  frozenAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AddWorkOrderPartRequest {
+  workOrderId: string;
+  productCode?: string;
+  name: string;
+  unitPrice: number;
+  quantity: number;
+  tier: WorkOrderPartTier;
+  alternativeGroupId?: string;
+}
+
+export interface UpdateWorkOrderPartRequest {
+  workOrderId: string;
+  partId: string;
+  productCode?: string;
+  name: string;
+  unitPrice: number;
+  quantity: number;
+  tier: WorkOrderPartTier;
+  alternativeGroupId?: string;
 }
 
 export interface CreateWorkOrderRequest {
   vehicleId: string;
   mileageAtEntry?: number;
   customerNote?: string;
+  /** Motivo por el que el cliente trae el vehículo. Opcional en BE hasta S3-14; el wizard lo enviará obligatorio. */
+  serviceReason?: string;
   // Persona que trajo el vehículo (solo para flotas)
   contactPersonName?: string;
   contactPersonPhone?: string;
@@ -381,7 +607,7 @@ export interface AddAdHocWorkOrderServiceRequest {
   quantity: number;
 }
 
-// ─── Aprobación (público) ─────────────────────────────────────────────────────
+// ─── Aprobación (público y cliente logueado) ──────────────────────────────────
 
 export interface ApprovalServiceItem {
   id: string;
@@ -390,6 +616,19 @@ export interface ApprovalServiceItem {
   unitPrice: number;
   quantity: number;
   subtotal: number;
+  /** Si tiene valor: item pertenece a un grupo de alternativas (cliente elige exactamente uno). */
+  alternativeGroupId?: string | null;
+}
+
+export interface ApprovalPartItem {
+  id: string;
+  name: string;
+  productCode?: string | null;
+  unitPrice: number;
+  quantity: number;
+  subtotal: number;
+  tier: WorkOrderPartTier;
+  alternativeGroupId?: string | null;
 }
 
 export interface ApproveQuotePreview {
@@ -401,8 +640,15 @@ export interface ApproveQuotePreview {
   customerName: string;
   totalAmount: number;
   services: ApprovalServiceItem[];
+  parts: ApprovalPartItem[];
   expiresAt: string;
   isExpired: boolean;
+}
+
+/** Payload del POST de aprobación (público vía token o desde el panel logueado). */
+export interface ApproveQuotePayload {
+  approvedServiceIds: string[];
+  approvedPartIds: string[];
 }
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
@@ -531,4 +777,98 @@ export interface PagedResult<T> {
   pageSize: number;
   hasNextPage: boolean;
   hasPreviousPage: boolean;
+}
+
+// ─── Calendario / Schedule ────────────────────────────────────────────────────
+
+export interface ScheduleSlot {
+  workOrderServiceId: string;
+  workOrderId: string;
+  serviceName: string;
+  scheduledStart: string;       // ISO
+  scheduledEnd: string;         // ISO
+  estimatedDays?: number | null;
+  areaId?: string | null;
+  areaName?: string | null;
+  mechanicId?: string | null;
+  mechanicFullName?: string | null;
+  vehicleId: string;
+  vehicleLicensePlate: string;
+  vehicleBrand: string;
+  vehicleModel: string;
+}
+
+// ─── Vehicle Documents (vencimientos) ─────────────────────────────────────────
+
+export interface VehicleDocument {
+  id: string;
+  vehicleId: string;
+  documentType: VehicleDocumentType;
+  /** ISO date (YYYY-MM-DD) */
+  expiresOn: string;
+  notes?: string | null;
+  issuingEntity?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateVehicleDocumentRequest {
+  documentType: VehicleDocumentType;
+  expiresOn: string; // YYYY-MM-DD
+  notes?: string | null;
+  issuingEntity?: string | null;
+}
+
+export interface UpdateVehicleDocumentRequest extends CreateVehicleDocumentRequest {}
+
+export interface UpcomingExpiration {
+  id: string;
+  vehicleId: string;
+  vehicleLicensePlate: string;
+  vehicleBrand: string;
+  vehicleModel: string;
+  documentType: VehicleDocumentType;
+  /** ISO date (YYYY-MM-DD) */
+  expiresOn: string;
+  daysUntilExpiration: number; // negativo si ya venció
+}
+
+// ─── Vehicle Trips (chofer escanea QR) ────────────────────────────────────────
+
+export interface VehicleTrip {
+  id: string;
+  vehicleId: string;
+  vehicleLicensePlate: string;
+  vehicleBrand: string;
+  vehicleModel: string;
+  driverName: string;
+  driverDocument: string;
+  startKm: number;
+  endKm?: number | null;
+  startedAt: string;
+  endedAt?: string | null;
+  status: VehicleTripStatus;
+}
+
+export interface TripStation {
+  vehicleId: string;
+  licensePlate: string;
+  brand: string;
+  model: string;
+  lastKnownKm: number;
+  openTrip?: VehicleTrip | null;
+}
+
+export interface StartTripRequest {
+  driverName: string;
+  driverDocument: string;
+  startKm: number;
+}
+
+export interface EndTripRequest {
+  endKm: number;
+}
+
+export interface RegenerateTripTokenResponse {
+  token: string;
 }

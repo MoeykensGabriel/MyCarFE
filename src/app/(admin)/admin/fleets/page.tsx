@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 
 import { Pagination } from "@/components/shared/Pagination";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { SearchInput } from "@/components/shared/SearchInput";
 import { OpenOrderModal } from "@/components/shared/OpenOrderModal";
 import { useFleet, useFleets } from "@/hooks/useFleets";
@@ -95,42 +96,6 @@ function DetailPanel({
         ) : null}
       </div>
 
-      {/* Lista de vehículos */}
-      {fleet && fleet.vehicles && fleet.vehicles.length > 0 && (
-        <div className="border-b border-[#c4c6cd]/60 px-5 py-4">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-[#44474c]/70 mb-3">
-            Vehículos de la flota
-          </p>
-          <div className="space-y-2">
-            {fleet.vehicles.map((v) => (
-              <div
-                key={v.id}
-                className="flex items-center justify-between gap-2 rounded-lg border border-[#c4c6cd]/60 px-3 py-2.5 bg-[#eefcfd]/40"
-              >
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold text-[#041627] truncate">
-                    {v.brand} {v.model} ({v.year})
-                  </p>
-                  <span className="inline-flex items-center gap-0.5 text-[10px] text-[#44474c] font-mono">
-                    <Tag className="w-2.5 h-2.5" />
-                    {v.licensePlate}
-                  </span>
-                </div>
-                <button
-                  onClick={() => onOpenOrder({
-                    vehicleId:    v.id,
-                    vehicleLabel: `${v.brand} ${v.model} · ${v.licensePlate}`,
-                  })}
-                  className="shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold text-[#041627] bg-[#fea520] hover:bg-[#865300] hover:text-white transition-all"
-                >
-                  <ClipboardPlus className="w-3 h-3" />
-                  Abrir
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Footer de acciones */}
       {fleet && (
@@ -216,14 +181,11 @@ export default function FleetsPage() {
       )}
 
       {/* ── Header ──────────────────────────────────────────────────────────── */}
-      <div>
-        <h1 className="text-2xl font-bold text-[#041627]">Flotas</h1>
-        {data && (
-          <p className="text-sm text-[#44474c] mt-0.5">
-            {data.totalCount.toLocaleString("es-AR")} empresas registradas
-          </p>
-        )}
-      </div>
+      <PageHeader
+        title="Flotas"
+        subtitle={data ? `${data.totalCount.toLocaleString("es-AR")} empresas registradas` : "Cargando empresas..."}
+        Icon={Building2}
+      />
 
       {/* ── Búsqueda ────────────────────────────────────────────────────────── */}
       <SearchInput
