@@ -11,6 +11,12 @@ import {
   AlertTriangle,
   Layers,
   Calendar,
+  Gauge,
+  Plus,
+  Trash2,
+  Wrench,
+  Package,
+  BatteryCharging,
 } from "lucide-react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { z } from "zod";
@@ -22,8 +28,9 @@ import {
   useCreateInspectionReport,
 } from "@/hooks/useInspections";
 import { workOrdersService } from "@/services/work-orders.service";
-import { PhotoType } from "@/lib/enums";
-import { formatDateTime } from "@/lib/format";
+import { PhotoType, TirePosition, TirePositionLabel, BatteryStatus, BatteryStatusLabel } from "@/lib/enums";
+import { TireInspectionInput, BatteryInspectionInput } from "@/types/api.types";
+import { formatDateTime, formatCurrency } from "@/lib/format";
 import {
   PendingInspection,
   PendingInspectionArea,
@@ -42,8 +49,6 @@ const proposedServiceSchema = z.object({
 const proposedPartSchema = z.object({
   name: z.string().min(1, "Requerido").max(200),
   quantity: z.coerce.number().int().positive("Debe ser > 0"),
-  productCode: z.string().max(100).optional(),
-  estimatedUnitPrice: z.coerce.number().min(0).optional(),
 });
 
 const reportSchema = z
@@ -61,6 +66,61 @@ const reportSchema = z
 type ReportFormInput  = z.input<typeof reportSchema>;
 type ReportFormOutput = z.output<typeof reportSchema>;
 
+// ─── Control de cubiertas ──────────────────────────────────────────────────────
+
+const TIRE_POSITIONS: TirePosition[] = [
+  TirePosition.FrontLeft,
+  TirePosition.FrontRight,
+  TirePosition.RearLeft,
+  TirePosition.RearRight,
+];
+
+/** Fila editable de cubierta en el form. Campos como string para el input controlado. */
+type TireRow = {
+  position: TirePosition;
+  inner: string;
+  center: string;
+  outer: string;
+  brand: string;
+  model: string;
+  sizeSpec: string;
+  notes: string;
+};
+
+/**
+ * Convierte las filas a payload, tomando solo las que tienen las 3 profundidades cargadas
+ * (la medición de 3 puntos es lo mínimo del control). Devuelve un error de validación
+ * si alguna fila tiene profundidades a medias.
+ */
+function buildTirePayload(
+  rows: TireRow[],
+): { tires: TireInspectionInput[] } | { error: string } {
+  const tires: TireInspectionInput[] = [];
+
+  for (const row of rows) {
+    const filled = [row.inner, row.center, row.outer].filter((v) => v.trim() !== "");
+    if (filled.length === 0) continue; // posición no revisada → se omite
+    if (filled.length < 3) {
+      return {
+        error: `Completá las 3 profundidades (interior, centro, exterior) de la cubierta ${TirePositionLabel[row.position]}.`,
+      };
+    }
+
+    tires.push({
+      position: row.position,
+      innerDepthMm: Number(row.inner),
+      centerDepthMm: Number(row.center),
+      outerDepthMm: Number(row.outer),
+      brand: row.brand.trim() || undefined,
+      model: row.model.trim() || undefined,
+      sizeSpec: row.sizeSpec.trim() || undefined,
+      notes: row.notes.trim() || undefined,
+    });
+  }
+
+  return { tires };
+}
+
 // ─── Modal de reporte ─────────────────────────────────────────────────────────
 
 function ReportFormModal({
@@ -76,6 +136,39 @@ function ReportFormModal({
   const [serverError, setServerError] = useState<string | null>(null);
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
+
+  // ── Control de cubiertas (solo si el área es de cubiertas) ───────────────────
+  const isTireArea = area.isTireArea;
+  const [tireRows, setTireRows] = useState<TireRow[]>(() =>
+    TIRE_POSITIONS.map((position) => ({
+      position,
+      inner: "",
+      center: "",
+      outer: "",
+      brand: "",
+      model: "",
+      sizeSpec: "",
+      notes: "",
+    })),
+  );
+
+  const updateTireRow = (index: number, field: keyof TireRow, value: string) =>
+    setTireRows((prev) =>
+      prev.map((row, i) => (i === index ? { ...row, [field]: value } : row)),
+    );
+
+  // ── Control de batería (solo si el área es de batería) ───────────────────────
+  const isBatteryArea = area.isBatteryArea;
+  const [batteryEnabled, setBatteryEnabled] = useState(false);
+  const [battery, setBattery] = useState({
+    status: String(BatteryStatus.Good),
+    voltage: "",
+    brand: "",
+    manufacturedOn: "",
+    notes: "",
+  });
+  const updateBattery = (field: keyof typeof battery, value: string) =>
+    setBattery((prev) => ({ ...prev, [field]: value }));
 
   const {
     register,
@@ -94,8 +187,37 @@ function ReportFormModal({
 
   const hasIssue = watch("hasIssue");
 
+  // Totales estimados en vivo — solo informativos para el mecánico, no se envían.
+  const watchedServices = watch("proposedServices");
+  const servicesTotal = (watchedServices ?? []).reduce(
+    (sum, s) => sum + (Number(s?.estimatedLaborCost) || 0),
+    0,
+  );
+
   const onSubmit = (data: ReportFormOutput) => {
     setServerError(null);
+
+    let tires: TireInspectionInput[] | undefined;
+    if (isTireArea) {
+      const built = buildTirePayload(tireRows);
+      if ("error" in built) {
+        setServerError(built.error);
+        return;
+      }
+      tires = built.tires.length > 0 ? built.tires : undefined;
+    }
+
+    let batteryPayload: BatteryInspectionInput | undefined;
+    if (isBatteryArea && batteryEnabled) {
+      batteryPayload = {
+        status:         Number(battery.status) as BatteryStatus,
+        voltage:        battery.voltage.trim() === "" ? null : Number(battery.voltage),
+        brand:          battery.brand.trim() || null,
+        manufacturedOn: battery.manufacturedOn || null,
+        notes:          battery.notes.trim() || null,
+      };
+    }
+
     createReport.mutate(
       {
         workOrderId: inspection.workOrderId,
@@ -104,6 +226,8 @@ function ReportFormModal({
         findings:    data.findings?.trim() || undefined,
         proposedServices: data.hasIssue ? data.proposedServices : undefined,
         proposedParts:    data.hasIssue ? data.proposedParts    : undefined,
+        tires,
+        battery:     batteryPayload,
       },
       {
         onSuccess: async (report) => {
@@ -149,13 +273,13 @@ function ReportFormModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden relative"
+        className="w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden relative flex flex-col max-h-[92dvh] sm:max-h-[88dvh]"
       >
         {/* Top Indicator bar */}
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#fea520] to-[#fec15d]" />
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4.5 border-b border-[#041627]/5">
+        <div className="shrink-0 flex items-center justify-between px-5 py-4.5 border-b border-[#041627]/5">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-8 h-8 rounded-lg bg-[#fea520]/10 flex items-center justify-center shrink-0">
               <Layers className="w-4.5 h-4.5 text-[#fea520]" />
@@ -179,7 +303,7 @@ function ReportFormModal({
         </div>
 
         {/* Vehicle Quick Info Strip */}
-        <div className="bg-[#f4f6f8] px-5 py-3 border-b border-[#041627]/5 flex items-center justify-between">
+        <div className="shrink-0 bg-[#f4f6f8] px-5 py-3 border-b border-[#041627]/5 flex items-center justify-between">
           <p className="text-xs font-bold text-[#041627]/80">
             {inspection.vehicleBrand} {inspection.vehicleModel}
           </p>
@@ -188,7 +312,9 @@ function ReportFormModal({
           </span>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="px-5 py-5 space-y-5" noValidate>
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col min-h-0 flex-1 overflow-hidden" noValidate>
+          {/* Cuerpo scrolleable — clave para que el modal no se desborde en mobile */}
+          <div className="px-5 py-5 space-y-5 overflow-y-auto flex-1 min-h-0">
           {/* HasIssue toggle: dos botones controlados que setean el field via setValue */}
           <input type="hidden" {...register("hasIssue")} />
           <div className="space-y-2">
@@ -251,6 +377,178 @@ function ReportFormModal({
             )}
           </div>
 
+          {/* ── Control de cubiertas (solo área de cubiertas) ─────────────── */}
+          {isTireArea && (
+            <div className="space-y-3 border-t border-[#041627]/5 pt-4">
+              <div className="flex items-center gap-1.5">
+                <Gauge className="w-3.5 h-3.5 text-[#fea520]" />
+                <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#041627]">
+                  Control de cubiertas
+                </p>
+              </div>
+              <p className="text-[10px] text-[#44474c]/70 leading-relaxed">
+                Medí la profundidad de banda en 3 puntos (interior / centro / exterior) por posición.
+                Dejá una posición vacía si no la revisaste. Marca y medida solo hacen falta si la
+                cubierta todavía no está registrada.
+              </p>
+
+              {tireRows.map((row, i) => (
+                <div key={row.position} className="bg-[#f4f6f8] p-2.5 rounded-lg space-y-2">
+                  <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#041627]">
+                    {TirePositionLabel[row.position]}
+                  </p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <input
+                      type="number"
+                      step="0.1"
+                      inputMode="decimal"
+                      placeholder="Interior (mm)"
+                      className="px-2 py-1.5 text-xs rounded border border-[#041627]/10 bg-white"
+                      value={row.inner}
+                      onChange={(e) => updateTireRow(i, "inner", e.target.value)}
+                    />
+                    <input
+                      type="number"
+                      step="0.1"
+                      inputMode="decimal"
+                      placeholder="Centro (mm)"
+                      className="px-2 py-1.5 text-xs rounded border border-[#041627]/10 bg-white"
+                      value={row.center}
+                      onChange={(e) => updateTireRow(i, "center", e.target.value)}
+                    />
+                    <input
+                      type="number"
+                      step="0.1"
+                      inputMode="decimal"
+                      placeholder="Exterior (mm)"
+                      className="px-2 py-1.5 text-xs rounded border border-[#041627]/10 bg-white"
+                      value={row.outer}
+                      onChange={(e) => updateTireRow(i, "outer", e.target.value)}
+                    />
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <input
+                      type="text"
+                      placeholder="Marca"
+                      className="px-2 py-1.5 text-xs rounded border border-[#041627]/10 bg-white"
+                      value={row.brand}
+                      onChange={(e) => updateTireRow(i, "brand", e.target.value)}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Modelo"
+                      className="px-2 py-1.5 text-xs rounded border border-[#041627]/10 bg-white"
+                      value={row.model}
+                      onChange={(e) => updateTireRow(i, "model", e.target.value)}
+                    />
+                    <input
+                      type="text"
+                      placeholder='Medida (ej. 185/65 R15)'
+                      className="px-2 py-1.5 text-xs rounded border border-[#041627]/10 bg-white"
+                      value={row.sizeSpec}
+                      onChange={(e) => updateTireRow(i, "sizeSpec", e.target.value)}
+                    />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Observaciones (opcional)"
+                    className="w-full px-2 py-1.5 text-xs rounded border border-[#041627]/10 bg-white"
+                    value={row.notes}
+                    onChange={(e) => updateTireRow(i, "notes", e.target.value)}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ── Control de batería (solo área de batería) ─────────────────── */}
+          {isBatteryArea && (
+            <div className="space-y-3 border-t border-[#041627]/5 pt-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <BatteryCharging className="w-3.5 h-3.5 text-[#fea520]" />
+                  <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#041627]">
+                    Control de batería
+                  </p>
+                </div>
+                <label className="flex items-center gap-1.5 text-[10px] font-bold text-[#44474c] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={batteryEnabled}
+                    onChange={(e) => setBatteryEnabled(e.target.checked)}
+                    className="accent-[#fea520]"
+                  />
+                  Revisé la batería
+                </label>
+              </div>
+
+              {batteryEnabled && (
+                <div className="bg-[#f4f6f8] p-2.5 rounded-lg space-y-2">
+                  <div>
+                    <label className="text-[9px] font-bold uppercase tracking-wider text-[#44474c]/70">
+                      Estado
+                    </label>
+                    <select
+                      className="w-full px-2 py-1.5 text-xs rounded border border-[#041627]/10 bg-white"
+                      value={battery.status}
+                      onChange={(e) => updateBattery("status", e.target.value)}
+                    >
+                      {Object.entries(BatteryStatusLabel).map(([value, label]) => (
+                        <option key={value} value={value}>{label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[9px] font-bold uppercase tracking-wider text-[#44474c]/70">
+                        Voltaje (V)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        inputMode="decimal"
+                        placeholder="12.6"
+                        className="w-full px-2 py-1.5 text-xs rounded border border-[#041627]/10 bg-white"
+                        value={battery.voltage}
+                        onChange={(e) => updateBattery("voltage", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[9px] font-bold uppercase tracking-wider text-[#44474c]/70">
+                        Marca
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Bosch, Moura..."
+                        className="w-full px-2 py-1.5 text-xs rounded border border-[#041627]/10 bg-white"
+                        value={battery.brand}
+                        onChange={(e) => updateBattery("brand", e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-bold uppercase tracking-wider text-[#44474c]/70">
+                      Fecha de fabricación (opcional)
+                    </label>
+                    <input
+                      type="date"
+                      className="w-full px-2 py-1.5 text-xs rounded border border-[#041627]/10 bg-white"
+                      value={battery.manufacturedOn}
+                      onChange={(e) => updateBattery("manufacturedOn", e.target.value)}
+                    />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Observaciones (bornes sulfatados, etc.)"
+                    className="w-full px-2 py-1.5 text-xs rounded border border-[#041627]/10 bg-white"
+                    value={battery.notes}
+                    onChange={(e) => updateBattery("notes", e.target.value)}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
           {/* ── Fotos del área (foto del estado inicial) ──────────────────── */}
           <div className="space-y-2 border-t border-[#041627]/5 pt-4">
             <div className="flex items-center justify-between">
@@ -303,118 +601,191 @@ function ReportFormModal({
 
           {/* ── Propuestas (solo si hay problema) ──────────────────────────── */}
           {hasIssue && (
-            <div className="space-y-4 border-t border-[#041627]/5 pt-4">
-              {/* Servicios sugeridos */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
+            <div className="space-y-5 border-t border-[#041627]/5 pt-4">
+              <p className="text-[10px] text-[#44474c]/70 leading-relaxed bg-[#eefcfd]/60 border border-[#041627]/5 rounded-lg p-2.5">
+                Podés sugerir <span className="font-bold text-[#041627]">varios servicios y varios repuestos</span>.
+                Cargá cada uno con su precio aproximado — el administrador elige cuáles entran al presupuesto.
+              </p>
+
+              {/* ── Servicios sugeridos ─────────────────────────────────────── */}
+              <div className="space-y-2.5">
+                <div className="flex items-center gap-1.5">
+                  <Wrench className="w-3.5 h-3.5 text-[#fea520]" />
                   <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#041627]">
                     Servicios sugeridos
                   </p>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      servicesArr.append({ name: "", description: "", estimatedLaborCost: 0, estimatedDays: undefined })
-                    }
-                    className="text-[10px] font-bold uppercase tracking-wider text-[#fea520] hover:underline"
-                  >
-                    + Agregar servicio
-                  </button>
+                  {servicesArr.fields.length > 0 && (
+                    <span className="text-[10px] font-bold text-[#44474c]/60">
+                      ({servicesArr.fields.length})
+                    </span>
+                  )}
                 </div>
-                {servicesArr.fields.length === 0 && (
-                  <p className="text-[10px] text-[#44474c]/60 italic">Sin servicios sugeridos.</p>
-                )}
+
                 {servicesArr.fields.map((field, i) => (
-                  <div key={field.id} className="grid grid-cols-12 gap-2 items-start bg-[#f4f6f8] p-2.5 rounded-lg">
-                    <input
-                      type="text"
-                      placeholder="Nombre del trabajo"
-                      className="col-span-12 px-2 py-1.5 text-xs rounded border border-[#041627]/10 bg-white"
-                      {...register(`proposedServices.${i}.name`)}
-                    />
-                    <input
-                      type="number"
-                      step="0.01"
-                      placeholder="Mano de obra aprox ($)"
-                      className="col-span-7 px-2 py-1.5 text-xs rounded border border-[#041627]/10 bg-white"
-                      {...register(`proposedServices.${i}.estimatedLaborCost`)}
-                    />
-                    <input
-                      type="number"
-                      placeholder="Días estim"
-                      className="col-span-4 px-2 py-1.5 text-xs rounded border border-[#041627]/10 bg-white"
-                      {...register(`proposedServices.${i}.estimatedDays`)}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => servicesArr.remove(i)}
-                      className="col-span-1 text-red-500 hover:text-red-700 text-xs font-bold"
-                      aria-label="Eliminar"
-                    >
-                      ×
-                    </button>
-                    {errors.proposedServices?.[i]?.name && (
-                      <p className="col-span-12 text-[10px] text-red-500">{errors.proposedServices[i]?.name?.message}</p>
-                    )}
+                  <div key={field.id} className="bg-[#f4f6f8] p-3 rounded-xl space-y-2 border border-[#041627]/5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#041627]/70">
+                        Servicio {i + 1}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => servicesArr.remove(i)}
+                        className="inline-flex items-center gap-1 text-[10px] font-bold text-red-500 hover:text-red-700"
+                        aria-label={`Eliminar servicio ${i + 1}`}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        Quitar
+                      </button>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold uppercase tracking-wider text-[#44474c]/70">
+                        Nombre del trabajo
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Ej. Cambio de pastillas de freno"
+                        className="w-full px-2.5 py-2 text-xs rounded-lg border border-[#041627]/10 bg-white"
+                        {...register(`proposedServices.${i}.name`)}
+                      />
+                      {errors.proposedServices?.[i]?.name && (
+                        <p className="text-[10px] text-red-500">{errors.proposedServices[i]?.name?.message}</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold uppercase tracking-wider text-[#44474c]/70">
+                        Detalle (opcional)
+                      </label>
+                      <textarea
+                        rows={2}
+                        placeholder="Aclaraciones del trabajo a realizar"
+                        className="w-full px-2.5 py-2 text-xs rounded-lg border border-[#041627]/10 bg-white resize-none"
+                        {...register(`proposedServices.${i}.description`)}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-bold uppercase tracking-wider text-[#44474c]/70">
+                          Mano de obra aprox ($)
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          inputMode="decimal"
+                          placeholder="0"
+                          className="w-full px-2.5 py-2 text-xs rounded-lg border border-[#041627]/10 bg-white"
+                          {...register(`proposedServices.${i}.estimatedLaborCost`)}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-bold uppercase tracking-wider text-[#44474c]/70">
+                          Días estim.
+                        </label>
+                        <input
+                          type="number"
+                          inputMode="numeric"
+                          placeholder="—"
+                          className="w-full px-2.5 py-2 text-xs rounded-lg border border-[#041627]/10 bg-white"
+                          {...register(`proposedServices.${i}.estimatedDays`)}
+                        />
+                      </div>
+                    </div>
                   </div>
                 ))}
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    servicesArr.append({ name: "", description: "", estimatedLaborCost: 0, estimatedDays: undefined })
+                  }
+                  className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-dashed border-[#041627]/20 text-[11px] font-bold uppercase tracking-wider text-[#44474c]/70 hover:border-[#fea520] hover:text-[#fea520] transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  Agregar servicio
+                </button>
+
+                {servicesTotal > 0 && (
+                  <p className="text-[10px] font-semibold text-[#44474c]/70 text-right">
+                    Mano de obra estimada:{" "}
+                    <span className="font-black text-[#041627]">{formatCurrency(servicesTotal)}</span>
+                  </p>
+                )}
               </div>
 
-              {/* Repuestos sugeridos */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
+              {/* ── Repuestos sugeridos ─────────────────────────────────────── */}
+              <div className="space-y-2.5">
+                <div className="flex items-center gap-1.5">
+                  <Package className="w-3.5 h-3.5 text-[#fea520]" />
                   <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#041627]">
                     Repuestos sugeridos
                   </p>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      partsArr.append({ name: "", quantity: 1, productCode: "", estimatedUnitPrice: undefined })
-                    }
-                    className="text-[10px] font-bold uppercase tracking-wider text-[#fea520] hover:underline"
-                  >
-                    + Agregar repuesto
-                  </button>
+                  {partsArr.fields.length > 0 && (
+                    <span className="text-[10px] font-bold text-[#44474c]/60">
+                      ({partsArr.fields.length})
+                    </span>
+                  )}
                 </div>
-                {partsArr.fields.length === 0 && (
-                  <p className="text-[10px] text-[#44474c]/60 italic">Sin repuestos sugeridos.</p>
-                )}
+
                 {partsArr.fields.map((field, i) => (
-                  <div key={field.id} className="grid grid-cols-12 gap-2 items-start bg-[#f4f6f8] p-2.5 rounded-lg">
-                    <input
-                      type="text"
-                      placeholder="Nombre del repuesto"
-                      className="col-span-12 px-2 py-1.5 text-xs rounded border border-[#041627]/10 bg-white"
-                      {...register(`proposedParts.${i}.name`)}
-                    />
-                    <input
-                      type="number"
-                      placeholder="Cant."
-                      className="col-span-3 px-2 py-1.5 text-xs rounded border border-[#041627]/10 bg-white"
-                      {...register(`proposedParts.${i}.quantity`)}
-                    />
-                    <input
-                      type="text"
-                      placeholder="Código (opcional)"
-                      className="col-span-4 px-2 py-1.5 text-xs rounded border border-[#041627]/10 bg-white"
-                      {...register(`proposedParts.${i}.productCode`)}
-                    />
-                    <input
-                      type="number"
-                      step="0.01"
-                      placeholder="Precio aprox (opcional)"
-                      className="col-span-4 px-2 py-1.5 text-xs rounded border border-[#041627]/10 bg-white"
-                      {...register(`proposedParts.${i}.estimatedUnitPrice`)}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => partsArr.remove(i)}
-                      className="col-span-1 text-red-500 hover:text-red-700 text-xs font-bold"
-                      aria-label="Eliminar"
-                    >
-                      ×
-                    </button>
+                  <div key={field.id} className="bg-[#f4f6f8] p-3 rounded-xl space-y-2 border border-[#041627]/5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#041627]/70">
+                        Repuesto {i + 1}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => partsArr.remove(i)}
+                        className="inline-flex items-center gap-1 text-[10px] font-bold text-red-500 hover:text-red-700"
+                        aria-label={`Eliminar repuesto ${i + 1}`}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        Quitar
+                      </button>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold uppercase tracking-wider text-[#44474c]/70">
+                        Nombre del repuesto
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Ej. Juego de pastillas delanteras"
+                        className="w-full px-2.5 py-2 text-xs rounded-lg border border-[#041627]/10 bg-white"
+                        {...register(`proposedParts.${i}.name`)}
+                      />
+                      {errors.proposedParts?.[i]?.name && (
+                        <p className="text-[10px] text-red-500">{errors.proposedParts[i]?.name?.message}</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold uppercase tracking-wider text-[#44474c]/70">
+                        Cantidad
+                      </label>
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        placeholder="1"
+                        className="w-full px-2.5 py-2 text-xs rounded-lg border border-[#041627]/10 bg-white"
+                        {...register(`proposedParts.${i}.quantity`)}
+                      />
+                    </div>
                   </div>
                 ))}
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    partsArr.append({ name: "", quantity: 1 })
+                  }
+                  className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-dashed border-[#041627]/20 text-[11px] font-bold uppercase tracking-wider text-[#44474c]/70 hover:border-[#fea520] hover:text-[#fea520] transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  Agregar repuesto
+                </button>
+
               </div>
             </div>
           )}
@@ -425,8 +796,10 @@ function ReportFormModal({
               <p className="text-xs font-semibold text-red-700">{serverError}</p>
             </div>
           )}
+          </div>
 
-          <div className="flex gap-2 pt-2 border-t border-[#041627]/5">
+          {/* Footer fijo — siempre visible aunque el cuerpo scrollee */}
+          <div className="shrink-0 flex gap-2 px-5 py-4 border-t border-[#041627]/5 bg-white">
             <button
               type="button"
               onClick={onClose}

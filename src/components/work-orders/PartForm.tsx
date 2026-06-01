@@ -13,11 +13,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { WorkOrderPartTier, WorkOrderPartTierLabel } from "@/lib/enums";
+import { formatCurrency } from "@/lib/format";
 
 export interface PartFormValues {
   productCode: string;       // se envía como undefined si está vacío
   name: string;
-  unitPrice: number;
+  unitPrice: number;                 // costo interno (no se muestra al cliente)
+  customerUnitPrice: number | null;  // precio cliente (PDF); null = usa el costo
   quantity: number;
   tier: WorkOrderPartTier;
 }
@@ -46,6 +48,9 @@ export function PartForm({
   const [unitPrice, setUnitPrice]     = useState<string>(
     initial?.unitPrice !== undefined ? String(initial.unitPrice) : "0"
   );
+  const [customerUnitPrice, setCustomerUnitPrice] = useState<string>(
+    initial?.customerUnitPrice != null ? String(initial.customerUnitPrice) : ""
+  );
   const [quantity, setQuantity]       = useState<string>(
     initial?.quantity !== undefined ? String(initial.quantity) : "1"
   );
@@ -55,12 +60,21 @@ export function PartForm({
 
   const parsedPrice = parseFloat(unitPrice);
   const parsedQty   = parseInt(quantity, 10);
+  // Precio cliente es opcional: vacío => null (cae al costo interno en el PDF/total).
+  const customerTrimmed = customerUnitPrice.trim();
+  const parsedCustomer  = customerTrimmed === "" ? null : parseFloat(customerTrimmed);
+  const customerValid   = parsedCustomer === null || (!isNaN(parsedCustomer) && parsedCustomer >= 0);
+
+  // Subtotal estimado de cara al cliente (precio cliente si hay, si no el costo).
+  const effectiveCustomer = parsedCustomer ?? (isNaN(parsedPrice) ? 0 : parsedPrice);
+  const customerSubtotal  = isNaN(parsedQty) ? 0 : effectiveCustomer * parsedQty;
 
   const canSubmit =
     name.trim().length > 0 &&
     unitPrice !== "" &&
     !isNaN(parsedPrice) &&
     parsedPrice >= 0 &&
+    customerValid &&
     quantity !== "" &&
     !isNaN(parsedQty) &&
     parsedQty >= 1;
@@ -68,10 +82,11 @@ export function PartForm({
   function handleSubmit() {
     if (!canSubmit) return;
     onSubmit({
-      productCode: productCode.trim(),
-      name:        name.trim(),
-      unitPrice:   parsedPrice,
-      quantity:    parsedQty,
+      productCode:       productCode.trim(),
+      name:              name.trim(),
+      unitPrice:         parsedPrice,
+      customerUnitPrice: parsedCustomer,
+      quantity:          parsedQty,
       tier,
     });
   }
@@ -105,10 +120,10 @@ export function PartForm({
         </p>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <Label className="text-xs">
-            Precio unitario <span className="text-red-500">*</span>
+            Costo interno <span className="text-red-500">*</span>
           </Label>
           <Input
             type="number"
@@ -117,7 +132,27 @@ export function PartForm({
             value={unitPrice}
             onChange={(e) => setUnitPrice(e.target.value)}
           />
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            Lo que te cuesta a vos. <strong>No</strong> se muestra al cliente.
+          </p>
         </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">Precio cliente (PDF)</Label>
+          <Input
+            type="number"
+            min={0}
+            step={0.01}
+            placeholder="igual al costo"
+            value={customerUnitPrice}
+            onChange={(e) => setCustomerUnitPrice(e.target.value)}
+          />
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            Precio que ve el cliente. Si lo dejás vacío, se usa el costo interno.
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <Label className="text-xs">
             Cantidad <span className="text-red-500">*</span>
@@ -149,6 +184,15 @@ export function PartForm({
           </Select>
         </div>
       </div>
+
+      {customerSubtotal > 0 && (
+        <p className="text-xs text-muted-foreground text-right">
+          Subtotal cliente:{" "}
+          <span className="font-semibold text-foreground tabular-nums">
+            {formatCurrency(customerSubtotal)}
+          </span>
+        </p>
+      )}
 
       <div className="flex justify-end gap-2 pt-2">
         {onCancel && (

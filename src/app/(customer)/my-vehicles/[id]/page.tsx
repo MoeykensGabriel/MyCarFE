@@ -11,6 +11,8 @@ import {
 } from "@/lib/enums";
 import { useVehicle } from "@/hooks/useVehicles";
 import { VehicleDocumentsCard } from "@/components/vehicle-documents/VehicleDocumentsCard";
+import { CustomerTiresCard } from "@/components/vehicle-tires/CustomerTiresCard";
+import { CustomerBatteryCard } from "@/components/vehicle-battery/CustomerBatteryCard";
 import { TripStationQrCard } from "@/components/vehicle-trips/TripStationQrCard";
 import { VehicleTripsHistoryCard } from "@/components/vehicle-trips/VehicleTripsHistoryCard";
 
@@ -162,6 +164,12 @@ export default function MyVehicleDetailPage() {
 
       {/* ── Vencimientos (VTV, póliza, patente) ─────────────────────────────── */}
       <VehicleDocumentsCard vehicleId={vehicle.id} />
+
+      {/* ── Estado de cubiertas (solo lectura — lo registra el taller) ───────── */}
+      <CustomerTiresCard vehicleId={vehicle.id} />
+
+      {/* ── Estado de batería (solo lectura — lo registra el taller) ─────────── */}
+      <CustomerBatteryCard vehicleId={vehicle.id} />
 
       {/* ── Estación de viajes (QR para choferes) — solo si es vehículo de flota ── */}
       {vehicle.fleetId && (

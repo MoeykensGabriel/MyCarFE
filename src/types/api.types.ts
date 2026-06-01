@@ -1,8 +1,11 @@
 import {
+  BatteryStatus,
   DocumentType,
   FuelType,
   PhotoType,
   QuoteItemApprovalStatus,
+  TirePosition,
+  TireStatus,
   VehicleBodyType,
   VehicleDocumentType,
   VehicleTripStatus,
@@ -308,6 +311,36 @@ export interface InspectionReport {
   proposedParts: InspectionReportProposedPart[];
 }
 
+/**
+ * Datos de una cubierta cargados por el mecánico del área de cubiertas durante la
+ * inspección inicial. Una entrada por posición revisada. Solo aplica si el área
+ * tiene isTireArea=true.
+ */
+export interface TireInspectionInput {
+  position: TirePosition;
+  innerDepthMm: number;
+  centerDepthMm: number;
+  outerDepthMm: number;
+  brand?: string | null;
+  model?: string | null;
+  sizeSpec?: string | null;
+  initialTreadDepthMm?: number | null;
+  expectedLifeKm?: number | null;
+  notes?: string | null;
+}
+
+/**
+ * Estado de batería cargado por el mecánico del área de batería. El estado lo define
+ * el mecánico (no se calcula). Solo aplica cuando el área tiene isBatteryArea=true.
+ */
+export interface BatteryInspectionInput {
+  status: BatteryStatus;
+  voltage?: number | null;
+  brand?: string | null;
+  manufacturedOn?: string | null; // ISO date (yyyy-MM-dd)
+  notes?: string | null;
+}
+
 export interface CreateInspectionReportRequest {
   workOrderId: string;
   areaId: string;
@@ -315,6 +348,8 @@ export interface CreateInspectionReportRequest {
   hasIssue: boolean;
   proposedServices?: ProposedServiceInput[];
   proposedParts?: ProposedPartInput[];
+  tires?: TireInspectionInput[];
+  battery?: BatteryInspectionInput;
 }
 
 export interface UpdateInspectionReportRequest {
@@ -334,6 +369,10 @@ export interface MarkAreaNoFindingsRequest {
 export interface PendingInspectionArea {
   areaId: string;
   areaName: string;
+  /** true = área de cubiertas: el reporte puede incluir datos/mediciones de cubiertas. */
+  isTireArea: boolean;
+  /** true = área de batería: el reporte puede incluir el estado de la batería. */
+  isBatteryArea: boolean;
 }
 
 export interface PendingInspection {
@@ -535,9 +574,15 @@ export interface WorkOrderPart {
   /** Código de proveedor en GestionPGB. Null = repuesto custom (no va al depósito). */
   productCode: string | null;
   name: string;
+  /** Costo interno del taller. NO se muestra al cliente. */
   unitPrice: number;
+  /** Precio que ve el cliente en el PDF (markup). Si es null, se usa unitPrice. */
+  customerUnitPrice: number | null;
   quantity: number;
+  /** Subtotal a costo interno (unitPrice × quantity). */
   subtotal: number;
+  /** Subtotal de cara al cliente (precio cliente × quantity) — lo que va al PDF/total. */
+  customerSubtotal: number;
   tier: WorkOrderPartTier;
   /** Si tiene valor, este repuesto pertenece a un grupo de alternativas (cliente elige uno). */
   alternativeGroupId: string | null;
@@ -553,6 +598,8 @@ export interface AddWorkOrderPartRequest {
   productCode?: string;
   name: string;
   unitPrice: number;
+  /** Precio cliente (PDF). Si se omite/null, el cliente ve el costo interno. */
+  customerUnitPrice?: number | null;
   quantity: number;
   tier: WorkOrderPartTier;
   alternativeGroupId?: string;
@@ -564,6 +611,8 @@ export interface UpdateWorkOrderPartRequest {
   productCode?: string;
   name: string;
   unitPrice: number;
+  /** Precio cliente (PDF). Si se omite/null, el cliente ve el costo interno. */
+  customerUnitPrice?: number | null;
   quantity: number;
   tier: WorkOrderPartTier;
   alternativeGroupId?: string;
@@ -746,6 +795,122 @@ export interface DashboardStats {
   topServices: DashboardTopService[];
   /** Vehículos en Completed esperando que el cliente los retire. */
   vehiclesToPickup: DashboardVehicleToPickup[];
+}
+
+// ─── Cubiertas ───────────────────────────────────────────────────────────────
+
+export interface TireWearEstimation {
+  currentAverageDepthMm: number;
+  status: TireStatus;
+  /** mm por km. null si todavía no hay info suficiente para proyectar. */
+  wearRateMmPerKm: number | null;
+  /** km restantes hasta 3mm (planificar cambio). null si no se puede proyectar. */
+  kmRemainingToReplaceSoon: number | null;
+  /** km restantes hasta 1.6mm (urgente/ilegal). null si no se puede proyectar. */
+  kmRemainingToUrgent: number | null;
+  hasIrregularWear: boolean;
+  lastMeasuredOn: string | null;
+  lastMeasurementId: string | null;
+}
+
+export interface VehicleTireMeasurement {
+  id: string;
+  vehicleTireId: string;
+  measuredOn: string;
+  vehicleMileageAtMeasurement: number;
+  innerDepthMm: number;
+  centerDepthMm: number;
+  outerDepthMm: number;
+  averageDepthMm: number;
+  spreadMm: number;
+  notes: string | null;
+  measuredByUserId: string | null;
+  workOrderId: string | null;
+  createdAt: string;
+}
+
+export interface VehicleTire {
+  id: string;
+  vehicleId: string;
+  position: TirePosition;
+  brand: string;
+  model: string;
+  sizeSpec: string;
+  installedOn: string;
+  installedAtKm: number;
+  initialTreadDepthMm: number;
+  expectedLifeKm: number;
+  isActive: boolean;
+  replacedOn: string | null;
+  replacedAtKm: number | null;
+  createdAt: string;
+  updatedAt: string;
+  measurements: VehicleTireMeasurement[];
+  estimation: TireWearEstimation;
+}
+
+export interface CreateVehicleTireRequest {
+  position: TirePosition;
+  brand: string;
+  model: string;
+  sizeSpec: string;
+  installedOn: string;       // YYYY-MM-DD
+  installedAtKm: number;
+  initialTreadDepthMm: number;
+  expectedLifeKm: number;
+}
+
+export interface AddTireMeasurementRequest {
+  measuredOn: string;        // ISO date-time
+  vehicleMileageAtMeasurement: number;
+  innerDepthMm: number;
+  centerDepthMm: number;
+  outerDepthMm: number;
+  notes?: string | null;
+  workOrderId?: string | null;
+}
+
+export interface ReplaceTireRequest {
+  replacedOn: string;        // YYYY-MM-DD
+  replacedAtKm: number;
+  newBrand: string;
+  newModel: string;
+  newSizeSpec: string;
+  newInitialTreadDepthMm: number;
+  newExpectedLifeKm: number;
+}
+
+// ─── Batería ─────────────────────────────────────────────────────────────────
+
+export interface VehicleBatteryCheck {
+  id: string;
+  vehicleBatteryId: string;
+  checkedOn: string;
+  vehicleMileageAtCheck: number;
+  status: BatteryStatus;
+  voltage: number | null;
+  notes: string | null;
+  checkedByUserId: string | null;
+  workOrderId: string | null;
+  createdAt: string;
+}
+
+export interface VehicleBattery {
+  id: string;
+  vehicleId: string;
+  brand: string | null;
+  manufacturedOn: string | null;
+  installedOn: string;
+  installedAtKm: number;
+  isActive: boolean;
+  replacedOn: string | null;
+  replacedAtKm: number | null;
+  createdAt: string;
+  updatedAt: string;
+  checks: VehicleBatteryCheck[];
+  /** Estado actual derivado del último chequeo (null si no hay chequeos). */
+  currentStatus: BatteryStatus | null;
+  lastCheckedOn: string | null;
 }
 
 // ─── Settings (configuración del taller) ─────────────────────────────────────

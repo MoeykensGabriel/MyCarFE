@@ -8,6 +8,7 @@ import { toast } from "sonner";
 
 import { BackButton } from "@/components/shared/BackButton";
 import { OpenOrderModal } from "@/components/shared/OpenOrderModal";
+import { VehicleTiresCard } from "@/components/vehicle-tires/VehicleTiresCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   DocumentTypeLabel,
@@ -157,6 +158,9 @@ export default function VehicleDetailPage() {
               <InfoRow label="N° de motor" value={vehicle.engineNumber} />
             </CardContent>
           </Card>
+
+          {/* Cubiertas */}
+          <VehicleTiresCard vehicleId={vehicle.id} defaultMileage={vehicle.currentMileage} />
 
           {/* Titular registral */}
           <Card>

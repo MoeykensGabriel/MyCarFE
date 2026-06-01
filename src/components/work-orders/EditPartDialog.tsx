@@ -29,11 +29,12 @@ export function EditPartDialog({ workOrderId, part, open, onClose }: Props) {
 
         <PartForm
           initial={{
-            productCode: part.productCode ?? "",
-            name:        part.name,
-            unitPrice:   part.unitPrice,
-            quantity:    part.quantity,
-            tier:        part.tier,
+            productCode:       part.productCode ?? "",
+            name:              part.name,
+            unitPrice:         part.unitPrice,
+            customerUnitPrice: part.customerUnitPrice,
+            quantity:          part.quantity,
+            tier:              part.tier,
           }}
           submitLabel="Guardar cambios"
           submitting={isPending}
@@ -44,12 +45,13 @@ export function EditPartDialog({ workOrderId, part, open, onClose }: Props) {
                 partId: part.id,
                 data: {
                   workOrderId,
-                  partId:      part.id,
-                  productCode: values.productCode || undefined,
-                  name:        values.name,
-                  unitPrice:   values.unitPrice,
-                  quantity:    values.quantity,
-                  tier:        values.tier,
+                  partId:            part.id,
+                  productCode:       values.productCode || undefined,
+                  name:              values.name,
+                  unitPrice:         values.unitPrice,
+                  customerUnitPrice: values.customerUnitPrice,
+                  quantity:          values.quantity,
+                  tier:              values.tier,
                 },
               },
               {

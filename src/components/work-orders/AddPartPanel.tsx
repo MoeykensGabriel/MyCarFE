@@ -40,11 +40,12 @@ export function AddPartPanel({ workOrderId }: Props) {
           addPart(
             {
               workOrderId,
-              productCode: values.productCode || undefined,
-              name:        values.name,
-              unitPrice:   values.unitPrice,
-              quantity:    values.quantity,
-              tier:        values.tier,
+              productCode:       values.productCode || undefined,
+              name:              values.name,
+              unitPrice:         values.unitPrice,
+              customerUnitPrice: values.customerUnitPrice,
+              quantity:          values.quantity,
+              tier:              values.tier,
             },
             {
               onSuccess: () => setOpen(false),

@@ -142,7 +142,18 @@ function PartRow({
             <span>{WorkOrderPartTierLabel[part.tier]}</span>
             {part.quantity > 1 && (
               <span>
-                {part.quantity} × {formatCurrency(part.unitPrice)}
+                {part.quantity} × {formatCurrency(part.customerUnitPrice ?? part.unitPrice)}
+              </span>
+            )}
+            <span title="Costo interno del taller (no lo ve el cliente)">
+              Costo: {formatCurrency(part.unitPrice)}
+            </span>
+            {part.customerUnitPrice != null && part.customerUnitPrice !== part.unitPrice && (
+              <span
+                className="text-emerald-700"
+                title="Margen sobre el costo interno"
+              >
+                Margen: {formatCurrency(part.customerSubtotal - part.subtotal)}
               </span>
             )}
             <ApprovalBadge status={part.approvalStatus} />
@@ -157,7 +168,7 @@ function PartRow({
                 : "text-gray-900"
             }`}
           >
-            {formatCurrency(part.subtotal)}
+            {formatCurrency(part.customerSubtotal)}
           </span>
           {canMutate && (
             <>

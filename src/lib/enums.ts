@@ -349,3 +349,57 @@ export const VehicleTripStatusLabel: Record<VehicleTripStatus, string> = {
   [VehicleTripStatus.AutoClosed]:      "Cerrado automáticamente",
   [VehicleTripStatus.ClosedByContact]: "Cerrado por el encargado",
 };
+
+// ─── Cubiertas ───────────────────────────────────────────────────────────────
+
+export enum TirePosition {
+  FrontLeft  = 0,
+  FrontRight = 1,
+  RearLeft   = 2,
+  RearRight  = 3,
+}
+
+export const TirePositionLabel: Record<TirePosition, string> = {
+  [TirePosition.FrontLeft]:  "Delantera izquierda",
+  [TirePosition.FrontRight]: "Delantera derecha",
+  [TirePosition.RearLeft]:   "Trasera izquierda",
+  [TirePosition.RearRight]:  "Trasera derecha",
+};
+
+/** Abreviatura para los slots posicionales. */
+export const TirePositionShort: Record<TirePosition, string> = {
+  [TirePosition.FrontLeft]:  "DI",
+  [TirePosition.FrontRight]: "DD",
+  [TirePosition.RearLeft]:   "TI",
+  [TirePosition.RearRight]:  "TD",
+};
+
+export enum TireStatus {
+  Healthy     = 0,
+  Attention   = 1,
+  ReplaceSoon = 2,
+  Urgent      = 3,
+}
+
+export const TireStatusLabel: Record<TireStatus, string> = {
+  [TireStatus.Healthy]:     "Saludable",
+  [TireStatus.Attention]:   "Atención",
+  [TireStatus.ReplaceSoon]: "Cambiar pronto",
+  [TireStatus.Urgent]:      "Urgente",
+};
+
+// ─── Batería ─────────────────────────────────────────────────────────────────
+
+export enum BatteryStatus {
+  Good        = 0,
+  Fair        = 1,
+  ReplaceSoon = 2,
+  Replace     = 3,
+}
+
+export const BatteryStatusLabel: Record<BatteryStatus, string> = {
+  [BatteryStatus.Good]:        "Buena",
+  [BatteryStatus.Fair]:        "Regular",
+  [BatteryStatus.ReplaceSoon]: "Cambiar pronto",
+  [BatteryStatus.Replace]:     "Reemplazar",
+};
