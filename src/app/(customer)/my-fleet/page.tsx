@@ -3,7 +3,7 @@
 import Link from "next/link";
 import {
   Building2, MapPin, Phone, Mail, Hash,
-  Car, Tag, ClipboardList, ChevronRight, User, Sparkles
+  Car, ClipboardList, ChevronRight, User, Sparkles
 } from "lucide-react";
 
 import { useFleetMine } from "@/hooks/useFleets";
@@ -183,38 +183,31 @@ export default function MyFleetPage() {
       )}
 
       {/* ── Vehículos de la Flota ───────────────────────────────────────────── */}
-      {fleet.vehicles?.length > 0 && (
-        <Section icon={Car} title="Vehículos Registrados" count={fleet.vehicles.length}>
-          <div className="space-y-0.5 divide-y divide-[#041627]/5">
-            {fleet.vehicles.map((v) => {
-              const initials = `${v.brand[0]}${v.model[0]}`.toUpperCase();
-              return (
-                <Link
-                  key={v.id}
-                  href={`/my-vehicles/${v.id}`}
-                  className="flex items-center justify-between gap-3 py-3 transition-colors hover:bg-black/5 active:scale-[0.99] rounded-xl px-2 -mx-2 group"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#041627] to-[#0a2540] text-[#fea520] flex items-center justify-center text-xs font-black shrink-0 border border-[#fea520]/20 shadow">
-                      {initials}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs font-extrabold text-[#041627] truncate group-hover:text-[#fea520] transition-colors leading-tight">
-                        {v.brand} {v.model}
-                      </p>
-                      <span className="inline-flex items-center gap-1 text-[10px] font-bold font-mono text-[#44474c]/85 mt-1 bg-[#f4f6f8] px-2 py-0.5 rounded border border-[#041627]/5">
-                        <Tag className="w-3.5 h-3.5 text-[#44474c]/50" />
-                        {v.licensePlate}
-                      </span>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-[#c4c6cd] group-hover:text-[#fea520] group-hover:translate-x-0.5 transition-all shrink-0" />
-                </Link>
-              );
-            })}
+      {/* Acceso al listado completo (buscable y paginado) en vez de renderizar
+          toda la flota inline — clave para flotas grandes. */}
+      <Link
+        href="/my-vehicles"
+        className="flex items-center justify-between w-full bg-white rounded-2xl border border-[#041627]/10 shadow-sm p-4.5 hover:border-[#fea520]/60 hover:shadow-md active:scale-[0.98] transition-all duration-300 group"
+      >
+        <div className="flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#041627] to-[#0a2540] text-[#fea520] flex items-center justify-center shrink-0 border border-[#fea520]/20 shadow group-hover:scale-105 transition-transform duration-300">
+            <Car className="w-5 h-5" />
           </div>
-        </Section>
-      )}
+          <div className="text-left">
+            <p className="text-xs font-black uppercase tracking-wider text-[#041627]">
+              Vehículos de la Flota
+            </p>
+            <p className="text-[11px] text-[#44474c]/75 font-semibold mt-0.5">
+              {fleet.vehicles?.length
+                ? `${fleet.vehicles.length} unidad${fleet.vehicles.length !== 1 ? "es" : ""} · buscá y abrí cada ficha`
+                : "Buscá y abrí la ficha de cada unidad"}
+            </p>
+          </div>
+        </div>
+        <div className="w-8 h-8 rounded-full bg-[#eefcfd] flex items-center justify-center group-hover:bg-[#fea520]/10 transition-colors shrink-0">
+          <ChevronRight className="w-4 h-4 text-[#fea520] group-hover:translate-x-0.5 transition-transform" />
+        </div>
+      </Link>
 
       {/* ── Acceso Rápido a Órdenes ─────────────────────────────────────────── */}
       <Link

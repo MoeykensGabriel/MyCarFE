@@ -1,12 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { Car, Tag, Gauge, ChevronRight, Fuel, ShieldAlert } from "lucide-react";
+import { Car, Tag, Gauge, ChevronRight, Fuel } from "lucide-react";
+import { useDebouncedCallback } from "use-debounce";
 
 import { FuelTypeLabel, VehicleBodyTypeLabel } from "@/lib/enums";
-import { useVehicles } from "@/hooks/useVehicles";
+import { useInfiniteVehicles } from "@/hooks/useVehicles";
 import { useAuthStore } from "@/store/auth.store";
 import { Vehicle } from "@/types/api.types";
+import { SearchInput } from "@/components/shared/SearchInput";
 import { UpcomingExpirationsBanner } from "@/components/vehicle-documents/UpcomingExpirationsBanner";
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
@@ -80,14 +83,31 @@ function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
 
 export default function MyVehiclesPage() {
   const { customerId, fleetId } = useAuthStore();
+  const [search, setSearch] = useState<string | undefined>(undefined);
 
   // Los vehículos de flota están bajo fleetId; los individuales bajo customerId.
-  const { data, isLoading, isError } = useVehicles({
-    pageSize:   50,
+  const {
+    data,
+    isLoading,
+    isError,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteVehicles({
+    pageSize:   20,
+    search,
     fleetId:    fleetId  ?? undefined,
     customerId: !fleetId ? (customerId ?? undefined) : undefined,
   });
-  const items = data?.items ?? [];
+
+  const handleSearch = useDebouncedCallback((value: string) => {
+    setSearch(value || undefined);
+  }, 350);
+
+  // Aplanamos todas las páginas cargadas. El total real viene del back en cada página.
+  const items = data?.pages.flatMap((p) => p.items) ?? [];
+  const totalCount = data?.pages[0]?.totalCount ?? 0;
+  const isSearching = !!search;
 
   return (
     <div className="space-y-5">
@@ -107,7 +127,7 @@ export default function MyVehiclesPage() {
                 Vehículos Registrados
               </p>
               <p className="text-xl font-black text-[#fea520] mt-0.5">
-                {items.length === 0 ? "0" : `${items.length} unidad${items.length !== 1 ? "es" : ""}`}
+                {totalCount === 0 ? "0" : `${totalCount} unidad${totalCount !== 1 ? "es" : ""}`}
               </p>
             </div>
           )}
@@ -116,6 +136,12 @@ export default function MyVehiclesPage() {
 
       {/* ── Banner de vencimientos próximos / vencidos ──────────────────────── */}
       <UpcomingExpirationsBanner />
+
+      {/* ── Buscador ────────────────────────────────────────────────────────── */}
+      <SearchInput
+        placeholder="Buscar por patente, marca o modelo..."
+        onChange={handleSearch}
+      />
 
       {/* ── Estados ─────────────────────────────────────────────────────────── */}
       {isLoading && (
@@ -136,10 +162,21 @@ export default function MyVehiclesPage() {
           <div className="w-14 h-14 rounded-2xl bg-[#eefcfd] flex items-center justify-center">
             <Car className="w-6 h-6 text-[#041627]" />
           </div>
-          <p className="text-sm font-extrabold text-[#041627]">Sin vehículos registrados</p>
-          <p className="text-xs text-[#44474c]/85 max-w-xs leading-relaxed">
-            Cuando traigas tu primer vehículo a nuestro taller o lo dejes para service, lo registraremos y aparecerá automáticamente acá.
-          </p>
+          {isSearching ? (
+            <>
+              <p className="text-sm font-extrabold text-[#041627]">Sin resultados</p>
+              <p className="text-xs text-[#44474c]/85 max-w-xs leading-relaxed">
+                No encontramos vehículos que coincidan con tu búsqueda. Probá con otra patente, marca o modelo.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-sm font-extrabold text-[#041627]">Sin vehículos registrados</p>
+              <p className="text-xs text-[#44474c]/85 max-w-xs leading-relaxed">
+                Cuando traigas tu primer vehículo a nuestro taller o lo dejes para service, lo registraremos y aparecerá automáticamente acá.
+              </p>
+            </>
+          )}
         </div>
       )}
 
@@ -152,6 +189,17 @@ export default function MyVehiclesPage() {
           <div className="space-y-3 animate-[fadeIn_0.2s_ease-out]">
             {items.map((v) => <VehicleCard key={v.id} vehicle={v} />)}
           </div>
+
+          {/* Cargar más — pide la siguiente página de a 20 al backend */}
+          {hasNextPage && (
+            <button
+              onClick={() => fetchNextPage()}
+              disabled={isFetchingNextPage}
+              className="w-full py-3 rounded-2xl text-xs font-black uppercase tracking-wider border border-[#041627]/10 bg-white text-[#041627] hover:border-[#fea520] hover:text-[#fea520] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+            >
+              {isFetchingNextPage ? "Cargando..." : "Cargar más"}
+            </button>
+          )}
         </div>
       )}
 
