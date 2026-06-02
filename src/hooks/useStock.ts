@@ -70,6 +70,19 @@ export function useRetryStockSubmission() {
 }
 
 /**
+ * Consulta puntual de disponibilidad de un producto por código (acción del usuario,
+ * por eso es mutation y no query). El resultado se muestra en el modal; toast solo en error.
+ */
+export function useStockAvailability() {
+  return useMutation({
+    mutationFn: (productCode: string) => stockService.checkAvailability(productCode),
+    onError: (err) => {
+      toast.error(extractError(err, "No se pudo consultar el stock"));
+    },
+  });
+}
+
+/**
  * Útil para forzar un estado manualmente desde la pantalla cuando el depósito
  * avisa por teléfono o WhatsApp antes de que GestionPGB actualice automáticamente.
  */

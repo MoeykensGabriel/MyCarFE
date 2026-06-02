@@ -1,6 +1,7 @@
 import apiClient from "@/lib/axios";
 import { StockRequestItemStatus, StockRequestStatus } from "@/lib/enums";
 import {
+  StockAvailability,
   StockRequest,
   StockRequestsParams,
   UpdateStockItemPayload,
@@ -54,5 +55,31 @@ export const stockService = {
       `/api/stock-requests/${stockRequestId}/retry-submission`,
     );
     return normalize(response.data);
+  },
+
+  /**
+   * Consulta la disponibilidad de un producto por código en el sistema del taller.
+   *
+   * TODO: conectar a GestionPGB — reemplazar el stub por:
+   *   const response = await apiClient.get<StockAvailability>("/api/stock/availability", {
+   *     params: { code: productCode },
+   *   });
+   *   return response.data;
+   *
+   * Por ahora simula la respuesta (con un pequeño delay) para construir la UI.
+   * Regla trivial de demo: códigos que terminan en dígito par => disponibles.
+   */
+  checkAvailability: async (productCode: string): Promise<StockAvailability> => {
+    const code = productCode.trim();
+    await new Promise((resolve) => setTimeout(resolve, 600)); // simula latencia de red
+    const lastChar = code.slice(-1);
+    const lastDigit = Number(lastChar);
+    const available = !Number.isNaN(lastDigit) && lastDigit % 2 === 0;
+    return {
+      productCode:    code,
+      available,
+      name:           available ? "Producto de ejemplo" : null,
+      quantityOnHand: available ? 5 : 0,
+    };
   },
 };

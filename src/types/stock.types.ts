@@ -33,3 +33,14 @@ export interface UpdateStockItemPayload {
   status: StockRequestItemStatus;
   notes?: string;
 }
+
+/**
+ * Resultado de consultar la disponibilidad de un producto por código en el sistema
+ * del taller (GestionPGB). Consulta read-only, independiente de los pedidos (stock-requests).
+ */
+export interface StockAvailability {
+  productCode:     string;
+  available:       boolean;
+  name?:           string | null;  // nombre del producto si GestionPGB lo devuelve
+  quantityOnHand?: number | null;  // cantidad disponible (opcional; la UI lo tolera)
+}

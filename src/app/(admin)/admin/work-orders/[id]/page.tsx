@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ChevronRight, ClipboardList, Building2, User, Car, Clock, Wrench, CheckCircle2, Search, PackageCheck } from "lucide-react";
+import { ChevronRight, ClipboardList, Building2, User, Car, Clock, Wrench, CheckCircle2, Search, PackageCheck, PackageSearch } from "lucide-react";
 import { toast } from "sonner";
 
 import { BackButton } from "@/components/shared/BackButton";
@@ -22,6 +22,7 @@ import { InspectionPanel } from "@/components/work-orders/InspectionPanel";
 import { InspectionFindingsCard } from "@/components/work-orders/InspectionFindingsCard";
 import { InspectionProposalsCard } from "@/components/work-orders/InspectionProposalsCard";
 import { SendQuoteButton } from "@/components/work-orders/SendQuoteButton";
+import { StockLookupModal } from "@/components/stock/StockLookupModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { WorkOrderStatus, WorkOrderStatusConfig } from "@/lib/enums";
@@ -114,6 +115,7 @@ export default function WorkOrderDetailPage() {
   const { data: order, isLoading, isError } = useWorkOrder(id);
   const [statusModalOpen, setStatusModalOpen] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [stockOpen, setStockOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const handleDownloadQuote = async () => {
@@ -288,14 +290,27 @@ export default function WorkOrderDetailPage() {
           {((order.parts?.length ?? 0) > 0 || isDiagnosing) && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">
-                  Repuestos
-                  {(order.parts?.length ?? 0) > 0 && (
-                    <span className="ml-2 text-xs font-normal text-muted-foreground">
-                      ({order.parts!.length})
-                    </span>
+                <div className="flex items-center justify-between gap-2">
+                  <CardTitle className="text-base">
+                    Repuestos
+                    {(order.parts?.length ?? 0) > 0 && (
+                      <span className="ml-2 text-xs font-normal text-muted-foreground">
+                        ({order.parts!.length})
+                      </span>
+                    )}
+                  </CardTitle>
+                  {isDiagnosing && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setStockOpen(true)}
+                      className="font-semibold"
+                    >
+                      <PackageSearch className="w-4 h-4 mr-1.5" />
+                      Consultar stock
+                    </Button>
                   )}
-                </CardTitle>
+                </div>
               </CardHeader>
               <CardContent>
                 <PartsList
@@ -557,6 +572,10 @@ export default function WorkOrderDetailPage() {
         open={statusModalOpen}
         onClose={() => setStatusModalOpen(false)}
       />
+
+      {isDiagnosing && (
+        <StockLookupModal open={stockOpen} onClose={() => setStockOpen(false)} />
+      )}
     </div>
   );
 }
