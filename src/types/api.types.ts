@@ -562,6 +562,11 @@ export interface WorkOrder {
   timeline?: WorkOrderTimelineEntry[];
   /** Reports de inspección (vista liviana) — sirve para emparejar fotos por área. */
   inspectionReports?: WorkOrderInspectionReportLite[];
+  /** Agendado del vehículo (ocupación de bahía). Null si no está agendado. */
+  scheduledStart?: string | null;
+  scheduledEnd?: string | null;
+  /** Duración total estimada de los servicios (mecánico ?? catálogo) × cantidad, en minutos. */
+  totalEstimatedMinutes?: number;
   createdAt: string;
   updatedAt: string;
 }

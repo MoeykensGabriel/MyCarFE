@@ -86,6 +86,21 @@ export const workOrdersService = {
     await apiClient.patch(`/api/work-orders/${id}/notes`, data);
   },
 
+  /**
+   * Agenda la orden (vehículo) en el calendario de ocupación. Si scheduledEnd se omite,
+   * el backend lo calcula como inicio + duración total estimada. Pasar ambos null borra el agendado.
+   */
+  schedule: async (
+    id: string,
+    data: { scheduledStart: string | null; scheduledEnd?: string | null },
+  ): Promise<WorkOrder> => {
+    const response = await apiClient.post<WorkOrder>(`/api/work-orders/${id}/schedule`, {
+      workOrderId: id,
+      ...data,
+    });
+    return response.data;
+  },
+
   addService: async (id: string, data: AddWorkOrderServiceRequest): Promise<void> => {
     await apiClient.post(`/api/work-orders/${id}/services`, data);
   },

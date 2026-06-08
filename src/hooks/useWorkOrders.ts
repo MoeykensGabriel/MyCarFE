@@ -88,6 +88,25 @@ export function useUpdateWorkOrderStatus(workOrderId: string) {
   });
 }
 
+export function useScheduleWorkOrder(workOrderId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: { scheduledStart: string | null; scheduledEnd?: string | null }) =>
+      workOrdersService.schedule(workOrderId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: workOrderKeys.detail(workOrderId) });
+      queryClient.invalidateQueries({ queryKey: workOrderKeys.lists() });
+      // El calendario de ocupación lee de otra query key (schedule/occupancy).
+      queryClient.invalidateQueries({ queryKey: ["schedule"] });
+      toast.success("Agenda actualizada");
+    },
+    onError: () => {
+      toast.error("No se pudo agendar la orden");
+    },
+  });
+}
+
 export function useAddWorkOrderService(workOrderId: string) {
   const queryClient = useQueryClient();
   return useMutation({
