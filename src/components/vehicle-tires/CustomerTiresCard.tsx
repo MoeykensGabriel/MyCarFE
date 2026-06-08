@@ -5,7 +5,7 @@ import { CircleGauge, AlertTriangle } from "lucide-react";
 import { useVehicleTires } from "@/hooks/useVehicleTires";
 import {
   TirePosition,
-  TirePositionShort,
+  TirePositionNotation,
   TireStatus,
   TireStatusLabel,
 } from "@/lib/enums";
@@ -85,7 +85,7 @@ function TireSlot({ tire }: { tire: VehicleTire }) {
     <div className={`rounded-xl border p-3 flex flex-col gap-2 ${s.border} ${s.bg}`}>
       <div className="flex items-center justify-between">
         <span className="text-[10px] font-black uppercase tracking-wider text-[#041627]/60">
-          {TirePositionShort[tire.position]}
+          {TirePositionNotation[tire.position]}
         </span>
         <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded ${s.pill}`}>
           {TireStatusLabel[est.status]}
@@ -124,7 +124,7 @@ function EmptySlot({ position }: { position: TirePosition }) {
   return (
     <div className="rounded-xl border border-dashed border-[#041627]/15 p-3 flex flex-col items-center justify-center gap-1 text-[#44474c]/45 min-h-24">
       <span className="text-[10px] font-black uppercase tracking-wider">
-        {TirePositionShort[position]}
+        {TirePositionNotation[position]}
       </span>
       <span className="text-[9px] uppercase tracking-wider font-bold">Sin datos</span>
     </div>
