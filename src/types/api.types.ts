@@ -983,6 +983,25 @@ export interface ScheduleSlot {
   vehicleModel: string;
 }
 
+/** Una orden (vehículo) ocupando bahía en el calendario de ocupación. */
+export interface OccupancySlot {
+  workOrderId: string;
+  scheduledStart: string;        // ISO
+  scheduledEnd: string;          // ISO
+  status: WorkOrderStatus;
+  vehicleId: string;
+  vehicleLicensePlate: string;
+  vehicleBrand: string;
+  vehicleModel: string;
+  ownerName?: string | null;
+}
+
+/** Ocupación del taller en un rango: slots por vehículo + capacidad física configurable. */
+export interface Occupancy {
+  physicalCapacity: number;
+  slots: OccupancySlot[];
+}
+
 // ─── Vehicle Documents (vencimientos) ─────────────────────────────────────────
 
 export interface VehicleDocument {

@@ -13,3 +13,11 @@ export function useSchedule(from: string, to: string) {
     enabled: !!from && !!to,
   });
 }
+
+export function useOccupancy(from: string, to: string) {
+  return useQuery({
+    queryKey: [...scheduleKeys.all, "occupancy", from, to] as const,
+    queryFn: () => scheduleService.getOccupancy({ from, to }),
+    enabled: !!from && !!to,
+  });
+}
