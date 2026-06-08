@@ -745,9 +745,11 @@ export interface DashboardMechanicLoad {
 }
 
 export interface DashboardWorkshopLoad {
-  /** Vehículos físicamente asociados a órdenes activas. */
+  /** Bahías ocupadas: vehículos presentes (en trabajo o esperando retiro) = InProgress + Completed. */
   vehiclesInShop: number;
-  /** Capacidad física del taller (configurable en appsettings del back). */
+  /** Subconjunto: vehículos Completed esperando retiro (ya sin trabajo activo). */
+  vehiclesAwaitingPickup: number;
+  /** Capacidad física del taller (configurable en datos de la empresa). */
   physicalCapacity: number;
   /** Total de minutos pendientes de trabajo en todo el taller. */
   totalPendingMinutes: number;

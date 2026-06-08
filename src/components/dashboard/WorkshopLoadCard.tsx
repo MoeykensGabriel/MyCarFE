@@ -73,6 +73,13 @@ export function WorkshopLoadCard({ load }: Props) {
               style={{ width: `${occupancyPct}%` }}
             />
           </div>
+          {/* Esperando retiro (Completed): ocupan lugar pero ya sin trabajo activo */}
+          {load.vehiclesAwaitingPickup > 0 && (
+            <p className="text-[10px] text-[#44474c]/70 mt-1.5">
+              <span className="font-bold text-[#041627]">{load.vehiclesAwaitingPickup}</span>{" "}
+              esperando retiro
+            </p>
+          )}
         </div>
 
         {/* Trabajo pendiente total */}
