@@ -15,6 +15,7 @@ export function useFleets(params: FleetsParams = {}) {
   return useQuery({
     queryKey: fleetKeys.list(params),
     queryFn: () => fleetsService.getAll(params),
+    staleTime: 30_000,
   });
 }
 

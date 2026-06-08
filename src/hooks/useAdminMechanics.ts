@@ -19,6 +19,7 @@ export function useAdminMechanics(params: AdminMechanicsParams = {}) {
   return useQuery({
     queryKey: mechanicAdminKeys.list(params),
     queryFn: () => adminMechanicsService.getAll(params),
+    staleTime: 30_000,
   });
 }
 

@@ -15,6 +15,7 @@ import {
   Eye,
   EyeOff,
   Layers,
+  Pencil,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -167,9 +168,10 @@ function DetailPanel({
           </div>
           <button
             onClick={() => setShowAreasEdit(true)}
-            className="text-[10px] font-bold uppercase tracking-widest text-[#041627] hover:text-[#fea520] transition-colors"
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest text-[#041627] bg-[#fea520]/15 border border-[#fea520]/40 hover:bg-[#fea520]/25 transition-colors"
           >
-            Editar
+            <Pencil className="w-3 h-3" />
+            Editar áreas
           </button>
         </div>
         {mechanic.areas && mechanic.areas.length > 0 ? (
@@ -184,7 +186,13 @@ function DetailPanel({
             ))}
           </div>
         ) : (
-          <p className="text-xs text-[#44474c]/60 italic">Sin áreas asignadas</p>
+          <button
+            onClick={() => setShowAreasEdit(true)}
+            className="w-full inline-flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed border-[#fea520]/50 text-[11px] font-bold text-[#041627]/70 hover:bg-[#fea520]/10 hover:text-[#041627] transition-colors"
+          >
+            <Layers className="w-3.5 h-3.5" />
+            Asignar áreas
+          </button>
         )}
       </div>
 

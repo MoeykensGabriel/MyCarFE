@@ -22,6 +22,9 @@ export function useVehicles(params: VehiclesParams = {}) {
   return useQuery({
     queryKey: vehicleKeys.list(params),
     queryFn: () => vehiclesService.getAll(params),
+    // Reusa el listado en memoria al volver a entrar dentro de 30s (evita refetch
+    // innecesario al navegar ida/vuelta). Las mutaciones invalidan lists() igual.
+    staleTime: 30_000,
   });
 }
 

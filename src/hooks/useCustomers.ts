@@ -14,6 +14,7 @@ export function useCustomers(params: CustomersParams = {}) {
   return useQuery({
     queryKey: customerKeys.list(params),
     queryFn: () => customersService.getAll(params),
+    staleTime: 30_000,
   });
 }
 
