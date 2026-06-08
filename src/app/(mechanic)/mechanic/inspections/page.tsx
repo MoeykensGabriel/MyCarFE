@@ -168,7 +168,7 @@ function ReportFormModal({
     voltage: "",
     remainingPercentage: "",
     brand: "",
-    manufacturedOn: "",
+    installedOn: "",
     notes: "",
     capacityAh: "",
     boxWidthCm: "",
@@ -223,7 +223,7 @@ function ReportFormModal({
         voltage:             battery.voltage.trim() === "" ? null : Number(battery.voltage),
         remainingPercentage: battery.remainingPercentage.trim() === "" ? null : Number(battery.remainingPercentage),
         brand:               battery.brand.trim() || null,
-        manufacturedOn:      battery.manufacturedOn || null,
+        installedOn:         battery.installedOn || null,
         notes:               battery.notes.trim() || null,
         capacityAh:          battery.capacityAh.trim()  === "" ? null : Number(battery.capacityAh),
         boxWidthCm:          battery.boxWidthCm.trim()  === "" ? null : Number(battery.boxWidthCm),
@@ -570,13 +570,13 @@ function ReportFormModal({
                   </div>
                   <div>
                     <label className="text-[9px] font-bold uppercase tracking-wider text-[#44474c]/70">
-                      Fecha de fabricación (opcional)
+                      Fecha de instalación (opcional)
                     </label>
                     <input
                       type="date"
                       className="w-full px-2 py-1.5 text-xs rounded border border-[#041627]/10 bg-white"
-                      value={battery.manufacturedOn}
-                      onChange={(e) => updateBattery("manufacturedOn", e.target.value)}
+                      value={battery.installedOn}
+                      onChange={(e) => updateBattery("installedOn", e.target.value)}
                     />
                   </div>
                   {/* ── Specs del repuesto (para saber qué batería comprar) ── */}

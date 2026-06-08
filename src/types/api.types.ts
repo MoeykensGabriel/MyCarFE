@@ -339,7 +339,7 @@ export interface BatteryInspectionInput {
   voltage?: number | null;
   remainingPercentage?: number | null; // 0–100
   brand?: string | null;
-  manufacturedOn?: string | null; // ISO date (yyyy-MM-dd)
+  installedOn?: string | null; // ISO date (yyyy-MM-dd) — de acá sale la garantía
   notes?: string | null;
   // Specs físicas del repuesto (opcionales).
   capacityAh?: number | null;
@@ -913,7 +913,6 @@ export interface VehicleBattery {
   boxLengthCm: number | null;
   boxHeightCm: number | null;
   positiveTerminalSide: BatteryTerminalSide | null;
-  manufacturedOn: string | null;
   installedOn: string;
   installedAtKm: number;
   isActive: boolean;

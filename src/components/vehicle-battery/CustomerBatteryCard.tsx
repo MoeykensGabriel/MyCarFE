@@ -33,8 +33,9 @@ export function CustomerBatteryCard({ vehicleId }: Props) {
   const lastCheck = battery.checks[battery.checks.length - 1];
   const pct = battery.currentRemainingPercentage;
   const s = statusStyle(battery.currentStatus);
-  const ageYears = battery.manufacturedOn
-    ? Math.max(0, new Date().getFullYear() - new Date(battery.manufacturedOn).getFullYear())
+  // Antigüedad desde la instalación (de ahí se mide la vida útil / garantía).
+  const ageYears = battery.installedOn
+    ? Math.max(0, new Date().getFullYear() - new Date(battery.installedOn).getFullYear())
     : null;
   // Dimensiones de caja: solo si las 3 medidas están cargadas (ancho × largo × alto).
   const boxDimensions =
