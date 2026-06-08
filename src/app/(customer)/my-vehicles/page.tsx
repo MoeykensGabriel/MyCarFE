@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Car, Tag, Gauge, ChevronRight, Fuel } from "lucide-react";
+import { Car, Tag, Gauge, ChevronRight, Fuel, ArrowDownAZ, Clock } from "lucide-react";
 import { useDebouncedCallback } from "use-debounce";
 
 import { FuelTypeLabel, VehicleBodyTypeLabel } from "@/lib/enums";
 import { useInfiniteVehicles } from "@/hooks/useVehicles";
+import type { VehicleSort } from "@/services/vehicles.service";
 import { useAuthStore } from "@/store/auth.store";
 import { Vehicle } from "@/types/api.types";
 import { SearchInput } from "@/components/shared/SearchInput";
@@ -84,6 +85,8 @@ function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
 export default function MyVehiclesPage() {
   const { customerId, fleetId } = useAuthStore();
   const [search, setSearch] = useState<string | undefined>(undefined);
+  // Por defecto alfabético (marca/modelo). El cliente puede cambiar a "plate" (patente ≈ antigüedad).
+  const [sort, setSort] = useState<VehicleSort>("alphabetical");
 
   // Los vehículos de flota están bajo fleetId; los individuales bajo customerId.
   const {
@@ -96,6 +99,7 @@ export default function MyVehiclesPage() {
   } = useInfiniteVehicles({
     pageSize:   20,
     search,
+    sort,
     fleetId:    fleetId  ?? undefined,
     customerId: !fleetId ? (customerId ?? undefined) : undefined,
   });
@@ -142,6 +146,33 @@ export default function MyVehiclesPage() {
         placeholder="Buscar por patente, marca o modelo..."
         onChange={handleSearch}
       />
+
+      {/* ── Orden ───────────────────────────────────────────────────────────── */}
+      <div className="flex items-center gap-1.5">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-[#44474c]/60 mr-1">
+          Ordenar:
+        </span>
+        {([
+          { value: "alphabetical", label: "A–Z",          Icon: ArrowDownAZ },
+          { value: "plate",        label: "Antigüedad",   Icon: Clock },
+        ] as const).map(({ value, label, Icon }) => {
+          const active = sort === value;
+          return (
+            <button
+              key={value}
+              onClick={() => setSort(value)}
+              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold border transition-colors ${
+                active
+                  ? "bg-[#041627] text-white border-[#041627]"
+                  : "bg-white text-[#44474c] border-[#c4c6cd] hover:border-[#041627]/40"
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              {label}
+            </button>
+          );
+        })}
+      </div>
 
       {/* ── Estados ─────────────────────────────────────────────────────────── */}
       {isLoading && (

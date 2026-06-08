@@ -1,12 +1,15 @@
 import apiClient from "@/lib/axios";
 import { CreateVehicleRequest, PagedResult, Vehicle } from "@/types/api.types";
 
+export type VehicleSort = "alphabetical" | "plate" | "recent";
+
 export interface VehiclesParams {
   customerId?: string;
   fleetId?: string;
   search?: string;  // patente, marca, modelo
   page?: number;
   pageSize?: number;
+  sort?: VehicleSort; // alphabetical (marca/modelo) | plate (patente) | recent
 }
 
 export const vehiclesService = {
