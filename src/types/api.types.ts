@@ -1,5 +1,6 @@
 import {
   BatteryStatus,
+  BatteryTerminalSide,
   DocumentType,
   FuelType,
   PhotoType,
@@ -268,7 +269,7 @@ export interface InspectionReportProposedService {
   name: string;
   description?: string | null;
   estimatedLaborCost: number;
-  estimatedDays?: number | null;
+  estimatedDurationMinutes?: number | null;
 }
 
 export interface InspectionReportProposedPart {
@@ -283,7 +284,7 @@ export interface ProposedServiceInput {
   name: string;
   description?: string | null;
   estimatedLaborCost: number;
-  estimatedDays?: number | null;
+  estimatedDurationMinutes?: number | null;
 }
 
 export interface ProposedPartInput {
@@ -336,9 +337,16 @@ export interface TireInspectionInput {
 export interface BatteryInspectionInput {
   status: BatteryStatus;
   voltage?: number | null;
+  remainingPercentage?: number | null; // 0–100
   brand?: string | null;
   manufacturedOn?: string | null; // ISO date (yyyy-MM-dd)
   notes?: string | null;
+  // Specs físicas del repuesto (opcionales).
+  capacityAh?: number | null;
+  boxWidthCm?: number | null;
+  boxLengthCm?: number | null;
+  boxHeightCm?: number | null;
+  positiveTerminalSide?: BatteryTerminalSide | null;
 }
 
 export interface CreateInspectionReportRequest {
@@ -889,6 +897,7 @@ export interface VehicleBatteryCheck {
   vehicleMileageAtCheck: number;
   status: BatteryStatus;
   voltage: number | null;
+  remainingPercentage: number | null;
   notes: string | null;
   checkedByUserId: string | null;
   workOrderId: string | null;
@@ -899,6 +908,11 @@ export interface VehicleBattery {
   id: string;
   vehicleId: string;
   brand: string | null;
+  capacityAh: number | null;
+  boxWidthCm: number | null;
+  boxLengthCm: number | null;
+  boxHeightCm: number | null;
+  positiveTerminalSide: BatteryTerminalSide | null;
   manufacturedOn: string | null;
   installedOn: string;
   installedAtKm: number;
@@ -910,6 +924,8 @@ export interface VehicleBattery {
   checks: VehicleBatteryCheck[];
   /** Estado actual derivado del último chequeo (null si no hay chequeos). */
   currentStatus: BatteryStatus | null;
+  /** Remanencia (%) del último chequeo (null si no hay o no se cargó). */
+  currentRemainingPercentage: number | null;
   lastCheckedOn: string | null;
 }
 
@@ -952,7 +968,7 @@ export interface ScheduleSlot {
   serviceName: string;
   scheduledStart: string;       // ISO
   scheduledEnd: string;         // ISO
-  estimatedDays?: number | null;
+  estimatedDurationMinutes?: number | null;
   areaId?: string | null;
   areaName?: string | null;
   mechanicId?: string | null;

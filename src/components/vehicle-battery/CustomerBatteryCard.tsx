@@ -3,7 +3,7 @@
 import { BatteryCharging } from "lucide-react";
 
 import { useVehicleBattery } from "@/hooks/useVehicleBattery";
-import { BatteryStatus, BatteryStatusLabel } from "@/lib/enums";
+import { BatteryStatus, BatteryStatusLabel, BatteryTerminalSideLabel } from "@/lib/enums";
 
 interface Props {
   vehicleId: string;
@@ -11,8 +11,8 @@ interface Props {
 
 /**
  * Vista de solo lectura del estado de la batería para el cliente.
- * Muestra lo que el taller registró en la inspección (estado del último chequeo).
- * Si el vehículo no tiene batería registrada o chequeos, no renderiza nada.
+ * Muestra la última revisión: fecha, resultado (estado) y remanencia (%) con barra
+ * coloreada. Si el vehículo no tiene batería registrada o chequeos, no renderiza nada.
  */
 export function CustomerBatteryCard({ vehicleId }: Props) {
   const { data: battery, isLoading } = useVehicleBattery(vehicleId);
@@ -21,7 +21,7 @@ export function CustomerBatteryCard({ vehicleId }: Props) {
     return (
       <section className="bg-white rounded-2xl border border-[#041627]/10 shadow-sm overflow-hidden">
         <div className="px-4 py-4">
-          <div className="h-20 bg-[#c4c6cd]/20 rounded-xl animate-pulse" />
+          <div className="h-24 bg-[#c4c6cd]/20 rounded-xl animate-pulse" />
         </div>
       </section>
     );
@@ -30,11 +30,17 @@ export function CustomerBatteryCard({ vehicleId }: Props) {
   // Sin batería o sin chequeos → no mostramos la sección.
   if (!battery || battery.currentStatus == null) return null;
 
-  const s = statusStyle(battery.currentStatus);
   const lastCheck = battery.checks[battery.checks.length - 1];
+  const pct = battery.currentRemainingPercentage;
+  const s = statusStyle(battery.currentStatus);
   const ageYears = battery.manufacturedOn
     ? Math.max(0, new Date().getFullYear() - new Date(battery.manufacturedOn).getFullYear())
     : null;
+  // Dimensiones de caja: solo si las 3 medidas están cargadas (ancho × largo × alto).
+  const boxDimensions =
+    battery.boxWidthCm != null && battery.boxLengthCm != null && battery.boxHeightCm != null
+      ? `${battery.boxWidthCm}×${battery.boxLengthCm}×${battery.boxHeightCm}`
+      : null;
 
   return (
     <section className="bg-white rounded-2xl border border-[#041627]/10 shadow-sm overflow-hidden">
@@ -45,45 +51,81 @@ export function CustomerBatteryCard({ vehicleId }: Props) {
         </p>
       </div>
 
-      <div className="px-4 py-4">
-        <div className={`rounded-xl border p-4 flex flex-col gap-2 ${s.border} ${s.bg}`}>
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-black uppercase tracking-wider text-[#041627]/60">
-              {battery.brand ? battery.brand : "Batería"}
-            </span>
-            <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded ${s.pill}`}>
-              {BatteryStatusLabel[battery.currentStatus]}
-            </span>
+      <div className="px-4 py-4 space-y-3">
+        {/* Remanencia con barra de progreso coloreada */}
+        {pct != null && (
+          <div>
+            <div className="flex items-end justify-between mb-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#44474c]/70">
+                Remanencia
+              </span>
+              <span className="text-2xl font-black leading-none" style={{ color: remainingColor(pct) }}>
+                {pct}
+                <span className="text-xs font-bold text-[#44474c]/60"> %</span>
+              </span>
+            </div>
+            <div className="h-3 w-full rounded-full bg-[#041627]/8 overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all"
+                style={{ width: `${clamp(pct)}%`, backgroundColor: remainingColor(pct) }}
+              />
+            </div>
           </div>
+        )}
 
-          <div className="flex items-end gap-3">
-            {lastCheck?.voltage != null && (
-              <p className="text-2xl font-black leading-none text-[#041627]">
-                {lastCheck.voltage.toFixed(1)}
-                <span className="text-xs font-bold text-[#44474c]/60"> V</span>
-              </p>
-            )}
-            <div className="text-[10px] text-[#44474c]/70 leading-tight">
-              {ageYears != null && <p>Antigüedad: ~{ageYears} año{ageYears !== 1 ? "s" : ""}</p>}
-              {lastCheck && (
-                <p>
-                  Revisada el{" "}
-                  {new Date(lastCheck.checkedOn).toLocaleDateString("es-AR", {
+        {/* Revisión: fecha + resultado */}
+        <div className="grid grid-cols-2 gap-2">
+          <div className="rounded-lg border border-[#041627]/8 bg-[#f4f6f8] px-3 py-2">
+            <p className="text-[9px] font-bold uppercase tracking-wider text-[#44474c]/60">Revisión</p>
+            <p className="text-xs font-bold text-[#041627] mt-0.5">
+              {lastCheck
+                ? new Date(lastCheck.checkedOn).toLocaleDateString("es-AR", {
                     day: "2-digit",
                     month: "2-digit",
                     year: "numeric",
-                  })}
-                </p>
-              )}
-            </div>
+                  })
+                : "—"}
+            </p>
           </div>
+          <div className="rounded-lg border border-[#041627]/8 bg-[#f4f6f8] px-3 py-2">
+            <p className="text-[9px] font-bold uppercase tracking-wider text-[#44474c]/60">Resultado</p>
+            <span className={`inline-block mt-1 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded ${s.pill}`}>
+              {BatteryStatusLabel[battery.currentStatus]}
+            </span>
+          </div>
+        </div>
 
-          {lastCheck?.notes && (
-            <p className="text-[10px] text-[#44474c]/70 leading-relaxed">{lastCheck.notes}</p>
+        {/* Datos secundarios: marca, capacidad, voltaje, antigüedad */}
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-[#44474c]/70">
+          {battery.brand && <span><span className="text-[#44474c]/50">Marca:</span> {battery.brand}</span>}
+          {battery.capacityAh != null && (
+            <span><span className="text-[#44474c]/50">Capacidad:</span> {battery.capacityAh} Ah</span>
+          )}
+          {lastCheck?.voltage != null && (
+            <span><span className="text-[#44474c]/50">Voltaje:</span> {lastCheck.voltage.toFixed(1)} V</span>
+          )}
+          {ageYears != null && (
+            <span><span className="text-[#44474c]/50">Antigüedad:</span> ~{ageYears} año{ageYears !== 1 ? "s" : ""}</span>
           )}
         </div>
 
-        <p className="text-[10px] text-[#44474c]/60 mt-3 leading-relaxed">
+        {/* Ficha técnica del repuesto: caja + borne (para identificar qué batería comprar) */}
+        {(boxDimensions != null || battery.positiveTerminalSide != null) && (
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-[#44474c]/70">
+            {boxDimensions != null && (
+              <span><span className="text-[#44474c]/50">Caja:</span> {boxDimensions} cm</span>
+            )}
+            {battery.positiveTerminalSide != null && (
+              <span><span className="text-[#44474c]/50">Borne +:</span> {BatteryTerminalSideLabel[battery.positiveTerminalSide]}</span>
+            )}
+          </div>
+        )}
+
+        {lastCheck?.notes && (
+          <p className="text-[10px] text-[#44474c]/70 leading-relaxed">{lastCheck.notes}</p>
+        )}
+
+        <p className="text-[10px] text-[#44474c]/60 leading-relaxed pt-1">
           Estado registrado por el taller en la inspección de tu vehículo.
         </p>
       </div>
@@ -91,17 +133,34 @@ export function CustomerBatteryCard({ vehicleId }: Props) {
   );
 }
 
-// ─── Estilos por estado ───────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function clamp(pct: number): number {
+  return Math.max(0, Math.min(100, pct));
+}
+
+/**
+ * Color de la remanencia en escala de 4 niveles, de verde a rojo,
+ * a medida que cae el porcentaje. Barra de carga común e intuitiva.
+ */
+function remainingColor(pct: number): string {
+  if (pct >= 75) return "#16a34a"; // verde
+  if (pct >= 50) return "#eab308"; // amarillo
+  if (pct >= 25) return "#f97316"; // naranja
+  return "#dc2626";                // rojo
+}
+
+// ─── Estilos del pill de estado ───────────────────────────────────────────────
 
 function statusStyle(status: BatteryStatus) {
   switch (status) {
     case BatteryStatus.Good:
-      return { bg: "bg-emerald-50", border: "border-emerald-200", pill: "bg-emerald-100 text-emerald-800" };
+      return { pill: "bg-emerald-100 text-emerald-800" };
     case BatteryStatus.Fair:
-      return { bg: "bg-yellow-50", border: "border-yellow-200", pill: "bg-yellow-100 text-yellow-800" };
+      return { pill: "bg-yellow-100 text-yellow-800" };
     case BatteryStatus.ReplaceSoon:
-      return { bg: "bg-orange-50", border: "border-orange-200", pill: "bg-orange-100 text-orange-800" };
+      return { pill: "bg-orange-100 text-orange-800" };
     case BatteryStatus.Replace:
-      return { bg: "bg-red-50", border: "border-red-200", pill: "bg-red-100 text-red-800" };
+      return { pill: "bg-red-100 text-red-800" };
   }
 }

@@ -374,6 +374,14 @@ export const TirePositionShort: Record<TirePosition, string> = {
   [TirePosition.RearRight]:  "TD",
 };
 
+/** Notación legible para el cliente: "Del. Izq.", "Tras. Der.", etc. */
+export const TirePositionNotation: Record<TirePosition, string> = {
+  [TirePosition.FrontLeft]:  "Del. Izq.",
+  [TirePosition.FrontRight]: "Del. Der.",
+  [TirePosition.RearLeft]:   "Tras. Izq.",
+  [TirePosition.RearRight]:  "Tras. Der.",
+};
+
 export enum TireStatus {
   Healthy     = 0,
   Attention   = 1,
@@ -402,4 +410,15 @@ export const BatteryStatusLabel: Record<BatteryStatus, string> = {
   [BatteryStatus.Fair]:        "Regular",
   [BatteryStatus.ReplaceSoon]: "Cambiar pronto",
   [BatteryStatus.Replace]:     "Reemplazar",
+};
+
+/** Lado del borne positivo (+) mirando la batería de frente. */
+export enum BatteryTerminalSide {
+  Left  = 0,
+  Right = 1,
+}
+
+export const BatteryTerminalSideLabel: Record<BatteryTerminalSide, string> = {
+  [BatteryTerminalSide.Left]:  "Izquierda",
+  [BatteryTerminalSide.Right]: "Derecha",
 };

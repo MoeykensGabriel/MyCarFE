@@ -28,7 +28,7 @@ import {
   useCreateInspectionReport,
 } from "@/hooks/useInspections";
 import { workOrdersService } from "@/services/work-orders.service";
-import { PhotoType, TirePosition, TirePositionLabel, BatteryStatus, BatteryStatusLabel } from "@/lib/enums";
+import { PhotoType, TirePosition, TirePositionLabel, BatteryStatus, BatteryStatusLabel, BatteryTerminalSide, BatteryTerminalSideLabel } from "@/lib/enums";
 import { TireInspectionInput, BatteryInspectionInput } from "@/types/api.types";
 import { formatDateTime, formatCurrency } from "@/lib/format";
 import {
@@ -43,7 +43,10 @@ const proposedServiceSchema = z.object({
   name: z.string().min(1, "Requerido").max(200),
   description: z.string().max(2000).optional(),
   estimatedLaborCost: z.coerce.number().min(0, "Debe ser >= 0"),
-  estimatedDays: z.coerce.number().int().positive("Debe ser > 0").optional(),
+  // Duración estimada flexible: días + horas. Se combina a minutos al enviar
+  // (1 día laboral = 8 hs = 480 min). Ambos opcionales.
+  estimatedDays: z.coerce.number().int().min(0, "Debe ser >= 0").optional(),
+  estimatedHours: z.coerce.number().int().min(0, "Debe ser >= 0").max(23, "0–23").optional(),
 });
 
 const proposedPartSchema = z.object({
@@ -163,9 +166,15 @@ function ReportFormModal({
   const [battery, setBattery] = useState({
     status: String(BatteryStatus.Good),
     voltage: "",
+    remainingPercentage: "",
     brand: "",
     manufacturedOn: "",
     notes: "",
+    capacityAh: "",
+    boxWidthCm: "",
+    boxLengthCm: "",
+    boxHeightCm: "",
+    positiveTerminalSide: "", // "" = sin especificar
   });
   const updateBattery = (field: keyof typeof battery, value: string) =>
     setBattery((prev) => ({ ...prev, [field]: value }));
@@ -210,11 +219,17 @@ function ReportFormModal({
     let batteryPayload: BatteryInspectionInput | undefined;
     if (isBatteryArea && batteryEnabled) {
       batteryPayload = {
-        status:         Number(battery.status) as BatteryStatus,
-        voltage:        battery.voltage.trim() === "" ? null : Number(battery.voltage),
-        brand:          battery.brand.trim() || null,
-        manufacturedOn: battery.manufacturedOn || null,
-        notes:          battery.notes.trim() || null,
+        status:              Number(battery.status) as BatteryStatus,
+        voltage:             battery.voltage.trim() === "" ? null : Number(battery.voltage),
+        remainingPercentage: battery.remainingPercentage.trim() === "" ? null : Number(battery.remainingPercentage),
+        brand:               battery.brand.trim() || null,
+        manufacturedOn:      battery.manufacturedOn || null,
+        notes:               battery.notes.trim() || null,
+        capacityAh:          battery.capacityAh.trim()  === "" ? null : Number(battery.capacityAh),
+        boxWidthCm:          battery.boxWidthCm.trim()  === "" ? null : Number(battery.boxWidthCm),
+        boxLengthCm:         battery.boxLengthCm.trim() === "" ? null : Number(battery.boxLengthCm),
+        boxHeightCm:         battery.boxHeightCm.trim() === "" ? null : Number(battery.boxHeightCm),
+        positiveTerminalSide: battery.positiveTerminalSide === "" ? null : (Number(battery.positiveTerminalSide) as BatteryTerminalSide),
       };
     }
 
@@ -224,7 +239,18 @@ function ReportFormModal({
         areaId:      area.areaId,
         hasIssue:    data.hasIssue,
         findings:    data.findings?.trim() || undefined,
-        proposedServices: data.hasIssue ? data.proposedServices : undefined,
+        proposedServices: data.hasIssue
+          ? data.proposedServices.map((s) => {
+              // Combinar días + horas a minutos. Si queda 0, no se estima (undefined).
+              const minutes = (s.estimatedDays ?? 0) * 480 + (s.estimatedHours ?? 0) * 60;
+              return {
+                name:                     s.name,
+                description:              s.description,
+                estimatedLaborCost:       s.estimatedLaborCost,
+                estimatedDurationMinutes: minutes > 0 ? minutes : undefined,
+              };
+            })
+          : undefined,
         proposedParts:    data.hasIssue ? data.proposedParts    : undefined,
         tires,
         battery:     batteryPayload,
@@ -528,6 +554,22 @@ function ReportFormModal({
                   </div>
                   <div>
                     <label className="text-[9px] font-bold uppercase tracking-wider text-[#44474c]/70">
+                      Remanencia (%)
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      step={1}
+                      inputMode="numeric"
+                      placeholder="0 a 100"
+                      className="w-full px-2 py-1.5 text-xs rounded border border-[#041627]/10 bg-white"
+                      value={battery.remainingPercentage}
+                      onChange={(e) => updateBattery("remainingPercentage", e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-bold uppercase tracking-wider text-[#44474c]/70">
                       Fecha de fabricación (opcional)
                     </label>
                     <input
@@ -537,6 +579,69 @@ function ReportFormModal({
                       onChange={(e) => updateBattery("manufacturedOn", e.target.value)}
                     />
                   </div>
+                  {/* ── Specs del repuesto (para saber qué batería comprar) ── */}
+                  <div className="border-t border-[#041627]/5 pt-2 space-y-2">
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-[#44474c]/50">
+                      Specs del repuesto (opcional)
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[9px] font-bold uppercase tracking-wider text-[#44474c]/70">
+                          Capacidad (Ah)
+                        </label>
+                        <input
+                          type="number"
+                          min={0}
+                          inputMode="numeric"
+                          placeholder="ej. 75"
+                          className="w-full px-2 py-1.5 text-xs rounded border border-[#041627]/10 bg-white"
+                          value={battery.capacityAh}
+                          onChange={(e) => updateBattery("capacityAh", e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[9px] font-bold uppercase tracking-wider text-[#44474c]/70">
+                          Borne + (de frente)
+                        </label>
+                        <select
+                          className="w-full px-2 py-1.5 text-xs rounded border border-[#041627]/10 bg-white"
+                          value={battery.positiveTerminalSide}
+                          onChange={(e) => updateBattery("positiveTerminalSide", e.target.value)}
+                        >
+                          <option value="">—</option>
+                          {Object.entries(BatteryTerminalSideLabel).map(([value, label]) => (
+                            <option key={value} value={value}>{label}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[9px] font-bold uppercase tracking-wider text-[#44474c]/70">
+                        Caja: ancho × largo × alto (cm)
+                      </label>
+                      <div className="grid grid-cols-3 gap-2">
+                        <input
+                          type="number" min={0} inputMode="numeric" placeholder="ancho"
+                          className="w-full px-2 py-1.5 text-xs rounded border border-[#041627]/10 bg-white"
+                          value={battery.boxWidthCm}
+                          onChange={(e) => updateBattery("boxWidthCm", e.target.value)}
+                        />
+                        <input
+                          type="number" min={0} inputMode="numeric" placeholder="largo"
+                          className="w-full px-2 py-1.5 text-xs rounded border border-[#041627]/10 bg-white"
+                          value={battery.boxLengthCm}
+                          onChange={(e) => updateBattery("boxLengthCm", e.target.value)}
+                        />
+                        <input
+                          type="number" min={0} inputMode="numeric" placeholder="alto"
+                          className="w-full px-2 py-1.5 text-xs rounded border border-[#041627]/10 bg-white"
+                          value={battery.boxHeightCm}
+                          onChange={(e) => updateBattery("boxHeightCm", e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
                   <input
                     type="text"
                     placeholder="Observaciones (bornes sulfatados, etc.)"
@@ -681,15 +786,33 @@ function ReportFormModal({
                       </div>
                       <div className="space-y-1">
                         <label className="text-[9px] font-bold uppercase tracking-wider text-[#44474c]/70">
-                          Días estim.
+                          Duración estim.
                         </label>
-                        <input
-                          type="number"
-                          inputMode="numeric"
-                          placeholder="—"
-                          className="w-full px-2.5 py-2 text-xs rounded-lg border border-[#041627]/10 bg-white"
-                          {...register(`proposedServices.${i}.estimatedDays`)}
-                        />
+                        <div className="grid grid-cols-2 gap-1.5">
+                          <div className="relative">
+                            <input
+                              type="number"
+                              inputMode="numeric"
+                              min={0}
+                              placeholder="0"
+                              className="w-full pl-2.5 pr-7 py-2 text-xs rounded-lg border border-[#041627]/10 bg-white"
+                              {...register(`proposedServices.${i}.estimatedDays`)}
+                            />
+                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-[#44474c]/50">días</span>
+                          </div>
+                          <div className="relative">
+                            <input
+                              type="number"
+                              inputMode="numeric"
+                              min={0}
+                              max={23}
+                              placeholder="0"
+                              className="w-full pl-2.5 pr-6 py-2 text-xs rounded-lg border border-[#041627]/10 bg-white"
+                              {...register(`proposedServices.${i}.estimatedHours`)}
+                            />
+                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-[#44474c]/50">hs</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -698,7 +821,7 @@ function ReportFormModal({
                 <button
                   type="button"
                   onClick={() =>
-                    servicesArr.append({ name: "", description: "", estimatedLaborCost: 0, estimatedDays: undefined })
+                    servicesArr.append({ name: "", description: "", estimatedLaborCost: 0, estimatedDays: undefined, estimatedHours: undefined })
                   }
                   className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-dashed border-[#041627]/20 text-[11px] font-bold uppercase tracking-wider text-[#44474c]/70 hover:border-[#fea520] hover:text-[#fea520] transition-colors"
                 >
