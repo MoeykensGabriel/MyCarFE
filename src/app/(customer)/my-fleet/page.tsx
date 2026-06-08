@@ -9,6 +9,8 @@ import {
 import { useFleetMine } from "@/hooks/useFleets";
 import { UpcomingExpirationsBanner } from "@/components/vehicle-documents/UpcomingExpirationsBanner";
 import { OpenTripsCard } from "@/components/vehicle-trips/OpenTripsCard";
+import { PremiumLockCard } from "@/components/shared/PremiumLockCard";
+import { useHasPremiumFeature } from "@/lib/premium";
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
@@ -81,6 +83,9 @@ function Section({ icon: Icon, title, count, children }: {
 
 export default function MyFleetPage() {
   const { data: fleet, isLoading, isError } = useFleetMine();
+  // Funciones plus (bloqueadas para todos por ahora — ver lib/premium).
+  const tripsEnabled = useHasPremiumFeature("vehicleTrips");
+  const docsEnabled  = useHasPremiumFeature("vehicleDocuments");
 
   if (isLoading) return (
     <div className="space-y-4">
@@ -112,15 +117,29 @@ export default function MyFleetPage() {
         </div>
       </div>
 
-      {/* ── Viajes en curso de toda la flota ────────────────────────────────── */}
-      <OpenTripsCard />
+      {/* ── Viajes en curso de toda la flota — función plus ─────────────────── */}
+      {tripsEnabled ? (
+        <OpenTripsCard />
+      ) : (
+        <PremiumLockCard
+          title="Viajes con QR"
+          description="Seguimiento de viajes de la flota con estación QR para los choferes. Disponible próximamente."
+        />
+      )}
 
-      {/* ── Vencimientos de toda la flota ───────────────────────────────────── */}
-      <UpcomingExpirationsBanner
-        maxItems={50}
-        title="Vencimientos de la flota"
-        hideWhenEmpty={false}
-      />
+      {/* ── Vencimientos de toda la flota — función plus ────────────────────── */}
+      {docsEnabled ? (
+        <UpcomingExpirationsBanner
+          maxItems={50}
+          title="Vencimientos de la flota"
+          hideWhenEmpty={false}
+        />
+      ) : (
+        <PremiumLockCard
+          title="Documentación y vencimientos"
+          description="Control de VTV, pólizas y patentes de toda la flota con avisos de vencimiento. Disponible próximamente."
+        />
+      )}
 
       {/* ── Header Empresa / Card Corporativa ────────────────────────────────── */}
       <div className="bg-white rounded-2xl border border-[#041627]/10 shadow-md relative overflow-hidden p-5">

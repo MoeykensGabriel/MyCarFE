@@ -12,6 +12,7 @@ import { useAuthStore } from "@/store/auth.store";
 import { Vehicle } from "@/types/api.types";
 import { SearchInput } from "@/components/shared/SearchInput";
 import { UpcomingExpirationsBanner } from "@/components/vehicle-documents/UpcomingExpirationsBanner";
+import { useHasPremiumFeature } from "@/lib/premium";
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
@@ -87,6 +88,8 @@ export default function MyVehiclesPage() {
   const [search, setSearch] = useState<string | undefined>(undefined);
   // Por defecto alfabético (marca/modelo). El cliente puede cambiar a "plate" (patente ≈ antigüedad).
   const [sort, setSort] = useState<VehicleSort>("alphabetical");
+  // Vencimientos es función plus — el banner solo aparece si está habilitada.
+  const docsEnabled = useHasPremiumFeature("vehicleDocuments");
 
   // Los vehículos de flota están bajo fleetId; los individuales bajo customerId.
   const {
@@ -138,8 +141,8 @@ export default function MyVehiclesPage() {
         </div>
       </div>
 
-      {/* ── Banner de vencimientos próximos / vencidos ──────────────────────── */}
-      <UpcomingExpirationsBanner />
+      {/* ── Banner de vencimientos — solo si la función plus está habilitada ── */}
+      {docsEnabled && <UpcomingExpirationsBanner />}
 
       {/* ── Buscador ────────────────────────────────────────────────────────── */}
       <SearchInput

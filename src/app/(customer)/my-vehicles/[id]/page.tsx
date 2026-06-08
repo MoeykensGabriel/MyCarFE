@@ -15,6 +15,8 @@ import { CustomerTiresCard } from "@/components/vehicle-tires/CustomerTiresCard"
 import { CustomerBatteryCard } from "@/components/vehicle-battery/CustomerBatteryCard";
 import { TripStationQrCard } from "@/components/vehicle-trips/TripStationQrCard";
 import { VehicleTripsHistoryCard } from "@/components/vehicle-trips/VehicleTripsHistoryCard";
+import { PremiumLockCard } from "@/components/shared/PremiumLockCard";
+import { useHasPremiumFeature } from "@/lib/premium";
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
@@ -73,6 +75,10 @@ function Section({ icon: Icon, title, children }: { icon: React.ElementType; tit
 export default function MyVehicleDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { data: vehicle, isLoading, isError } = useVehicle(id);
+
+  // Funciones plus (bloqueadas para todos por ahora — ver lib/premium).
+  const canDocs  = useHasPremiumFeature("vehicleDocuments");
+  const canTrips = useHasPremiumFeature("vehicleTrips");
 
   if (isLoading) return (
     <div className="space-y-4">
@@ -162,8 +168,15 @@ export default function MyVehicleDetailPage() {
         </div>
       </Link>
 
-      {/* ── Vencimientos (VTV, póliza, patente) ─────────────────────────────── */}
-      <VehicleDocumentsCard vehicleId={vehicle.id} />
+      {/* ── Vencimientos (VTV, póliza, patente) — función plus ──────────────── */}
+      {canDocs ? (
+        <VehicleDocumentsCard vehicleId={vehicle.id} />
+      ) : (
+        <PremiumLockCard
+          title="Documentación y vencimientos"
+          description="Cargá VTV, póliza y patente, y recibí avisos antes de que venzan. Disponible próximamente."
+        />
+      )}
 
       {/* ── Estado de cubiertas (solo lectura — lo registra el taller) ───────── */}
       <CustomerTiresCard vehicleId={vehicle.id} />
@@ -171,16 +184,23 @@ export default function MyVehicleDetailPage() {
       {/* ── Estado de batería (solo lectura — lo registra el taller) ─────────── */}
       <CustomerBatteryCard vehicleId={vehicle.id} />
 
-      {/* ── Estación de viajes (QR para choferes) — solo si es vehículo de flota ── */}
+      {/* ── Estación de viajes (QR para choferes) — solo flota, función plus ── */}
       {vehicle.fleetId && (
-        <>
-          <TripStationQrCard
-            vehicleId={vehicle.id}
-            vehicleLabel={`${vehicle.brand} ${vehicle.model} · ${vehicle.licensePlate}`}
-            tripToken={vehicle.tripToken}
+        canTrips ? (
+          <>
+            <TripStationQrCard
+              vehicleId={vehicle.id}
+              vehicleLabel={`${vehicle.brand} ${vehicle.model} · ${vehicle.licensePlate}`}
+              tripToken={vehicle.tripToken}
+            />
+            <VehicleTripsHistoryCard vehicleId={vehicle.id} />
+          </>
+        ) : (
+          <PremiumLockCard
+            title="Viajes con QR"
+            description="Estación con QR para que los choferes registren sus viajes. Disponible próximamente."
           />
-          <VehicleTripsHistoryCard vehicleId={vehicle.id} />
-        </>
+        )
       )}
 
       {/* ── Datos técnicos ──────────────────────────────────────────────────── */}
