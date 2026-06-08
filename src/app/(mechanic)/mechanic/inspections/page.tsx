@@ -218,17 +218,32 @@ function ReportFormModal({
 
     let batteryPayload: BatteryInspectionInput | undefined;
     if (isBatteryArea && batteryEnabled) {
+      // Helpers: convierten string del input a número o null. Evitan mandar "" (rompe el
+      // binding del backend). Capacidad (Ah) y remanencia (%) son enteros; las dimensiones
+      // de la caja pueden ser decimales (ej. 17.5 cm).
+      const toIntOrNull = (v: string): number | null => {
+        const t = v.trim();
+        if (t === "") return null;
+        const n = Math.round(Number(t));
+        return Number.isFinite(n) ? n : null;
+      };
+      const toDecimalOrNull = (v: string): number | null => {
+        const t = v.trim();
+        if (t === "") return null;
+        const n = Number(t);
+        return Number.isFinite(n) ? n : null;
+      };
       batteryPayload = {
         status:              Number(battery.status) as BatteryStatus,
         voltage:             battery.voltage.trim() === "" ? null : Number(battery.voltage),
-        remainingPercentage: battery.remainingPercentage.trim() === "" ? null : Number(battery.remainingPercentage),
+        remainingPercentage: toIntOrNull(battery.remainingPercentage),
         brand:               battery.brand.trim() || null,
         installedOn:         battery.installedOn || null,
         notes:               battery.notes.trim() || null,
-        capacityAh:          battery.capacityAh.trim()  === "" ? null : Number(battery.capacityAh),
-        boxWidthCm:          battery.boxWidthCm.trim()  === "" ? null : Number(battery.boxWidthCm),
-        boxLengthCm:         battery.boxLengthCm.trim() === "" ? null : Number(battery.boxLengthCm),
-        boxHeightCm:         battery.boxHeightCm.trim() === "" ? null : Number(battery.boxHeightCm),
+        capacityAh:          toIntOrNull(battery.capacityAh),
+        boxWidthCm:          toDecimalOrNull(battery.boxWidthCm),
+        boxLengthCm:         toDecimalOrNull(battery.boxLengthCm),
+        boxHeightCm:         toDecimalOrNull(battery.boxHeightCm),
         positiveTerminalSide: battery.positiveTerminalSide === "" ? null : (Number(battery.positiveTerminalSide) as BatteryTerminalSide),
       };
     }
@@ -621,19 +636,19 @@ function ReportFormModal({
                       </label>
                       <div className="grid grid-cols-3 gap-2">
                         <input
-                          type="number" min={0} inputMode="numeric" placeholder="ancho"
+                          type="number" min={0} step="0.1" inputMode="decimal" placeholder="ancho"
                           className="w-full px-2 py-1.5 text-xs rounded border border-[#041627]/10 bg-white"
                           value={battery.boxWidthCm}
                           onChange={(e) => updateBattery("boxWidthCm", e.target.value)}
                         />
                         <input
-                          type="number" min={0} inputMode="numeric" placeholder="largo"
+                          type="number" min={0} step="0.1" inputMode="decimal" placeholder="largo"
                           className="w-full px-2 py-1.5 text-xs rounded border border-[#041627]/10 bg-white"
                           value={battery.boxLengthCm}
                           onChange={(e) => updateBattery("boxLengthCm", e.target.value)}
                         />
                         <input
-                          type="number" min={0} inputMode="numeric" placeholder="alto"
+                          type="number" min={0} step="0.1" inputMode="decimal" placeholder="alto"
                           className="w-full px-2 py-1.5 text-xs rounded border border-[#041627]/10 bg-white"
                           value={battery.boxHeightCm}
                           onChange={(e) => updateBattery("boxHeightCm", e.target.value)}
