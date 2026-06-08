@@ -34,9 +34,8 @@ export function CustomerBatteryCard({ vehicleId }: Props) {
   const pct = battery.currentRemainingPercentage;
   const s = statusStyle(battery.currentStatus);
   // Antigüedad desde la instalación (de ahí se mide la vida útil / garantía).
-  const ageYears = battery.installedOn
-    ? Math.max(0, new Date().getFullYear() - new Date(battery.installedOn).getFullYear())
-    : null;
+  // Se calcula en vivo desde installedOn → va sumando por mes sola, sin guardar nada.
+  const ageLabel = battery.installedOn ? formatBatteryAge(battery.installedOn) : null;
   // Dimensiones de caja: solo si las 3 medidas están cargadas (ancho × largo × alto).
   const boxDimensions =
     battery.boxWidthCm != null && battery.boxLengthCm != null && battery.boxHeightCm != null
@@ -57,12 +56,12 @@ export function CustomerBatteryCard({ vehicleId }: Props) {
         {pct != null && (
           <div>
             <div className="flex items-end justify-between mb-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#44474c]/70">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#44474c]">
                 Remanencia
               </span>
               <span className="text-2xl font-black leading-none" style={{ color: remainingColor(pct) }}>
                 {pct}
-                <span className="text-xs font-bold text-[#44474c]/60"> %</span>
+                <span className="text-xs font-bold text-[#44474c]"> %</span>
               </span>
             </div>
             <div className="h-3 w-full rounded-full bg-[#041627]/8 overflow-hidden">
@@ -77,7 +76,7 @@ export function CustomerBatteryCard({ vehicleId }: Props) {
         {/* Revisión: fecha + resultado */}
         <div className="grid grid-cols-2 gap-2">
           <div className="rounded-lg border border-[#041627]/8 bg-[#f4f6f8] px-3 py-2">
-            <p className="text-[9px] font-bold uppercase tracking-wider text-[#44474c]/60">Revisión</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[#44474c]">Revisión</p>
             <p className="text-xs font-bold text-[#041627] mt-0.5">
               {lastCheck
                 ? new Date(lastCheck.checkedOn).toLocaleDateString("es-AR", {
@@ -89,7 +88,7 @@ export function CustomerBatteryCard({ vehicleId }: Props) {
             </p>
           </div>
           <div className="rounded-lg border border-[#041627]/8 bg-[#f4f6f8] px-3 py-2">
-            <p className="text-[9px] font-bold uppercase tracking-wider text-[#44474c]/60">Resultado</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[#44474c]">Resultado</p>
             <span className={`inline-block mt-1 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded ${s.pill}`}>
               {BatteryStatusLabel[battery.currentStatus]}
             </span>
@@ -97,36 +96,56 @@ export function CustomerBatteryCard({ vehicleId }: Props) {
         </div>
 
         {/* Datos secundarios: marca, capacidad, voltaje, antigüedad */}
-        <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-[#44474c]/70">
-          {battery.brand && <span><span className="text-[#44474c]/50">Marca:</span> {battery.brand}</span>}
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-[#041627]">
+          {battery.brand && (
+            <span>
+              <span className="text-[#44474c] font-medium">Marca:</span>{" "}
+              <span className="font-bold">{battery.brand}</span>
+            </span>
+          )}
           {battery.capacityAh != null && (
-            <span><span className="text-[#44474c]/50">Capacidad:</span> {battery.capacityAh} Ah</span>
+            <span>
+              <span className="text-[#44474c] font-medium">Capacidad:</span>{" "}
+              <span className="font-bold">{battery.capacityAh} Ah</span>
+            </span>
           )}
           {lastCheck?.voltage != null && (
-            <span><span className="text-[#44474c]/50">Voltaje:</span> {lastCheck.voltage.toFixed(1)} V</span>
+            <span>
+              <span className="text-[#44474c] font-medium">Voltaje:</span>{" "}
+              <span className="font-bold">{lastCheck.voltage.toFixed(1)} V</span>
+            </span>
           )}
-          {ageYears != null && (
-            <span><span className="text-[#44474c]/50">Antigüedad:</span> ~{ageYears} año{ageYears !== 1 ? "s" : ""}</span>
+          {ageLabel && (
+            <span>
+              <span className="text-[#44474c] font-medium">Antigüedad:</span>{" "}
+              <span className="font-bold">{ageLabel}</span>
+            </span>
           )}
         </div>
 
         {/* Ficha técnica del repuesto: caja + borne (para identificar qué batería comprar) */}
         {(boxDimensions != null || battery.positiveTerminalSide != null) && (
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-[#44474c]/70">
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-[#041627]">
             {boxDimensions != null && (
-              <span><span className="text-[#44474c]/50">Caja:</span> {boxDimensions} cm</span>
+              <span>
+                <span className="text-[#44474c] font-medium">Caja:</span>{" "}
+                <span className="font-bold">{boxDimensions} cm</span>
+              </span>
             )}
             {battery.positiveTerminalSide != null && (
-              <span><span className="text-[#44474c]/50">Borne +:</span> {BatteryTerminalSideLabel[battery.positiveTerminalSide]}</span>
+              <span>
+                <span className="text-[#44474c] font-medium">Borne +:</span>{" "}
+                <span className="font-bold">{BatteryTerminalSideLabel[battery.positiveTerminalSide]}</span>
+              </span>
             )}
           </div>
         )}
 
         {lastCheck?.notes && (
-          <p className="text-[10px] text-[#44474c]/70 leading-relaxed">{lastCheck.notes}</p>
+          <p className="text-xs text-[#44474c] leading-relaxed">{lastCheck.notes}</p>
         )}
 
-        <p className="text-[10px] text-[#44474c]/60 leading-relaxed pt-1">
+        <p className="text-xs text-slate-500 leading-relaxed pt-1">
           Estado registrado por el taller en la inspección de tu vehículo.
         </p>
       </div>
@@ -138,6 +157,28 @@ export function CustomerBatteryCard({ vehicleId }: Props) {
 
 function clamp(pct: number): number {
   return Math.max(0, Math.min(100, pct));
+}
+
+/**
+ * Antigüedad de la batería desde su instalación, en meses (o años + meses al pasar
+ * el año). Se calcula contra la fecha actual, así que crece sola con el tiempo.
+ */
+function formatBatteryAge(installedOnIso: string): string {
+  const start = new Date(installedOnIso);
+  const now = new Date();
+  let months =
+    (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
+  // Si todavía no se cumplió el día del mes, restamos un mes.
+  if (now.getDate() < start.getDate()) months -= 1;
+  months = Math.max(0, months);
+
+  if (months < 1) return "menos de 1 mes";
+  if (months < 12) return `${months} ${months === 1 ? "mes" : "meses"}`;
+
+  const years = Math.floor(months / 12);
+  const rem = months % 12;
+  const yearsLabel = `${years} ${years === 1 ? "año" : "años"}`;
+  return rem === 0 ? yearsLabel : `${yearsLabel} ${rem} ${rem === 1 ? "mes" : "meses"}`;
 }
 
 /**
