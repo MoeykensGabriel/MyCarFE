@@ -52,23 +52,18 @@ export function CustomerBatteryCard({ vehicleId }: Props) {
       </div>
 
       <div className="px-4 py-4 space-y-3">
-        {/* Remanencia con barra de progreso coloreada */}
+        {/* Remanencia con símbolo de batería que se rellena según el nivel */}
         {pct != null && (
-          <div>
-            <div className="flex items-end justify-between mb-1">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#44474c]">
+          <div className="flex items-center gap-4">
+            <BatterySymbol pct={pct} />
+            <div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#44474c]">
                 Remanencia
               </span>
-              <span className="text-2xl font-black leading-none" style={{ color: remainingColor(pct) }}>
+              <p className="text-3xl font-black leading-none mt-0.5" style={{ color: remainingColor(pct) }}>
                 {pct}
-                <span className="text-xs font-bold text-[#44474c]"> %</span>
-              </span>
-            </div>
-            <div className="h-3 w-full rounded-full bg-[#041627]/8 overflow-hidden">
-              <div
-                className="h-full rounded-full transition-all"
-                style={{ width: `${clamp(pct)}%`, backgroundColor: remainingColor(pct) }}
-              />
+                <span className="text-sm font-bold text-[#44474c]"> %</span>
+              </p>
             </div>
           </div>
         )}
@@ -150,6 +145,36 @@ export function CustomerBatteryCard({ vehicleId }: Props) {
         </p>
       </div>
     </section>
+  );
+}
+
+// ─── Símbolo de batería que se rellena ────────────────────────────────────────
+
+/**
+ * Ícono de batería (horizontal) cuyo relleno y color reflejan la remanencia.
+ * Verde → amarillo → naranja → rojo a medida que cae el porcentaje.
+ */
+function BatterySymbol({ pct }: { pct: number }) {
+  const p = clamp(pct);
+  const color = remainingColor(pct);
+  // Track interno: x=6, ancho útil 74. El relleno arranca desde la izquierda.
+  const fillWidth = (74 * p) / 100;
+
+  return (
+    <svg viewBox="0 0 96 48" className="w-24 shrink-0" role="img" aria-label={`Batería al ${p}%`}>
+      {/* Cuerpo */}
+      <rect x={2} y={8} width={82} height={32} rx={6} fill="#ffffff" stroke="#041627" strokeOpacity={0.25} strokeWidth={2} />
+      {/* Borne */}
+      <rect x={86} y={18} width={7} height={12} rx={2} fill="#041627" fillOpacity={0.35} />
+      {/* Relleno coloreado */}
+      {fillWidth > 0 && (
+        <rect x={6} y={12} width={fillWidth} height={24} rx={3} fill={color} className="transition-all" />
+      )}
+      {/* Divisiones (estética de celdas) */}
+      {[28, 50, 72].map((x) => (
+        <line key={x} x1={x} y1={12} x2={x} y2={36} stroke="#ffffff" strokeOpacity={0.6} strokeWidth={1.5} />
+      ))}
+    </svg>
   );
 }
 
