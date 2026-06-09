@@ -56,22 +56,98 @@ export function CustomerTiresCard({ vehicleId }: Props) {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3">
-            {SLOTS.map((pos) => {
-              const tire = byPosition(pos);
-              return tire ? (
-                <TireSlot key={pos} tire={tire} />
-              ) : (
-                <EmptySlot key={pos} position={pos} />
-              );
-            })}
-          </div>
+          <>
+            {/* Esquema del auto desde arriba con las 4 ruedas coloreadas por estado */}
+            <TireDiagram byPosition={byPosition} />
+            <TireLegend />
+
+            <div className="grid grid-cols-2 gap-3 mt-4">
+              {SLOTS.map((pos) => {
+                const tire = byPosition(pos);
+                return tire ? (
+                  <TireSlot key={pos} tire={tire} />
+                ) : (
+                  <EmptySlot key={pos} position={pos} />
+                );
+              })}
+            </div>
+          </>
         )}
         <p className="text-[10px] text-[#44474c]/60 mt-3 leading-relaxed">
           Mediciones registradas por el taller en las inspecciones de tu vehículo.
         </p>
       </div>
     </section>
+  );
+}
+
+// ─── Esquema visual del auto (vista desde arriba) ─────────────────────────────
+
+function statusColor(status: TireStatus): string {
+  switch (status) {
+    case TireStatus.Healthy:     return "#16a34a"; // verde
+    case TireStatus.Attention:   return "#eab308"; // amarillo
+    case TireStatus.ReplaceSoon: return "#f97316"; // naranja
+    case TireStatus.Urgent:      return "#dc2626"; // rojo
+  }
+}
+
+function TireDiagram({
+  byPosition,
+}: {
+  byPosition: (pos: TirePosition) => VehicleTire | undefined;
+}) {
+  // Una rueda del esquema: rect redondeado coloreado por estado + los mm adentro.
+  const Wheel = ({ pos, x, y }: { pos: TirePosition; x: number; y: number }) => {
+    const tire = byPosition(pos);
+    const color = tire ? statusColor(tire.estimation.status) : "#c4c6cd";
+    const mm = tire ? tire.estimation.currentAverageDepthMm.toFixed(1) : "—";
+    return (
+      <g>
+        <rect x={x} y={y} width={26} height={48} rx={10} fill={color}>
+          <title>
+            {TirePositionNotation[pos]} — {tire ? `${mm} mm` : "Sin datos"}
+          </title>
+        </rect>
+        <text x={x + 13} y={y + 28} textAnchor="middle" fontSize="11" fontWeight="800" fill="#ffffff">
+          {mm}
+        </text>
+      </g>
+    );
+  };
+
+  return (
+    <svg viewBox="0 0 172 252" className="w-40 mx-auto block" role="img" aria-label="Estado de las cubiertas">
+      {/* Carrocería (vista superior) */}
+      <rect x={44} y={14} width={84} height={224} rx={32} fill="#eef2f6" stroke="#041627" strokeOpacity={0.12} />
+      {/* Parabrisas y luneta */}
+      <rect x={56} y={56} width={60} height={56} rx={16} fill="#dbe3ea" />
+      <rect x={56} y={138} width={60} height={46} rx={14} fill="#dbe3ea" />
+      {/* Ruedas (frente arriba) */}
+      <Wheel pos={TirePosition.FrontLeft}  x={16}  y={34} />
+      <Wheel pos={TirePosition.FrontRight} x={130} y={34} />
+      <Wheel pos={TirePosition.RearLeft}   x={16}  y={170} />
+      <Wheel pos={TirePosition.RearRight}  x={130} y={170} />
+    </svg>
+  );
+}
+
+function TireLegend() {
+  const items: { status: TireStatus; label: string }[] = [
+    { status: TireStatus.Healthy,     label: TireStatusLabel[TireStatus.Healthy] },
+    { status: TireStatus.Attention,   label: TireStatusLabel[TireStatus.Attention] },
+    { status: TireStatus.ReplaceSoon, label: TireStatusLabel[TireStatus.ReplaceSoon] },
+    { status: TireStatus.Urgent,      label: TireStatusLabel[TireStatus.Urgent] },
+  ];
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 mt-2">
+      {items.map((i) => (
+        <span key={i.status} className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#44474c]/80">
+          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: statusColor(i.status) }} />
+          {i.label}
+        </span>
+      ))}
+    </div>
   );
 }
 
