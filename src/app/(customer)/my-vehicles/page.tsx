@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Car, Tag, Gauge, ChevronRight, Fuel, ArrowDownAZ, Clock } from "lucide-react";
+import { Car, Gauge, ChevronRight, Fuel, ArrowDownAZ, Clock } from "lucide-react";
 import { useDebouncedCallback } from "use-debounce";
 
 import { FuelTypeLabel, VehicleBodyTypeLabel } from "@/lib/enums";
@@ -37,40 +37,36 @@ function VehicleCardSkeleton() {
 // ─── Card de vehículo ─────────────────────────────────────────────────────────
 
 function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
-  const initials = `${vehicle.brand[0] ?? ""}${vehicle.model[0] ?? ""}`.toUpperCase();
-
   return (
     <Link
       href={`/my-vehicles/${vehicle.id}`}
-      className="flex items-center gap-4 bg-white rounded-2xl border border-[#041627]/10 shadow-sm p-4 transition-all duration-300 active:scale-[0.98] hover:border-[#fea520]/60 hover:shadow-md group"
+      className="flex items-center gap-3 sm:gap-4 bg-white rounded-2xl border border-[#041627]/10 shadow-sm p-3.5 sm:p-4 transition-all duration-300 active:scale-[0.98] hover:border-[#fea520]/60 hover:shadow-md group"
     >
-      {/* Avatar circular con gradiente corporativo premium */}
-      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#041627] to-[#0a2540] text-[#fea520] flex items-center justify-center font-black text-sm shrink-0 shadow-md shadow-[#041627]/10 group-hover:scale-105 transition-transform duration-300 border border-[#fea520]/20">
-        {initials}
+      {/* Ícono del vehículo (a futuro: foto del vehículo tomada en la inspección) */}
+      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#041627] to-[#0a2540] flex items-center justify-center shrink-0 shadow-md shadow-[#041627]/10 group-hover:scale-105 transition-transform duration-300 border border-[#fea520]/20">
+        <Car className="w-7 h-7 text-[#fea520]" strokeWidth={2} />
       </div>
 
-      {/* Info */}
+      {/* Info — patente grande, modelo + año al lado */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-extrabold text-[#041627] truncate leading-tight">
-          {vehicle.brand} {vehicle.model} <span className="font-semibold text-[#44474c]/70 text-xs">({vehicle.year})</span>
+        <p className="font-mono font-black text-[#041627] text-xl leading-none tracking-wide truncate">
+          {vehicle.licensePlate}
+        </p>
+        <p className="text-xs sm:text-sm font-semibold text-[#44474c] mt-1.5 truncate">
+          {vehicle.brand} {vehicle.model} · {vehicle.year}
         </p>
 
-        <span className="inline-flex items-center gap-1 text-[11px] font-bold font-mono text-[#44474c] mt-1 bg-[#f4f6f8] px-2 py-0.5 rounded-md border border-[#041627]/5">
-          <Tag className="w-3.5 h-3.5 text-[#44474c]/50" />
-          {vehicle.licensePlate}
-        </span>
-
-        {/* Chips */}
-        <div className="flex items-center gap-1.5 mt-2.5 flex-wrap">
-          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#041627] bg-[#eefcfd] border border-[#041627]/5 rounded-full px-2.5 py-0.5">
+        {/* Chips secundarios */}
+        <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#041627] bg-[#eefcfd] border border-[#041627]/5 rounded-full px-2 py-0.5">
             <Gauge className="w-3 h-3 text-[#fea520]" />
             {vehicle.currentMileage.toLocaleString("es-AR")} km
           </span>
-          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#041627] bg-[#eefcfd] border border-[#041627]/5 rounded-full px-2.5 py-0.5">
+          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#041627] bg-[#eefcfd] border border-[#041627]/5 rounded-full px-2 py-0.5">
             <Fuel className="w-3 h-3 text-[#fea520]" />
             {FuelTypeLabel[vehicle.fuelType]}
           </span>
-          <span className="text-[10px] font-bold text-[#041627] bg-[#eefcfd]/50 border border-[#041627]/5 rounded-full px-2.5 py-0.5">
+          <span className="hidden sm:inline-flex text-[10px] font-bold text-[#041627] bg-[#eefcfd]/50 border border-[#041627]/5 rounded-full px-2 py-0.5">
             {VehicleBodyTypeLabel[vehicle.vehicleBodyType]}
           </span>
         </div>

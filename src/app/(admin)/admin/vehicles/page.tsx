@@ -19,16 +19,16 @@ import { OpenOrderModal } from "@/components/shared/OpenOrderModal";
 import { FuelTypeLabel, VehicleBodyTypeLabel } from "@/lib/enums";
 import { useVehicle, useVehicles } from "@/hooks/useVehicles";
 import { workOrdersService } from "@/services/work-orders.service";
-import { Vehicle } from "@/types/api.types";
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────
 
-function VehicleAvatar({ vehicle, size = "md" }: { vehicle: Vehicle; size?: "sm" | "md" | "lg" }) {
-  const initials = `${vehicle.brand[0] ?? ""}${vehicle.model[0] ?? ""}`.toUpperCase();
-  const sz = size === "lg" ? "w-16 h-16 text-xl" : size === "sm" ? "w-8 h-8 text-xs" : "w-10 h-10 text-sm";
+function VehicleAvatar({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
+  const box  = size === "lg" ? "w-16 h-16" : size === "sm" ? "w-10 h-10" : "w-11 h-11";
+  const icon = size === "lg" ? "w-8 h-8"  : size === "sm" ? "w-5 h-5"   : "w-6 h-6";
+  // Ícono de vehículo (a futuro: foto del vehículo tomada en la inspección).
   return (
-    <div className={`${sz} rounded-full bg-[#041627] text-white flex items-center justify-center font-bold shrink-0`}>
-      {initials}
+    <div className={`${box} rounded-xl bg-[#041627] flex items-center justify-center shrink-0`}>
+      <Car className={`${icon} text-[#fea520]`} strokeWidth={2} />
     </div>
   );
 }
@@ -61,7 +61,7 @@ function DetailPanel({
           {isLoading ? (
             <div className="w-16 h-16 rounded-full bg-[#c4c6cd]/30 animate-pulse" />
           ) : vehicle ? (
-            <VehicleAvatar vehicle={vehicle} size="lg" />
+            <VehicleAvatar size="lg" />
           ) : null}
           <button
             onClick={onClose}
@@ -293,17 +293,16 @@ export default function VehiclesPage() {
                             : "hover:bg-[#eefcfd]/60 border-l-transparent"
                         }`}
                       >
-                        {/* Vehículo */}
+                        {/* Vehículo — patente grande, modelo + año al lado */}
                         <div className="flex items-center gap-3 min-w-0">
-                          <VehicleAvatar vehicle={v} size="sm" />
+                          <VehicleAvatar size="sm" />
                           <div className="min-w-0">
-                            <p className="text-sm font-semibold text-[#041627] truncate">
-                              {v.brand} {v.model} ({v.year})
-                            </p>
-                            <span className="inline-flex items-center gap-1 text-xs text-[#44474c] font-mono">
-                              <Tag className="w-3 h-3" />
+                            <p className="font-mono font-black text-[#041627] text-sm leading-none tracking-wide truncate">
                               {v.licensePlate}
-                            </span>
+                            </p>
+                            <p className="text-xs text-[#44474c] truncate mt-1">
+                              {v.brand} {v.model} · {v.year}
+                            </p>
                           </div>
                         </div>
 
