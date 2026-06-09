@@ -985,6 +985,12 @@ export interface ScheduleSlot {
   vehicleModel: string;
 }
 
+/** Área (servicio) que necesita un vehículo agendado. */
+export interface OccupancyArea {
+  areaId: string | null;
+  areaName: string | null;
+}
+
 /** Una orden (vehículo) ocupando bahía en el calendario de ocupación. */
 export interface OccupancySlot {
   workOrderId: string;
@@ -996,6 +1002,8 @@ export interface OccupancySlot {
   vehicleBrand: string;
   vehicleModel: string;
   ownerName?: string | null;
+  /** Áreas distintas de los servicios del vehículo (para el tablero por día → servicio). */
+  areas: OccupancyArea[];
 }
 
 /** Ocupación del taller en un rango: slots por vehículo + capacidad física configurable. */

@@ -6,7 +6,6 @@ import { CalendarDays, ChevronLeft, ChevronRight, Car } from "lucide-react";
 
 import { useOccupancy } from "@/hooks/useSchedule";
 import { PageHeader } from "@/components/shared/PageHeader";
-import { WorkOrderStatus } from "@/lib/enums";
 import type { OccupancySlot } from "@/types/api.types";
 
 // ─── Helpers de fechas ────────────────────────────────────────────────────────
@@ -30,24 +29,38 @@ function toISODate(d: Date): string {
 }
 
 function dayLabel(d: Date): string {
-  return d.toLocaleDateString("es-AR", { weekday: "short", day: "2-digit", month: "2-digit" });
+  return d.toLocaleDateString("es-AR", { weekday: "long", day: "2-digit", month: "2-digit" });
 }
 
-// ─── Estilo por estado del vehículo en la bahía ─────────────────────────────────
+// ─── Agrupación por servicio/área dentro de un día ──────────────────────────────
 
-function slotStyle(status: WorkOrderStatus): { chip: string; tag: string } {
-  switch (status) {
-    case WorkOrderStatus.InProgress:
-      // Trabajo activo
-      return { chip: "border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900", tag: "En trabajo" };
-    case WorkOrderStatus.Completed:
-      // Terminado, esperando que lo retiren (ya no se le aplica trabajo)
-      return { chip: "border-slate-300 bg-slate-100 hover:bg-slate-200 text-slate-600", tag: "Esperando retiro" };
-    case WorkOrderStatus.Approved:
-    default:
-      // Agendado pero todavía no presente
-      return { chip: "border-sky-200 bg-sky-50 hover:bg-sky-100 text-sky-900", tag: "Agendado" };
+interface AreaRow {
+  key: string;
+  name: string;
+  slots: OccupancySlot[];
+}
+
+function areaRowsForDay(daySlots: OccupancySlot[]): AreaRow[] {
+  const map = new Map<string, AreaRow>();
+  for (const s of daySlots) {
+    // Un vehículo sin servicios/áreas cae en "Sin área".
+    const areas = s.areas.length > 0 ? s.areas : [{ areaId: null, areaName: null }];
+    for (const a of areas) {
+      const key = a.areaId ?? "__none__";
+      const name = a.areaName ?? "Sin área";
+      let row = map.get(key);
+      if (!row) {
+        row = { key, name, slots: [] };
+        map.set(key, row);
+      }
+      row.slots.push(s);
+    }
   }
+  return Array.from(map.values()).sort((a, b) => {
+    if (a.key === "__none__") return 1;
+    if (b.key === "__none__") return -1;
+    return a.name.localeCompare(b.name);
+  });
 }
 
 // ─── Página ───────────────────────────────────────────────────────────────────
@@ -74,8 +87,7 @@ export default function CalendarPage() {
     for (const d of weekDays) {
       const dStart = new Date(d); dStart.setHours(0, 0, 0, 0);
       const dEnd   = new Date(d); dEnd.setHours(23, 59, 59, 999);
-      const key = toISODate(d);
-      map[key] = slots.filter((s) => {
+      map[toISODate(d)] = slots.filter((s) => {
         const start = new Date(s.scheduledStart);
         const end   = new Date(s.scheduledEnd);
         return start <= dEnd && end >= dStart;
@@ -87,12 +99,12 @@ export default function CalendarPage() {
   return (
     <div className="space-y-5">
       <PageHeader
-        title="Ocupación del taller"
+        title="Tablero del taller"
         subtitle={
           <span>
             Del <strong>{dayLabel(weekDays[0])}</strong> al <strong>{dayLabel(weekDays[6])}</strong>.
-            {capacity > 0 && <> Capacidad: <strong>{capacity}</strong> {capacity === 1 ? "lugar" : "lugares"}.</>}
-            {" "}Cada día muestra los vehículos que ocupan una bahía.
+            {capacity > 0 && <> Capacidad: <strong>{capacity}</strong> {capacity === 1 ? "lugar" : "lugares"} por día.</>}
+            {" "}Cada día muestra, por servicio, los vehículos en el taller.
           </span>
         }
         Icon={CalendarDays}
@@ -125,19 +137,19 @@ export default function CalendarPage() {
       )}
       {isError && (
         <div className="rounded border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-          No se pudo cargar la ocupación.
+          No se pudo cargar el tablero.
         </div>
       )}
 
       {!isLoading && !isError && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3">
+        <div className="space-y-4">
           {weekDays.map((d) => {
-            const key   = toISODate(d);
-            const here  = slotsByDay[key] ?? [];
-            const count = here.length;
-            const full  = capacity > 0 && count >= capacity;
-            const near  = capacity > 0 && !full && count / capacity >= 0.8;
-
+            const key      = toISODate(d);
+            const daySlots = slotsByDay[key] ?? [];
+            const rows     = areaRowsForDay(daySlots);
+            const count    = daySlots.length; // vehículos distintos en el taller ese día
+            const full     = capacity > 0 && count >= capacity;
+            const near     = capacity > 0 && !full && count / capacity >= 0.8;
             const countCls = full
               ? "bg-red-100 text-red-700 border-red-200"
               : near
@@ -145,37 +157,48 @@ export default function CalendarPage() {
                 : "bg-emerald-100 text-emerald-700 border-emerald-200";
 
             return (
-              <div key={key} className="rounded-xl border border-[#c4c6cd] bg-white overflow-hidden flex flex-col">
-                <div className="px-3 py-2 border-b border-[#c4c6cd]/60 bg-gray-50 flex items-center justify-between">
-                  <span className="text-xs font-bold text-gray-700">{dayLabel(d)}</span>
-                  <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full border tabular-nums ${countCls}`}>
-                    {count}{capacity > 0 ? ` / ${capacity}` : ""}
+              <div key={key} className="rounded-xl border border-[#c4c6cd] bg-white overflow-hidden">
+                {/* Cabecera del día */}
+                <div className="flex items-center justify-between px-4 py-2.5 bg-[#041627] text-white">
+                  <span className="text-sm font-bold capitalize">{dayLabel(d)}</span>
+                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border tabular-nums ${countCls}`}>
+                    {count}{capacity > 0 ? ` / ${capacity}` : ""} {count === 1 ? "vehículo" : "vehículos"}
                   </span>
                 </div>
-                <div className="p-2 space-y-1.5 min-h-[3rem]">
-                  {count === 0 ? (
-                    <span className="text-[11px] text-gray-300">—</span>
-                  ) : (
-                    here.map((s) => {
-                      const st = slotStyle(s.status);
-                      return (
-                        <Link
-                          key={s.workOrderId}
-                          href={`/admin/work-orders/${s.workOrderId}`}
-                          className={`block rounded-lg border px-2 py-1.5 transition-colors ${st.chip}`}
-                          title={`${s.vehicleBrand} ${s.vehicleModel}${s.ownerName ? ` — ${s.ownerName}` : ""}`}
-                        >
-                          <div className="flex items-center gap-1 font-mono text-xs font-bold">
-                            <Car className="w-3 h-3 shrink-0" />
-                            {s.vehicleLicensePlate}
-                          </div>
-                          <div className="text-[10px] opacity-80 truncate">{s.vehicleBrand} {s.vehicleModel}</div>
-                          <div className="text-[9px] font-bold uppercase tracking-wide opacity-70 mt-0.5">{st.tag}</div>
-                        </Link>
-                      );
-                    })
-                  )}
-                </div>
+
+                {/* Filas por servicio/área */}
+                {rows.length === 0 ? (
+                  <p className="px-4 py-4 text-xs text-gray-400">Sin vehículos agendados.</p>
+                ) : (
+                  <div className="divide-y divide-[#c4c6cd]/40">
+                    {rows.map((row) => (
+                      <div key={row.key} className="grid grid-cols-[140px_1fr_auto] gap-3 items-center px-4 py-2.5">
+                        {/* Servicio / área */}
+                        <span className="text-sm font-semibold text-[#041627] truncate">{row.name}</span>
+
+                        {/* Chips de patentes */}
+                        <div className="flex flex-wrap gap-1.5">
+                          {row.slots.map((s) => (
+                            <Link
+                              key={s.workOrderId}
+                              href={`/admin/work-orders/${s.workOrderId}`}
+                              title={`${s.vehicleBrand} ${s.vehicleModel}${s.ownerName ? ` — ${s.ownerName}` : ""}`}
+                              className="inline-flex items-center gap-1 rounded-md border border-amber-300 bg-amber-50 px-2 py-1 font-mono text-xs font-bold text-amber-900 hover:bg-amber-100 transition-colors"
+                            >
+                              <Car className="w-3 h-3 shrink-0" />
+                              {s.vehicleLicensePlate}
+                            </Link>
+                          ))}
+                        </div>
+
+                        {/* Conteo */}
+                        <span className="text-xs font-bold text-[#44474c]/70 whitespace-nowrap tabular-nums">
+                          {row.slots.length} {row.slots.length === 1 ? "vehículo" : "vehículos"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             );
           })}
