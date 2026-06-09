@@ -283,7 +283,6 @@ export default function WorkOrderDetailPage() {
                 editable={isDiagnosing}
                 workOrderStatus={status}
               />
-              {isDiagnosing && <AddServicePanel workOrderId={order.id} />}
             </CardContent>
           </Card>
 
@@ -319,7 +318,6 @@ export default function WorkOrderDetailPage() {
                   parts={order.parts ?? []}
                   editable={isDiagnosing}
                 />
-                {isDiagnosing && <AddPartPanel workOrderId={order.id} />}
               </CardContent>
             </Card>
           )}
@@ -343,6 +341,19 @@ export default function WorkOrderDetailPage() {
                 </span>
               </div>
             </div>
+          )}
+
+          {/* Agregar al presupuesto — paneles debajo del Total para no tapar la sumatoria */}
+          {isDiagnosing && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Agregar al presupuesto</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <AddServicePanel workOrderId={order.id} />
+                <AddPartPanel workOrderId={order.id} />
+              </CardContent>
+            </Card>
           )}
 
           {/* Agenda / ocupación del taller (agendar por vehículo) */}
