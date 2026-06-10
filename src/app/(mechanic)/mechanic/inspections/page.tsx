@@ -740,7 +740,7 @@ function ReportFormModal({
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="text-[9px] font-bold uppercase tracking-wider text-[#44474c]/70">
-                        Km al cambio (del ingreso)
+                        Kilometraje
                       </label>
                       <input
                         type="text"
