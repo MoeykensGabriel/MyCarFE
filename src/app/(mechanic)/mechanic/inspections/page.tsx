@@ -17,6 +17,7 @@ import {
   Wrench,
   Package,
   BatteryCharging,
+  Droplet,
 } from "lucide-react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { z } from "zod";
@@ -29,7 +30,7 @@ import {
 } from "@/hooks/useInspections";
 import { workOrdersService } from "@/services/work-orders.service";
 import { PhotoType, TirePosition, TirePositionLabel, BatteryStatus, BatteryStatusLabel, BatteryTerminalSide, BatteryTerminalSideLabel } from "@/lib/enums";
-import { TireInspectionInput, BatteryInspectionInput } from "@/types/api.types";
+import { TireInspectionInput, BatteryInspectionInput, OilInspectionInput } from "@/types/api.types";
 import { formatDateTime, formatCurrency } from "@/lib/format";
 import {
   PendingInspection,
@@ -179,6 +180,21 @@ function ReportFormModal({
   const updateBattery = (field: keyof typeof battery, value: string) =>
     setBattery((prev) => ({ ...prev, [field]: value }));
 
+  // ── Control de aceite (solo si el área es de aceite) ─────────────────────────
+  const isOilArea = area.isOilArea;
+  const [oilEnabled, setOilEnabled] = useState(false);
+  const [oil, setOil] = useState({
+    changedOn: "",
+    intervalKm: "10000",
+    intervalMonths: "6",
+    oilType: "",
+    oilBrand: "",
+    filterChanged: true,
+    notes: "",
+  });
+  const updateOil = (field: keyof typeof oil, value: string | boolean) =>
+    setOil((prev) => ({ ...prev, [field]: value }));
+
   const {
     register,
     handleSubmit,
@@ -248,6 +264,28 @@ function ReportFormModal({
       };
     }
 
+    let oilPayload: OilInspectionInput | undefined;
+    if (isOilArea && oilEnabled) {
+      const toIntOrNullOil = (v: string): number | null => {
+        const t = v.trim();
+        if (t === "") return null;
+        const n = Math.round(Number(t));
+        return Number.isFinite(n) ? n : null;
+      };
+      oilPayload = {
+        // El km del cambio siempre es el del ingreso (línea base): lo resuelve el backend
+        // desde MileageAtEntry. La fecha vacía también hereda la del ingreso.
+        changedAtKm:    null,
+        changedOn:      oil.changedOn || null,
+        intervalKm:     toIntOrNullOil(oil.intervalKm),
+        intervalMonths: toIntOrNullOil(oil.intervalMonths),
+        oilType:        oil.oilType.trim() || null,
+        oilBrand:       oil.oilBrand.trim() || null,
+        filterChanged:  oil.filterChanged,
+        notes:          oil.notes.trim() || null,
+      };
+    }
+
     createReport.mutate(
       {
         workOrderId: inspection.workOrderId,
@@ -269,6 +307,7 @@ function ReportFormModal({
         proposedParts:    data.hasIssue ? data.proposedParts    : undefined,
         tires,
         battery:     batteryPayload,
+        oil:         oilPayload,
       },
       {
         onSuccess: async (report) => {
@@ -373,7 +412,7 @@ function ReportFormModal({
                 }`}
               >
                 <Check className="w-4 h-4 text-emerald-500 shrink-0" strokeWidth={2.5} />
-                Sin hallazgos
+                Sin novedades
               </button>
               <button
                 type="button"
@@ -393,7 +432,7 @@ function ReportFormModal({
           {/* Findings */}
           <div className="space-y-2">
             <label className="text-[10px] font-extrabold uppercase tracking-widest text-[#041627] flex items-center gap-1">
-              Hallazgos o detalles {hasIssue && <span className="text-red-500 normal-case">*</span>}
+              Novedades o detalles {hasIssue && <span className="text-red-500 normal-case">*</span>}
             </label>
             <textarea
               rows={4}
@@ -663,6 +702,160 @@ function ReportFormModal({
                     className="w-full px-2 py-1.5 text-xs rounded border border-[#041627]/10 bg-white"
                     value={battery.notes}
                     onChange={(e) => updateBattery("notes", e.target.value)}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Control de aceite (solo área de aceite) ───────────────────── */}
+          {isOilArea && (
+            <div className="space-y-3 border-t border-[#041627]/5 pt-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <Droplet className="w-3.5 h-3.5 text-[#fea520]" />
+                  <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#041627]">
+                    Control de aceite / service
+                  </p>
+                </div>
+                <label className="flex items-center gap-1.5 text-[10px] font-bold text-[#44474c] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={oilEnabled}
+                    onChange={(e) => setOilEnabled(e.target.checked)}
+                    className="accent-[#fea520]"
+                  />
+                  Hice el cambio de aceite
+                </label>
+              </div>
+
+              {oilEnabled && (
+                <div className="bg-[#f4f6f8] p-2.5 rounded-lg space-y-2">
+                  <p className="text-[10px] text-[#44474c]/70 leading-relaxed">
+                    El km del cambio se toma del ingreso de la orden. Si dejás la fecha en blanco,
+                    usa la del ingreso. El próximo service se avisa por kilometraje o por tiempo,
+                    lo que llegue primero.
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[9px] font-bold uppercase tracking-wider text-[#44474c]/70">
+                        Km al cambio (del ingreso)
+                      </label>
+                      <input
+                        type="text"
+                        readOnly
+                        disabled
+                        className="w-full px-2 py-1.5 text-xs rounded border border-[#041627]/10 bg-[#041627]/5 text-[#44474c] cursor-not-allowed"
+                        value={`${inspection.mileageAtEntry.toLocaleString("es-AR")} km`}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[9px] font-bold uppercase tracking-wider text-[#44474c]/70">
+                        Fecha del cambio
+                      </label>
+                      <input
+                        type="date"
+                        className="w-full px-2 py-1.5 text-xs rounded border border-[#041627]/10 bg-white"
+                        value={oil.changedOn}
+                        onChange={(e) => updateOil("changedOn", e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[9px] font-bold uppercase tracking-wider text-[#44474c]/70">
+                        Intervalo (km)
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        inputMode="numeric"
+                        placeholder="10000"
+                        className="w-full px-2 py-1.5 text-xs rounded border border-[#041627]/10 bg-white"
+                        value={oil.intervalKm}
+                        onChange={(e) => updateOil("intervalKm", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[9px] font-bold uppercase tracking-wider text-[#44474c]/70">
+                        Intervalo (meses)
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        inputMode="numeric"
+                        placeholder="6"
+                        className="w-full px-2 py-1.5 text-xs rounded border border-[#041627]/10 bg-white"
+                        value={oil.intervalMonths}
+                        onChange={(e) => updateOil("intervalMonths", e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Próximo service estimado: km del ingreso + intervalo. Solo informativo,
+                      el cálculo real lo hace el backend con los mismos datos. */}
+                  <div className="rounded-lg border border-[#fea520]/40 bg-[#fea520]/10 px-3 py-2">
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-[#44474c]/70">
+                      Próximo service estimado
+                    </p>
+                    <p className="text-xs font-black text-[#041627]">
+                      {(
+                        inspection.mileageAtEntry + (Math.round(Number(oil.intervalKm)) || 10000)
+                      ).toLocaleString("es-AR")}{" "}
+                      km
+                      <span className="font-semibold text-[#44474c]">
+                        {" "}({inspection.mileageAtEntry.toLocaleString("es-AR")} km del ingreso +{" "}
+                        {(Math.round(Number(oil.intervalKm)) || 10000).toLocaleString("es-AR")} km)
+                        {" "}· o a los {Math.round(Number(oil.intervalMonths)) || 6} meses, lo que llegue primero
+                      </span>
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[9px] font-bold uppercase tracking-wider text-[#44474c]/70">
+                        Tipo de aceite
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="5W30 sintético"
+                        className="w-full px-2 py-1.5 text-xs rounded border border-[#041627]/10 bg-white"
+                        value={oil.oilType}
+                        onChange={(e) => updateOil("oilType", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[9px] font-bold uppercase tracking-wider text-[#44474c]/70">
+                        Marca
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Shell, Castrol..."
+                        className="w-full px-2 py-1.5 text-xs rounded border border-[#041627]/10 bg-white"
+                        value={oil.oilBrand}
+                        onChange={(e) => updateOil("oilBrand", e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <label className="flex items-center gap-1.5 text-[10px] font-bold text-[#44474c] cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={oil.filterChanged}
+                      onChange={(e) => updateOil("filterChanged", e.target.checked)}
+                      className="accent-[#fea520]"
+                    />
+                    También cambié el filtro de aceite
+                  </label>
+
+                  <input
+                    type="text"
+                    placeholder="Observaciones (opcional)"
+                    className="w-full px-2 py-1.5 text-xs rounded border border-[#041627]/10 bg-white"
+                    value={oil.notes}
+                    onChange={(e) => updateOil("notes", e.target.value)}
                   />
                 </div>
               )}

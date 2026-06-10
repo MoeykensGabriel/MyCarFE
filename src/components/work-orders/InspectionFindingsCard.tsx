@@ -36,7 +36,7 @@ export function InspectionFindingsCard({ workOrderId }: Props) {
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <ClipboardCheck className="w-4 h-4 text-amber-500" />
-            Hallazgos de la inspección
+            Novedades de la inspección
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -56,12 +56,12 @@ export function InspectionFindingsCard({ workOrderId }: Props) {
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <ClipboardCheck className="w-4 h-4 text-green-600" />
-            Inspección sin hallazgos
+            Inspección sin novedades
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
-            Los mecánicos no reportaron problemas. Podés armar el presupuesto en
+            Los mecánicos no reportaron novedades o problemas. Podés armar el presupuesto en
             base al motivo de visita o agregar servicios manualmente.
           </p>
         </CardContent>
@@ -75,13 +75,13 @@ export function InspectionFindingsCard({ workOrderId }: Props) {
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-600" />
-            Hallazgos de la inspección
+            Novedades de la inspección
             <span className="ml-1 text-xs font-normal text-muted-foreground">
               ({findings.length})
             </span>
           </CardTitle>
           <p className="text-xs text-muted-foreground mt-1">
-            Lo que los mecánicos detectaron. Convertí cada hallazgo en servicio o
+            Lo que los mecánicos detectaron. Convertí cada novedad en servicio o
             repuesto para armar el presupuesto.
           </p>
         </CardHeader>

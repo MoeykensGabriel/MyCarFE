@@ -13,6 +13,7 @@ import { useVehicle } from "@/hooks/useVehicles";
 import { VehicleDocumentsCard } from "@/components/vehicle-documents/VehicleDocumentsCard";
 import { CustomerTiresCard } from "@/components/vehicle-tires/CustomerTiresCard";
 import { CustomerBatteryCard } from "@/components/vehicle-battery/CustomerBatteryCard";
+import { CustomerOilCard } from "@/components/vehicle-oil/CustomerOilCard";
 import { TripStationQrCard } from "@/components/vehicle-trips/TripStationQrCard";
 import { VehicleTripsHistoryCard } from "@/components/vehicle-trips/VehicleTripsHistoryCard";
 import { PremiumLockCard } from "@/components/shared/PremiumLockCard";
@@ -183,6 +184,9 @@ export default function MyVehicleDetailPage() {
 
       {/* ── Estado de batería (solo lectura — lo registra el taller) ─────────── */}
       <CustomerBatteryCard vehicleId={vehicle.id} />
+
+      {/* ── Estado de aceite / próximo service (solo lectura — lo registra el taller) ── */}
+      <CustomerOilCard vehicleId={vehicle.id} />
 
       {/* ── Estación de viajes (QR para choferes) — solo flota, función plus ── */}
       {vehicle.fleetId && (

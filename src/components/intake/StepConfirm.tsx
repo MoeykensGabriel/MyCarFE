@@ -127,7 +127,7 @@ export function StepConfirm({
         </div>
         <div className="px-4 py-4 bg-white">
           {mode === "particular" && existingCustomer && (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <SummaryItem
                 label="Nombre"
                 value={`${existingCustomer.firstName} ${existingCustomer.lastName}`}
@@ -140,7 +140,7 @@ export function StepConfirm({
             </div>
           )}
           {mode === "particular" && customerDraft && !existingCustomer && (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <SummaryItem
                 label="Nombre"
                 value={`${customerDraft.firstName} ${customerDraft.lastName}`}
@@ -166,7 +166,7 @@ export function StepConfirm({
                 )}
               </div>
               {fleetAndContact.contact ? (
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <SummaryItem
                     label="Contacto"
                     value={`${fleetAndContact.contact.firstName} ${fleetAndContact.contact.lastName}`}
@@ -190,7 +190,7 @@ export function StepConfirm({
             Vehículo
           </span>
         </div>
-        <div className="px-4 py-4 bg-white grid grid-cols-2 gap-3">
+        <div className="px-4 py-4 bg-white grid grid-cols-1 sm:grid-cols-2 gap-3">
           <SummaryItem
             label="Vehículo"
             value={`${vehicleDraft.brand} ${vehicleDraft.model} (${vehicleDraft.year})`}

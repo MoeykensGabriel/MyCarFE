@@ -45,7 +45,8 @@ export const adminMechanicsService = {
   },
 
   update: async (id: string, data: UpdateMechanicRequest): Promise<Mechanic> => {
-    const response = await apiClient.put<Mechanic>(`/api/mechanics/${id}`, data);
+    // El controller expone PATCH para actualizar el mecánico.
+    const response = await apiClient.patch<Mechanic>(`/api/mechanics/${id}`, { id, ...data });
     return response.data;
   },
 

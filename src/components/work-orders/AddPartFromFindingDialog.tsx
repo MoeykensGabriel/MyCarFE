@@ -37,9 +37,9 @@ export function AddPartFromFindingDialog({
     <Dialog open={open} onOpenChange={(o) => !o && !isPending && onClose()}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Crear repuesto desde el hallazgo</DialogTitle>
+          <DialogTitle>Crear repuesto desde la novedad</DialogTitle>
           <DialogDescription>
-            Cargá el repuesto que hace falta para resolver este hallazgo. Si tiene
+            Cargá el repuesto que hace falta para resolver esta novedad. Si tiene
             código de proveedor, se va a pedir al depósito al aprobar el presupuesto.
           </DialogDescription>
         </DialogHeader>

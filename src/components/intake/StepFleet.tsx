@@ -182,7 +182,7 @@ export function StepFleet({ defaultValues, onNext, onBack }: Props) {
               {...fleetForm.register("companyName")}
             />
           </Field>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="CUIT" required error={fe.taxId?.message}>
               <Input placeholder="30-12345678-9" {...fleetForm.register("taxId")} />
             </Field>
@@ -190,7 +190,7 @@ export function StepFleet({ defaultValues, onNext, onBack }: Props) {
               <Input placeholder="+54 9 11 1234 5678" {...fleetForm.register("phone")} />
             </Field>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Email">
               <Input type="email" placeholder="empresa@ejemplo.com" {...fleetForm.register("email")} />
             </Field>
@@ -211,7 +211,7 @@ export function StepFleet({ defaultValues, onNext, onBack }: Props) {
       )}
 
       {!selectedFleetId && <Section title="Contacto / Conductor">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Nombre" required error={ce.firstName?.message}>
             <Input placeholder="Juan" {...contactForm.register("firstName")} />
           </Field>
@@ -219,7 +219,7 @@ export function StepFleet({ defaultValues, onNext, onBack }: Props) {
             <Input placeholder="Pérez" {...contactForm.register("lastName")} />
           </Field>
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Tipo de documento" required>
             <Select
               defaultValue={String(defaultValues?.contact?.documentType ?? DocumentType.DNI)}

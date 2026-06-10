@@ -92,7 +92,7 @@ export default function IntakePage() {
         <div className="min-w-0">
           <div className="bg-white rounded-xl border border-[#c4c6cd] shadow-sm overflow-hidden">
             {/* Header del card: stepTitle + paso X/Y + indicador */}
-            <div className="border-b border-[#c4c6cd]/60 px-6 py-4 space-y-3">
+            <div className="border-b border-[#c4c6cd]/60 px-4 sm:px-6 py-4 space-y-3">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-base font-semibold text-[#041627]">{stepTitle}</h2>
                 {step > 0 && (
@@ -103,7 +103,7 @@ export default function IntakePage() {
               </div>
               {step > 0 && <StepIndicator steps={steps} current={step} />}
             </div>
-            <div className="px-6 py-6">
+            <div className="px-4 sm:px-6 py-4 sm:py-6">
               {step === 0 && (
                 <Step0Mode onSelect={(m) => { setMode(m); setStep(1); }} />
               )}

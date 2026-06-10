@@ -3,6 +3,7 @@ import {
   BatteryTerminalSide,
   DocumentType,
   FuelType,
+  OilServiceStatus,
   PhotoType,
   QuoteItemApprovalStatus,
   TirePosition,
@@ -349,6 +350,22 @@ export interface BatteryInspectionInput {
   positiveTerminalSide?: BatteryTerminalSide | null;
 }
 
+/**
+ * Cambio de aceite/filtros cargado por el mecánico del área de aceite (o un generalista).
+ * Todo opcional: km/fecha caen a los de ingreso/inspección; intervalos a 10.000 km / 6 meses.
+ * Solo aplica cuando el área tiene isOilArea=true.
+ */
+export interface OilInspectionInput {
+  changedAtKm?: number | null;
+  changedOn?: string | null; // ISO date (yyyy-MM-dd)
+  intervalKm?: number | null;
+  intervalMonths?: number | null;
+  oilType?: string | null;
+  oilBrand?: string | null;
+  filterChanged?: boolean | null;
+  notes?: string | null;
+}
+
 export interface CreateInspectionReportRequest {
   workOrderId: string;
   areaId: string;
@@ -358,6 +375,7 @@ export interface CreateInspectionReportRequest {
   proposedParts?: ProposedPartInput[];
   tires?: TireInspectionInput[];
   battery?: BatteryInspectionInput;
+  oil?: OilInspectionInput;
 }
 
 export interface UpdateInspectionReportRequest {
@@ -381,12 +399,16 @@ export interface PendingInspectionArea {
   isTireArea: boolean;
   /** true = área de batería: el reporte puede incluir el estado de la batería. */
   isBatteryArea: boolean;
+  /** true = área de aceite: el reporte puede registrar el cambio de aceite/filtros. */
+  isOilArea: boolean;
 }
 
 export interface PendingInspection {
   workOrderId: string;
   workOrderCreatedAt: string;
   serviceReason?: string | null;
+  /** Km del vehículo al ingreso. Línea base del cambio de aceite (no editable por el mecánico). */
+  mileageAtEntry: number;
   vehicleId: string;
   vehicleBrand: string;
   vehicleModel: string;
@@ -411,6 +433,8 @@ export interface Mechanic {
   updatedAt: string;
   /** Áreas de especialidad asignadas (M-a-N). Puede venir vacío si el admin no las asignó. */
   areas: Area[];
+  /** true = generalista: puede reportar/trabajar en TODAS las áreas activas. */
+  isGeneralist: boolean;
 }
 
 export interface CreateMechanicRequest {
@@ -419,6 +443,7 @@ export interface CreateMechanicRequest {
   email: string;
   phone?: string;
   specialty?: string;
+  isGeneralist?: boolean;
 }
 
 export interface UpdateMechanicRequest extends Partial<CreateMechanicRequest> {
@@ -933,6 +958,34 @@ export interface VehicleBattery {
   /** Remanencia (%) del último chequeo (null si no hay o no se cargó). */
   currentRemainingPercentage: number | null;
   lastCheckedOn: string | null;
+}
+
+/**
+ * Estado del aceite del vehículo: el último cambio + la estimación del próximo service
+ * por los dos contadores (km y tiempo). Los campos calculados los resuelve el backend
+ * contra el km actual del vehículo y la fecha de hoy.
+ */
+export interface VehicleOilService {
+  id: string;
+  vehicleId: string;
+  // Último cambio (línea base)
+  changedOn: string;       // ISO date
+  changedAtKm: number;
+  intervalKm: number;
+  intervalMonths: number;
+  oilType: string | null;
+  oilBrand: string | null;
+  filterChanged: boolean;
+  notes: string | null;
+  // Próximo service (calculado)
+  nextServiceKm: number;
+  nextServiceOn: string;   // ISO date
+  // Contexto actual + restantes (pueden ser negativos si está vencido)
+  currentMileage: number;
+  kmRemaining: number;
+  daysRemaining: number;
+  status: OilServiceStatus;
+  createdAt: string;
 }
 
 // ─── Settings (configuración del taller) ─────────────────────────────────────

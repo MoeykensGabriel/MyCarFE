@@ -161,7 +161,7 @@ export function StepVehicle({
         <input type="hidden" {...register("brand")} />
         <input type="hidden" {...register("model")} />
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Field label="Marca" required error={errors.brand?.message}>
             <Combobox
               options={BRANDS}
@@ -188,7 +188,7 @@ export function StepVehicle({
           </Field>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Patente" required error={errors.licensePlate?.message}>
             <Input
               placeholder="ABC123 o AF123BK"
@@ -201,7 +201,7 @@ export function StepVehicle({
           </Field>
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
             { label: "Combustible", key: "fuelType",        options: FUEL_OPTIONS, defaultVal: defaultValues?.fuelType         ?? FuelType.Gasoline       },
             { label: "Carrocería",  key: "vehicleBodyType", options: BODY_OPTIONS, defaultVal: defaultValues?.vehicleBodyType   ?? VehicleBodyType.Sedan    },
@@ -223,7 +223,7 @@ export function StepVehicle({
           ))}
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Kilometraje actual" error={errors.currentMileage?.message}>
             <Input
               type="number"
@@ -308,7 +308,7 @@ export function StepVehicle({
           </>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="Nombre" required error={errors.registrationHolderFirstName?.message}>
                 <Input
                   placeholder="Nombre del titular"
@@ -322,7 +322,7 @@ export function StepVehicle({
                 />
               </Field>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="Tipo de documento" required>
                 <Select
                   defaultValue={String(defaultValues?.registrationHolderDocumentType ?? DocumentType.DNI)}
@@ -345,11 +345,14 @@ export function StepVehicle({
                 />
               </Field>
             </div>
-            <Field label="N° de cédula verde">
-              <Input placeholder="Opcional" {...register("registrationCertificateNumber")} />
-            </Field>
           </>
         )}
+
+        {/* La cédula verde es un dato del VEHÍCULO, no del titular: queda visible
+            siempre, incluso con "Mismo que la empresa/el cliente" tildado. */}
+        <Field label="N° de cédula verde">
+          <Input placeholder="Opcional" {...register("registrationCertificateNumber")} />
+        </Field>
       </Section>
 
       <Section title="Motivo de visita">
@@ -390,7 +393,7 @@ export function StepVehicle({
       </Section>
 
       <Section title="Quién trae el vehículo">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <label className="text-[11px] font-bold uppercase tracking-widest text-[#041627]">
               Nombre{" "}

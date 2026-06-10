@@ -170,7 +170,7 @@ function ServiceRow({
           {s.mechanicFindings && (
             <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2">
               <p className="text-[10px] font-bold uppercase tracking-widest text-blue-700/80">
-                Hallazgos / recomendaciones
+                Novedades / recomendaciones
               </p>
               <p className="text-xs text-blue-900 mt-0.5 whitespace-pre-wrap leading-relaxed">
                 {s.mechanicFindings}

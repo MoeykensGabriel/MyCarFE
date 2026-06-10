@@ -35,7 +35,24 @@ import {
   useCreateMechanic,
   useUpdateMechanic,
 } from "@/hooks/useAdminMechanics";
-import { Mechanic, ProblemDetails } from "@/types/api.types";
+import { Mechanic, ProblemDetails, UpdateMechanicRequest } from "@/types/api.types";
+
+// Construye el payload completo de update (FirstName/LastName son obligatorios en el
+// backend), aplicando overrides puntuales sobre los datos actuales del mecánico.
+function buildMechanicUpdate(
+  m: Mechanic,
+  overrides: Partial<UpdateMechanicRequest>,
+): UpdateMechanicRequest {
+  return {
+    firstName:    m.firstName,
+    lastName:     m.lastName,
+    phone:        m.phone ?? undefined,
+    specialty:    m.specialty ?? undefined,
+    isActive:     m.isActive,
+    isGeneralist: m.isGeneralist,
+    ...overrides,
+  };
+}
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -45,6 +62,7 @@ const mechanicSchema = z.object({
   email:     z.string().min(1, "Ingresá el email").email("Ingresá un email válido. Ej: nombre@empresa.com"),
   phone:     optionalPhoneSchema,
   specialty: z.string().max(200, "Máximo 200 caracteres").optional(),
+  isGeneralist: z.boolean().optional(),
 });
 
 type MechanicForm = z.infer<typeof mechanicSchema>;
@@ -98,9 +116,16 @@ function DetailPanel({
 
   function handleToggleActive() {
     updateMechanic.mutate(
-      { id: mechanic.id, data: { isActive: !mechanic.isActive } },
+      { id: mechanic.id, data: buildMechanicUpdate(mechanic, { isActive: !mechanic.isActive }) },
       { onSuccess: () => setShowToggle(false) }
     );
+  }
+
+  function handleToggleGeneralist() {
+    updateMechanic.mutate({
+      id: mechanic.id,
+      data: buildMechanicUpdate(mechanic, { isGeneralist: !mechanic.isGeneralist }),
+    });
   }
 
   return (
@@ -132,8 +157,14 @@ function DetailPanel({
           Mecánico desde {formatDate(mechanic.createdAt)}
         </p>
 
-        <div className="mt-3">
+        <div className="mt-3 flex flex-wrap items-center gap-1.5">
           <ActiveBadge isActive={mechanic.isActive} />
+          {mechanic.isGeneralist && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-[#fea520]/15 border border-[#fea520]/40 text-[#865300]">
+              <Layers className="w-3 h-3" />
+              Generalista
+            </span>
+          )}
         </div>
       </div>
 
@@ -194,6 +225,25 @@ function DetailPanel({
             Asignar áreas
           </button>
         )}
+      </div>
+
+      {/* Generalista (trabaja en todas las áreas) */}
+      <div className="border-t border-[#c4c6cd]/60 px-5 py-4">
+        <label className="flex items-start gap-2.5 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={mechanic.isGeneralist}
+            onChange={handleToggleGeneralist}
+            disabled={updateMechanic.isPending}
+            className="mt-0.5 accent-[#fea520] w-4 h-4 disabled:opacity-50"
+          />
+          <span>
+            <span className="block text-xs font-bold text-[#041627]">Mecánico generalista</span>
+            <span className="block text-[10px] text-[#44474c]/70 mt-0.5">
+              Reporta y trabaja en <strong>todas las áreas</strong> activas, sin asignación previa.
+            </span>
+          </span>
+        </label>
       </div>
 
       {/* Footer: toggle activo/inactivo */}
@@ -514,6 +564,22 @@ function CreateMechanicModal({ onClose }: { onClose: () => void }) {
                   El mecánico podrá reportar en las áreas que selecciones durante la fase de inspección.
                 </p>
               </div>
+
+              {/* Generalista */}
+              <label className="flex items-start gap-2.5 rounded-xl border border-[#c4c6cd] bg-[#eefcfd]/40 px-3.5 py-3 cursor-pointer hover:border-[#fea520]/50 transition-colors">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 accent-[#fea520] w-4 h-4"
+                  {...register("isGeneralist")}
+                />
+                <span>
+                  <span className="block text-xs font-bold text-[#041627]">Mecánico generalista</span>
+                  <span className="block text-[10px] text-[#44474c]/70 mt-0.5">
+                    Puede reportar y trabajar en <strong>todas las áreas</strong> activas durante la inspección,
+                    sin necesidad de asignárselas una por una.
+                  </span>
+                </span>
+              </label>
 
               {/* Error servidor */}
               {serverError && (

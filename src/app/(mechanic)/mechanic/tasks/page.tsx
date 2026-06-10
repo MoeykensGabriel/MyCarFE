@@ -202,7 +202,7 @@ function TaskCard({ task }: { task: MechanicTask }) {
           />
           {task.mechanicFindings && (
             <NoteBlock
-              label="Hallazgos secundarios reportados"
+              label="Novedades secundarias reportadas"
               text={task.mechanicFindings}
               tone="info"
             />
@@ -480,14 +480,14 @@ function CompleteModal({
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4"
       onClick={onClose}
     >
-      <form
+      <div
         onClick={(e) => e.stopPropagation()}
-        onSubmit={handleSubmit}
-        className="bg-white rounded-t-3xl sm:rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl relative"
+        className="bg-white rounded-t-3xl sm:rounded-2xl w-full max-w-md max-h-[90vh] sm:max-h-[85vh] flex flex-col shadow-2xl overflow-hidden relative"
       >
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-600 to-emerald-500" />
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-600 to-emerald-500 shrink-0" />
         
-        <div className="sticky top-0 bg-white border-b border-[#041627]/5 px-5 py-4.5 flex items-center justify-between z-10">
+        {/* Header fijo */}
+        <div className="bg-white border-b border-[#041627]/5 px-5 py-4.5 flex items-center justify-between shrink-0">
           <div>
             <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#fea520]">
               Finalizar trabajo
@@ -504,128 +504,136 @@ function CompleteModal({
           </button>
         </div>
 
-        <div className="px-5 py-5 space-y-5">
-          {/* Notas (obligatorias) */}
-          <div className="space-y-2">
-            <label
-              htmlFor="notes"
-              className="text-[10px] font-extrabold uppercase tracking-widest text-[#041627] flex items-center gap-1"
-            >
-              ¿Qué tareas realizaste? <span className="text-red-500">*</span>
-            </label>
-            <textarea
-              id="notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={4}
-              placeholder="Ej: Cambié la correa de distribución y el rodillo tensor. Verifiqué tensión y no presenta ruidos extraños."
-              maxLength={2000}
-              className="w-full px-3.5 py-3 text-sm rounded-xl border border-[#041627]/10 bg-white text-[#041627] placeholder:text-[#44474c]/40 focus:outline-none focus:ring-2 focus:ring-[#fea520]/20 focus:border-[#fea520] transition-all resize-none shadow-inner"
-            />
-            <div className="flex items-center justify-between text-[10px] font-semibold text-[#44474c]/75 pl-0.5">
-              <p>Mínimo 10 caracteres · Visibilidad para cliente.</p>
-              <p className="tabular-nums font-bold">{notes.length}/2000</p>
-            </div>
-          </div>
-
-          {/* Hallazgos (opcionales) */}
-          <div className="space-y-2">
-            <label
-              htmlFor="findings"
-              className="text-[10px] font-extrabold uppercase tracking-widest text-[#041627]"
-            >
-              Hallazgos o recomendaciones (opcional)
-            </label>
-            <textarea
-              id="findings"
-              value={findings}
-              onChange={(e) => setFindings(e.target.value)}
-              rows={3}
-              placeholder="Ej: Se observa desgaste menor en discos delanteros, recomiendo reemplazo en el próximo service."
-              maxLength={2000}
-              className="w-full px-3.5 py-3 text-sm rounded-xl border border-[#041627]/10 bg-white text-[#041627] placeholder:text-[#44474c]/40 focus:outline-none focus:ring-2 focus:ring-[#fea520]/20 focus:border-[#fea520] transition-all resize-none shadow-inner"
-            />
-            <p className="text-[10px] font-semibold text-[#44474c]/70 pl-0.5">
-              Cosas secundarias encontradas ajenas a esta tarea asignada.
-            </p>
-          </div>
-
-          {/* Fotos post-trabajo (opcional) */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#041627]">
-                Fotos del trabajo terminado
-              </p>
-              <label className="text-[10px] font-bold uppercase tracking-wider text-[#fea520] hover:underline cursor-pointer">
-                + Agregar foto
-                <input
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  multiple
-                  className="hidden"
-                  onChange={(e) => {
-                    const files = Array.from(e.target.files ?? []);
-                    if (files.length > 0) setPhotos((prev) => [...prev, ...files]);
-                    e.target.value = "";
-                  }}
-                />
+        {/* Form y scroll area */}
+        <form
+          onSubmit={handleSubmit}
+          className="flex-1 flex flex-col min-h-0"
+          noValidate
+        >
+          <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5 min-h-0">
+            {/* Notas (obligatorias) */}
+            <div className="space-y-2">
+              <label
+                htmlFor="notes"
+                className="text-[10px] font-extrabold uppercase tracking-widest text-[#041627] flex items-center gap-1"
+              >
+                ¿Qué tareas realizaste? <span className="text-red-500">*</span>
               </label>
+              <textarea
+                id="notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={4}
+                placeholder="Ej: Cambié la correa de distribución y el rodillo tensor. Verifiqué tensión y no presenta ruidos extraños."
+                maxLength={2000}
+                className="w-full px-3.5 py-3 text-sm rounded-xl border border-[#041627]/10 bg-white text-[#041627] placeholder:text-[#44474c]/40 focus:outline-none focus:ring-2 focus:ring-[#fea520]/20 focus:border-[#fea520] transition-all resize-none shadow-inner"
+              />
+              <div className="flex items-center justify-between text-[10px] font-semibold text-[#44474c]/75 pl-0.5">
+                <p>Mínimo 10 caracteres · Visibilidad para cliente.</p>
+                <p className="tabular-nums font-bold">{notes.length}/2000</p>
+              </div>
             </div>
-            {photos.length === 0 ? (
-              <p className="text-[10px] text-[#44474c]/60 italic">
-                Sacá una foto del área después del trabajo. Sirve como &ldquo;después&rdquo; comparado con la foto que sacaste en la inspección.
+
+            {/* Novedades (opcionales) */}
+            <div className="space-y-2">
+              <label
+                htmlFor="findings"
+                className="text-[10px] font-extrabold uppercase tracking-widest text-[#041627]"
+              >
+                Novedades o recomendaciones (opcional)
+              </label>
+              <textarea
+                id="findings"
+                value={findings}
+                onChange={(e) => setFindings(e.target.value)}
+                rows={3}
+                placeholder="Ej: Se observa desgaste menor en discos delanteros, recomiendo reemplazo en el próximo service."
+                maxLength={2000}
+                className="w-full px-3.5 py-3 text-sm rounded-xl border border-[#041627]/10 bg-white text-[#041627] placeholder:text-[#44474c]/40 focus:outline-none focus:ring-2 focus:ring-[#fea520]/20 focus:border-[#fea520] transition-all resize-none shadow-inner"
+              />
+              <p className="text-[10px] font-semibold text-[#44474c]/70 pl-0.5">
+                Cosas secundarias encontradas ajenas a esta tarea asignada.
               </p>
-            ) : (
-              <div className="grid grid-cols-3 gap-2">
-                {photos.map((f, i) => (
-                  <div key={`${f.name}-${i}`} className="relative">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={URL.createObjectURL(f)}
-                      alt={`Foto ${i + 1}`}
-                      className="w-full aspect-square object-cover rounded-md border border-[#041627]/10"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setPhotos((prev) => prev.filter((_, idx) => idx !== i))}
-                      className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center shadow"
-                      aria-label="Quitar"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
+            </div>
+
+            {/* Fotos post-trabajo (opcional) */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#041627]">
+                  Fotos del trabajo terminado
+                </p>
+                <label className="text-[10px] font-bold uppercase tracking-wider text-[#fea520] hover:underline cursor-pointer">
+                  + Agregar foto
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files ?? []);
+                      if (files.length > 0) setPhotos((prev) => [...prev, ...files]);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+              </div>
+              {photos.length === 0 ? (
+                <p className="text-[10px] text-[#44474c]/60 italic">
+                  Sacá una foto del área después del trabajo. Sirve como &ldquo;después&rdquo; comparado con la foto que sacaste en la inspección.
+                </p>
+              ) : (
+                <div className="grid grid-cols-3 gap-2">
+                  {photos.map((f, i) => (
+                    <div key={`${f.name}-${i}`} className="relative">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={URL.createObjectURL(f)}
+                        alt={`Foto ${i + 1}`}
+                        className="w-full aspect-square object-cover rounded-md border border-[#041627]/10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setPhotos((prev) => prev.filter((_, idx) => idx !== i))}
+                        className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center shadow"
+                        aria-label="Quitar"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {error && (
+              <div className="flex items-start gap-2.5 rounded-xl bg-red-50 border border-red-200 p-3.5 animate-[fadeIn_0.2s_ease-out]">
+                <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                <p className="text-xs font-semibold text-red-700">{error}</p>
               </div>
             )}
           </div>
 
-          {error && (
-            <div className="flex items-start gap-2.5 rounded-xl bg-red-50 border border-red-200 p-3.5 animate-[fadeIn_0.2s_ease-out]">
-              <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-              <p className="text-xs font-semibold text-red-700">{error}</p>
-            </div>
-          )}
-        </div>
-
-        <div className="sticky bottom-0 bg-white border-t border-[#041627]/5 px-5 py-4 flex gap-2 z-10">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isSubmitting}
-            className="flex-1 py-3.5 rounded-xl text-xs font-black uppercase tracking-wider border border-[#041627]/10 text-[#041627] hover:bg-[#f4f6f8] active:scale-[0.98] transition-colors"
-          >
-            Cancelar
-          </button>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="flex-1 py-3.5 rounded-xl text-xs font-black uppercase tracking-wider bg-gradient-to-r from-emerald-600 to-emerald-500 text-white hover:from-emerald-700 hover:to-emerald-600 active:scale-[0.98] transition-all shadow-md shadow-emerald-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isSubmitting ? "Finalizando..." : "Confirmar"}
-          </button>
-        </div>
-      </form>
+          {/* Footer fijo */}
+          <div className="sticky bottom-0 bg-white border-t border-[#041627]/5 px-5 py-4 flex gap-2 z-10 shrink-0">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isSubmitting}
+              className="flex-1 py-3.5 rounded-xl text-xs font-black uppercase tracking-wider border border-[#041627]/10 text-[#041627] hover:bg-[#f4f6f8] active:scale-[0.98] transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="flex-1 py-3.5 rounded-xl text-xs font-black uppercase tracking-wider bg-gradient-to-r from-emerald-600 to-emerald-500 text-white hover:from-emerald-700 hover:to-emerald-600 active:scale-[0.98] transition-all shadow-md shadow-emerald-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? "Finalizando..." : "Confirmar"}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

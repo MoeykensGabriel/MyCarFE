@@ -28,7 +28,7 @@ export function StepIndicator({ steps, current }: StepIndicatorProps) {
                 {done ? <Check className="w-3.5 h-3.5" /> : step}
               </div>
               <span
-                className={`text-sm font-medium ${
+                className={`text-sm font-medium hidden sm:inline ${
                   active ? "text-[#041627]" : done ? "text-[#44474c]" : "text-[#c4c6cd]"
                 }`}
               >

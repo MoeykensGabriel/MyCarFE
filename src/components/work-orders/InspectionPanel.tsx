@@ -170,26 +170,26 @@ function AreaRow({
           onClick={onMarkNoFindings}
           disabled={marking}
         >
-          {marking ? "..." : "Marcar sin hallazgos"}
+          {marking ? "..." : "Marcar sin novedades"}
         </Button>
       </li>
     );
   }
 
-  // ── Sin hallazgos (admin) ──────────────────────────────────────────────────
+  // ── Sin novedades (admin) ──────────────────────────────────────────────────
   if (report.isNoFindings) {
     return (
       <li className="py-3 flex items-center gap-3">
         <Lock className="w-4 h-4 text-gray-400 shrink-0" />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-gray-900 truncate">{area.name}</p>
-          <p className="text-xs text-gray-500">Marcada sin hallazgos (admin) · {formatDateTime(report.createdAt)}</p>
+          <p className="text-xs text-gray-500">Marcada sin novedades (admin) · {formatDateTime(report.createdAt)}</p>
         </div>
       </li>
     );
   }
 
-  // ── Sin hallazgos reportado por mecánico ───────────────────────────────────
+  // ── Sin novedades reportadas por mecánico ───────────────────────────────────
   if (!report.hasIssue) {
     return (
       <li className="py-3">
@@ -198,7 +198,7 @@ function AreaRow({
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-900 truncate">{area.name}</p>
             <p className="text-xs text-gray-500">
-              {report.mechanicFullName ?? "—"} · sin hallazgos · {formatDateTime(report.createdAt)}
+              {report.mechanicFullName ?? "—"} · sin novedades · {formatDateTime(report.createdAt)}
             </p>
             {report.findings && (
               <p className="text-xs text-gray-700 mt-1 italic whitespace-pre-wrap">
@@ -221,7 +221,7 @@ function AreaRow({
             {area.name}
             <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-red-50 border border-red-200 text-red-700">
               <Sparkles className="w-2.5 h-2.5 mr-0.5" />
-              Hay hallazgos
+              Hay novedades
             </span>
           </p>
           <p className="text-xs text-gray-500">

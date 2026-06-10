@@ -72,7 +72,7 @@ export function useMarkAreaNoFindings(workOrderId: string) {
       inspectionsService.markAreaNoFindings(workOrderId, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: inspectionKeys.byWorkOrder(workOrderId) });
-      toast.success("Área marcada sin hallazgos");
+      toast.success("Área marcada sin novedades");
     },
     onError: () => toast.error("No se pudo marcar el área"),
   });

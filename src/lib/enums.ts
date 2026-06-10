@@ -412,6 +412,21 @@ export const BatteryStatusLabel: Record<BatteryStatus, string> = {
   [BatteryStatus.Replace]:     "Reemplazar",
 };
 
+// ─── Aceite / próximo service ─────────────────────────────────────────────────
+
+/** Estado del aceite respecto del próximo service (lo que llegue primero por km o tiempo). */
+export enum OilServiceStatus {
+  Ok      = 0,
+  DueSoon = 1,
+  Overdue = 2,
+}
+
+export const OilServiceStatusLabel: Record<OilServiceStatus, string> = {
+  [OilServiceStatus.Ok]:      "Al día",
+  [OilServiceStatus.DueSoon]: "Próximo",
+  [OilServiceStatus.Overdue]: "Vencido",
+};
+
 /** Lado del borne positivo (+) mirando la batería de frente. */
 export enum BatteryTerminalSide {
   Left  = 0,

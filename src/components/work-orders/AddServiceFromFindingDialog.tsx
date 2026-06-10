@@ -41,13 +41,13 @@ export function AddServiceFromFindingDialog({
 
   const prefilledDescription = finding.findings
     ? `${finding.findings}\n\n— ${attribution}`
-    : `Hallazgo en ${attribution}`;
+    : `Novedad en ${attribution}`;
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Crear servicio desde el hallazgo</DialogTitle>
+          <DialogTitle>Crear servicio desde la novedad</DialogTitle>
           <DialogDescription>
             Se crea un servicio puntual (ad-hoc) en esta orden. La descripción ya está
             prellenada con el reporte del mecánico — solo ponele nombre y precio.

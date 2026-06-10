@@ -18,7 +18,7 @@ const MODES: { mode: IntakeMode; Icon: LucideIcon; title: string; description: s
 
 export function Step0Mode({ onSelect }: { onSelect: (mode: IntakeMode) => void }) {
   return (
-    <div className="grid grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       {MODES.map(({ mode, Icon, title, description }) => (
         <button
           key={mode}

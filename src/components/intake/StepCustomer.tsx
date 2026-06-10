@@ -161,7 +161,7 @@ export function StepCustomer({ defaultValues, onNext, onSelectExisting, onBack }
       {!selected && creatingNew && (
         <>
           <Section title="Datos personales">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="Nombre" required error={errors.firstName?.message}>
                 <Input placeholder="Juan" {...register("firstName")} />
               </Field>
@@ -169,7 +169,7 @@ export function StepCustomer({ defaultValues, onNext, onSelectExisting, onBack }
                 <Input placeholder="Pérez" {...register("lastName")} />
               </Field>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="Tipo de documento" required>
                 <Select
                   defaultValue={String(defaultValues?.documentType ?? DocumentType.DNI)}
