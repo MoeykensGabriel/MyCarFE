@@ -8,6 +8,7 @@ import { Tag, Clock, Wrench, FileText, Bell, CheckCircle2, MoveRight, Download, 
 import { BackButton } from "@/components/shared/BackButton";
 import { ContactWorkshopCard } from "@/components/shared/ContactWorkshopCard";
 import { BeforeAfterGallery } from "@/components/work-orders/BeforeAfterGallery";
+import { CustomerInspectionFindingsCard } from "@/components/work-orders/CustomerInspectionFindingsCard";
 import { StatusBadge } from "@/components/work-orders/StatusBadge";
 import { WorkOrderStatus, WorkOrderStatusConfig, getWorkOrderStatusConfig } from "@/lib/enums";
 import { formatCurrency, formatDate, formatDateTime, formatEstimatedDuration } from "@/lib/format";
@@ -398,6 +399,9 @@ export default function MyOrderDetailPage() {
           </div>
         </div>
       )}
+
+      {/* ── Novedades de la inspección (feed por área) ──────────────────────── */}
+      <CustomerInspectionFindingsCard reports={order.inspectionReports ?? []} />
 
       {/* ── Servicios ───────────────────────────────────────────────────────── */}
       <ServicesSection services={order.services ?? []} totalAmount={order.totalAmount} />

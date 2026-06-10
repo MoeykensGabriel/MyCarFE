@@ -603,6 +603,9 @@ export interface WorkOrderInspectionReportLite {
   mechanicId?: string | null;
   mechanicFullName?: string | null;
   hasIssue: boolean;
+  /** Novedades que reportó el mecánico (visible para el cliente). */
+  findings?: string | null;
+  createdAt: string;
 }
 
 // ─── Repuestos (parts) ────────────────────────────────────────────────────────

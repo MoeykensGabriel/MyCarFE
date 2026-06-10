@@ -52,7 +52,7 @@ export function OilSection({ enabled, onEnabledChange, oil, onUpdate, mileageAtE
 
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className={fieldLabelCls}>Kilometraje</label>
+              <label className={fieldLabelCls}>Km</label>
               <input
                 type="text"
                 readOnly
