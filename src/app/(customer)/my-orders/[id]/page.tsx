@@ -9,6 +9,7 @@ import { BackButton } from "@/components/shared/BackButton";
 import { ContactWorkshopCard } from "@/components/shared/ContactWorkshopCard";
 import { BeforeAfterGallery } from "@/components/work-orders/BeforeAfterGallery";
 import { CustomerInspectionFindingsCard } from "@/components/work-orders/CustomerInspectionFindingsCard";
+import { OrderStatusStepper } from "@/components/customer-orders/OrderStatusStepper";
 import { StatusBadge } from "@/components/work-orders/StatusBadge";
 import { WorkOrderStatus, WorkOrderStatusConfig, getWorkOrderStatusConfig } from "@/lib/enums";
 import { formatCurrency, formatDate, formatDateTime, formatEstimatedDuration } from "@/lib/format";
@@ -246,6 +247,9 @@ export default function MyOrderDetailPage() {
             </div>
             <StatusBadge status={status} />
           </div>
+
+          {/* Progreso del viaje de la orden — mismo stepper que en el listado */}
+          <OrderStatusStepper status={status} />
 
           <div className="flex items-center justify-between pt-3 border-t border-dashed border-[#041627]/10">
             <div>
