@@ -10,6 +10,7 @@ import { useInfiniteVehicles } from "@/hooks/useVehicles";
 import type { VehicleSort } from "@/services/vehicles.service";
 import { useAuthStore } from "@/store/auth.store";
 import { Vehicle } from "@/types/api.types";
+import { PlateBadge } from "@/components/shared/PlateBadge";
 import { SearchInput } from "@/components/shared/SearchInput";
 import { UpcomingExpirationsBanner } from "@/components/vehicle-documents/UpcomingExpirationsBanner";
 import { useHasPremiumFeature } from "@/lib/premium";
@@ -47,11 +48,9 @@ function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
         <Car className="w-7 h-7 text-[#fea520]" strokeWidth={2} />
       </div>
 
-      {/* Info — patente grande, modelo + año al lado */}
+      {/* Info — patente grande (PlateBadge, igual que en órdenes), modelo + año abajo */}
       <div className="flex-1 min-w-0">
-        <p className="font-mono font-black text-[#041627] text-xl leading-none tracking-wide truncate">
-          {vehicle.licensePlate}
-        </p>
+        <PlateBadge plate={vehicle.licensePlate} />
         <p className="text-xs sm:text-sm font-semibold text-[#44474c] mt-1.5 truncate">
           {vehicle.brand} {vehicle.model} · {vehicle.year}
         </p>

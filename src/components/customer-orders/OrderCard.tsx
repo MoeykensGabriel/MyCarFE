@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { Tag, ChevronRight, Sparkles } from "lucide-react";
+import { ChevronRight, Sparkles } from "lucide-react";
 
+import { PlateBadge } from "@/components/shared/PlateBadge";
 import { StatusBadge } from "@/components/work-orders/StatusBadge";
 import { WorkOrderStatus } from "@/lib/enums";
 import { formatCurrency, formatDate } from "@/lib/format";
@@ -35,16 +36,13 @@ export function OrderCard({ order }: { order: WorkOrder }) {
         </div>
       )}
 
-      {/* Fila superior: vehículo + estado */}
+      {/* Fila superior: patente protagonista (igual que en Mis Vehículos) + estado */}
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="min-w-0">
-          <p className="text-sm font-extrabold text-[#041627] truncate">
+          <PlateBadge plate={order.vehicleLicensePlate} />
+          <p className="text-xs font-semibold text-[#44474c] mt-1.5 truncate">
             {order.vehicleBrand} {order.vehicleModel}
           </p>
-          <span className="inline-flex items-center gap-1 text-[11px] text-[#44474c] font-semibold font-mono mt-0.5 bg-[#f4f6f8] px-2 py-0.5 rounded-md">
-            <Tag className="w-3 h-3 text-[#44474c]/50" />
-            {order.vehicleLicensePlate}
-          </span>
         </div>
         <StatusBadge status={order.currentStatus} />
       </div>

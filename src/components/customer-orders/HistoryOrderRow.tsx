@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ChevronRight, CheckCircle2, XCircle } from "lucide-react";
 
+import { PlateBadge } from "@/components/shared/PlateBadge";
 import { WorkOrderStatus } from "@/lib/enums";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { WorkOrder } from "@/types/api.types";
@@ -33,12 +34,9 @@ export function HistoryOrderRow({ order }: { order: WorkOrder }) {
       </div>
 
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-extrabold text-[#041627] truncate">
-          {order.vehicleBrand} {order.vehicleModel}
-          <span className="font-mono font-semibold text-[#44474c]/70"> · {order.vehicleLicensePlate}</span>
-        </p>
-        <p className="text-[10px] font-semibold text-[#44474c]/60 mt-0.5">
-          {cancelled ? "Cancelada" : "Entregada"} · {formatDate(order.createdAt)}
+        <PlateBadge plate={order.vehicleLicensePlate} size="sm" />
+        <p className="text-[10px] font-semibold text-[#44474c]/60 mt-1 truncate">
+          {order.vehicleBrand} {order.vehicleModel} · {cancelled ? "Cancelada" : "Entregada"} · {formatDate(order.createdAt)}
         </p>
       </div>
 
