@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const PUBLIC_ROUTES = ["/login", "/approve"];
+// "/trip" es la estación pública de viajes (QR pegado en el auto): el chofer
+// entra sin sesión — el token de la URL es la credencial, lo valida el backend.
+const PUBLIC_ROUTES = ["/login", "/approve", "/trip"];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

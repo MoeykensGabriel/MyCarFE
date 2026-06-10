@@ -246,10 +246,10 @@ export default function WorkOrderDetailPage() {
       )}
 
       {/* ── Grid principal ──────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
         {/* Columna izquierda — 2/3 */}
-        <div className="col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-6">
 
           {/* Panel de inspección colectiva (solo cuando aplica) */}
           {isUnderInspection && <InspectionPanel workOrderId={order.id} />}

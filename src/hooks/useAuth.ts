@@ -15,9 +15,10 @@ export function useAuth() {
 
   const logout = useCallback(() => {
     store.clearSession();
-    // Limpiar cookies que usa el proxy (Edge runtime)
-    document.cookie = "token=; path=/; max-age=0";
-    document.cookie = "role=; path=/; max-age=0";
+    // Limpiar cookies que usa el proxy (Edge runtime). `secure` para que el
+    // navegador acepte pisar las cookies Secure que setea el login.
+    document.cookie = "token=; path=/; max-age=0; samesite=strict; secure";
+    document.cookie = "role=; path=/; max-age=0; samesite=strict; secure";
     router.push("/login");
   }, [store, router]);
 

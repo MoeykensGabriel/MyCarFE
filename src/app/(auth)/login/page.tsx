@@ -38,15 +38,15 @@ export default function LoginPage() {
     setServerError(null);
     try {
       const response = await authService.login(data);
-      console.log("[login] response:", response);
 
       setSession(response);
       localStorage.setItem("role", response.role);
 
       // Setear cookies para que el middleware (Edge/Node) pueda leer el rol
-      // y proteger las rutas sin acceso a localStorage.
-      document.cookie = `token=${response.token}; path=/; samesite=strict`;
-      document.cookie = `role=${response.role}; path=/; samesite=strict`;
+      // y proteger las rutas sin acceso a localStorage. `secure` evita que
+      // viajen por HTTP plano (los navegadores igual las permiten en localhost).
+      document.cookie = `token=${response.token}; path=/; samesite=strict; secure`;
+      document.cookie = `role=${response.role}; path=/; samesite=strict; secure`;
 
       const target =
         response.role === "Admin"        ? "/admin/dashboard"
@@ -55,12 +55,8 @@ export default function LoginPage() {
       : response.fleetId                 ? "/my-fleet"
       :                                    "/my-orders";
 
-      console.log("[login] redirecting →", target);
       window.location.href = target;
     } catch (err) {
-      // Logueamos TODO para diagnóstico desde la consola del navegador
-      console.error("[login] failed:", err);
-
       const axiosError = err as AxiosError<ProblemDetails>;
       const status     = axiosError.response?.status;
 
