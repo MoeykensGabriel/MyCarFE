@@ -52,8 +52,7 @@ export default function LoginPage() {
         response.role === "Admin"        ? "/admin/dashboard"
       : response.role === "Mechanic"     ? "/mechanic/tasks"
       : response.role === "Receptionist" ? "/reception/intake"
-      : response.fleetId                 ? "/my-fleet"
-      :                                    "/my-orders";
+      :                                    "/home";
 
       window.location.href = target;
     } catch (err) {

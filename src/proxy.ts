@@ -39,7 +39,8 @@ export function proxy(request: NextRequest) {
 
   // Rutas customer: solo Customer
   if (
-    (pathname.startsWith("/my-orders") ||
+    (pathname.startsWith("/home") ||
+      pathname.startsWith("/my-orders") ||
       pathname.startsWith("/my-vehicles") ||
       pathname.startsWith("/my-fleet") ||
       pathname.startsWith("/my-account")) &&

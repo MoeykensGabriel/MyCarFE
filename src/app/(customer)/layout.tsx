@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ClipboardList, Car, LogOut, Building2, UserCircle } from "lucide-react";
+import { Home, ClipboardList, Car, LogOut, Settings } from "lucide-react";
 
 import { SessionGuard } from "@/components/shared/SessionGuard";
 import { useAuth } from "@/hooks/useAuth";
@@ -11,14 +11,15 @@ import { useSessionSync } from "@/hooks/useSessionSync";
 
 // ─── Íconos de la barra inferior (BottomNav) ────────────────────────────────────────
 
-function BottomNav({ isFleet }: { isFleet: boolean }) {
+function BottomNav() {
   const pathname = usePathname();
 
+  // Tres destinos frecuentes. La configuración (perfil / empresa) vive arriba,
+  // en el engranaje del header — no gasta un lugar de la barra.
   const tabs = [
-    { href: "/my-orders",   label: "Órdenes",   Icon: ClipboardList },
+    { href: "/home",        label: "Inicio",     Icon: Home          },
+    { href: "/my-orders",   label: "Órdenes",    Icon: ClipboardList },
     { href: "/my-vehicles", label: "Vehículos",  Icon: Car           },
-    ...(isFleet ? [{ href: "/my-fleet", label: "Mi empresa", Icon: Building2 }] : []),
-    { href: "/my-account",  label: "Perfil",     Icon: UserCircle    },
   ];
 
   return (
@@ -60,9 +61,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
   useSessionSync(); // Hidrata fleetId desde /api/customers/me si el JWT no lo trae
 
   const { logout } = useAuth();
-  const fleetId  = useAuthStore((s) => s.fleetId);
   const fullName = useAuthStore((s) => s.fullName);
-  const isFleet  = !!fleetId;
 
   const greeting = fullName ? `Hola, ${fullName.split(" ")[0]}` : "Hola";
 
@@ -82,13 +81,23 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
-          <button
-            onClick={logout}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 text-white/90 text-xs font-bold hover:bg-white/10 active:scale-[0.97] transition-all shadow-sm"
-          >
-            <LogOut className="w-3.5 h-3.5 text-[#fea520]" />
-            Salir
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Configuración / perfil — reemplaza los tabs de cuenta del bottom nav */}
+            <Link
+              href="/my-account"
+              aria-label="Configuración y perfil"
+              className="flex items-center justify-center w-8 h-8 rounded-xl border border-white/10 bg-white/5 text-white/90 hover:bg-white/10 active:scale-[0.95] transition-all shadow-sm"
+            >
+              <Settings className="w-4 h-4 text-[#fea520]" />
+            </Link>
+            <button
+              onClick={logout}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 text-white/90 text-xs font-bold hover:bg-white/10 active:scale-[0.97] transition-all shadow-sm"
+            >
+              <LogOut className="w-3.5 h-3.5 text-[#fea520]" />
+              Salir
+            </button>
+          </div>
         </div>
       </header>
 
@@ -98,7 +107,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
       </main>
 
       {/* ── Barra inferior ──────────────────────────────────────────────────── */}
-      <BottomNav isFleet={isFleet} />
+      <BottomNav />
     </div>
   );
 }
