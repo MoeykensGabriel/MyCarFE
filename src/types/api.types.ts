@@ -149,8 +149,30 @@ export interface Vehicle {
   fleetId?: string | null;
   /** Token público de la estación de viajes (QR). Solo para flota. */
   tripToken?: string | null;
+  /** Última lectura de km registrada (cualquier fuente). Null = nunca. */
+  mileageUpdatedAt?: string | null;
+  /** Días desde la última lectura de km. Null = nunca hubo una. */
+  daysSinceMileageUpdate?: number | null;
+  /** True si toca actualizar el kilometraje (umbral del taller superado o sin lecturas). */
+  mileageUpdateDue?: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+// ─── Lecturas de kilometraje ──────────────────────────────────────────────────
+
+export enum MileageReadingSource {
+  WorkshopIntake = 0,
+  CustomerReport = 1,
+  TripStation = 2,
+  AdminAdjustment = 3,
+}
+
+export interface VehicleMileageReading {
+  id: string;
+  mileage: number;
+  source: MileageReadingSource;
+  createdAt: string;
 }
 
 export interface CreateVehicleRequest {
@@ -995,10 +1017,13 @@ export interface VehicleOilService {
 
 export interface WorkshopSettings {
   physicalCapacity: number;
+  /** Cada cuántos días se recuerda al cliente actualizar el km de sus vehículos. */
+  mileageReminderDays: number;
 }
 
 export interface UpdateWorkshopSettingsRequest {
   physicalCapacity: number;
+  mileageReminderDays: number;
 }
 
 // ─── Errores RFC 7807 ─────────────────────────────────────────────────────────

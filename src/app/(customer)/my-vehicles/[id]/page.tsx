@@ -1,8 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Tag, Gauge, Fuel, ClipboardList, ChevronRight, Info, ShieldAlert, Sparkles, FileText, User } from "lucide-react";
+import { Tag, Gauge, Fuel, ClipboardList, ChevronRight, Info, ShieldAlert, Sparkles, FileText, User, Pencil } from "lucide-react";
 
 import { BackButton } from "@/components/shared/BackButton";
 import {
@@ -15,6 +16,7 @@ import { CustomerTiresCard } from "@/components/vehicle-tires/CustomerTiresCard"
 import { CustomerBatteryCard } from "@/components/vehicle-battery/CustomerBatteryCard";
 import { CustomerOilCard } from "@/components/vehicle-oil/CustomerOilCard";
 import { TripStationQrCard } from "@/components/vehicle-trips/TripStationQrCard";
+import { UpdateMileageModal } from "@/components/vehicle-mileage/UpdateMileageModal";
 import { VehicleTripsHistoryCard } from "@/components/vehicle-trips/VehicleTripsHistoryCard";
 import { PremiumLockCard } from "@/components/shared/PremiumLockCard";
 import { useHasPremiumFeature } from "@/lib/premium";
@@ -76,6 +78,7 @@ function Section({ icon: Icon, title, children }: { icon: React.ElementType; tit
 export default function MyVehicleDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { data: vehicle, isLoading, isError } = useVehicle(id);
+  const [showMileageModal, setShowMileageModal] = useState(false);
 
   // Funciones plus (bloqueadas para todos por ahora — ver lib/premium).
   const canDocs  = useHasPremiumFeature("vehicleDocuments");
@@ -133,10 +136,20 @@ export default function MyVehicleDetailPage() {
 
         {/* Chips rápidos */}
         <div className="flex flex-wrap gap-1.5 mt-5 pt-4 border-t border-[#041627]/5">
-          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#041627] bg-[#eefcfd] border border-[#041627]/5 rounded-full px-3 py-1 shadow-sm">
-            <Gauge className="w-3.5 h-3.5 text-[#fea520]" />
+          {/* Km: siempre editable desde acá; resaltado en ámbar cuando la lectura venció. */}
+          <button
+            onClick={() => setShowMileageModal(true)}
+            className={`inline-flex items-center gap-1 text-[10px] font-bold rounded-full px-3 py-1 shadow-sm active:scale-95 transition-all ${
+              vehicle.mileageUpdateDue
+                ? "text-[#865300] bg-[#fea520]/20 border border-[#fea520]/50 hover:bg-[#fea520]/30 font-extrabold"
+                : "text-[#041627] bg-[#eefcfd] border border-[#041627]/5 hover:border-[#fea520]/40"
+            }`}
+          >
+            <Gauge className={`w-3.5 h-3.5 ${vehicle.mileageUpdateDue ? "text-[#e8951d]" : "text-[#fea520]"}`} />
             {vehicle.currentMileage.toLocaleString("es-AR")} km
-          </span>
+            <Pencil className="w-3 h-3 opacity-60" />
+            {vehicle.mileageUpdateDue && "Actualizar"}
+          </button>
           <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#041627] bg-[#eefcfd] border border-[#041627]/5 rounded-full px-3 py-1 shadow-sm">
             <Fuel className="w-3.5 h-3.5 text-[#fea520]" />
             {FuelTypeLabel[vehicle.fuelType]}
@@ -149,6 +162,14 @@ export default function MyVehicleDetailPage() {
           </span>
         </div>
       </div>
+
+      {/* ── Modal de actualización de kilometraje ───────────────────────────── */}
+      {showMileageModal && (
+        <UpdateMileageModal
+          vehicle={vehicle}
+          onClose={() => setShowMileageModal(false)}
+        />
+      )}
 
       {/* ── Acceso Rápido a Órdenes ─────────────────────────────────────────── */}
       <Link

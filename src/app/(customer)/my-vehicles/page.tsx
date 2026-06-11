@@ -13,6 +13,8 @@ import { Vehicle } from "@/types/api.types";
 import { PlateBadge } from "@/components/shared/PlateBadge";
 import { SearchInput } from "@/components/shared/SearchInput";
 import { UpcomingExpirationsBanner } from "@/components/vehicle-documents/UpcomingExpirationsBanner";
+import { MileageReminderBanner } from "@/components/vehicle-mileage/MileageReminderBanner";
+import { UpdateMileageModal } from "@/components/vehicle-mileage/UpdateMileageModal";
 import { useHasPremiumFeature } from "@/lib/premium";
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
@@ -37,7 +39,13 @@ function VehicleCardSkeleton() {
 
 // ─── Card de vehículo ─────────────────────────────────────────────────────────
 
-function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
+function VehicleCard({
+  vehicle,
+  onUpdateMileage,
+}: {
+  vehicle: Vehicle;
+  onUpdateMileage: (vehicle: Vehicle) => void;
+}) {
   return (
     <Link
       href={`/my-vehicles/${vehicle.id}`}
@@ -57,10 +65,25 @@ function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
 
         {/* Chips secundarios */}
         <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#041627] bg-[#eefcfd] border border-[#041627]/5 rounded-full px-2 py-0.5">
-            <Gauge className="w-3 h-3 text-[#fea520]" />
-            {vehicle.currentMileage.toLocaleString("es-AR")} km
-          </span>
+          {/* Km: si la lectura está vencida, el chip se vuelve botón de acción (ámbar). */}
+          {vehicle.mileageUpdateDue ? (
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onUpdateMileage(vehicle);
+              }}
+              className="inline-flex items-center gap-1 text-[10px] font-extrabold text-[#865300] bg-[#fea520]/20 border border-[#fea520]/50 rounded-full px-2 py-0.5 hover:bg-[#fea520]/30 active:scale-95 transition-all animate-[fadeIn_0.2s_ease-out]"
+            >
+              <Gauge className="w-3 h-3 text-[#e8951d]" />
+              {vehicle.currentMileage.toLocaleString("es-AR")} km · Actualizar
+            </button>
+          ) : (
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#041627] bg-[#eefcfd] border border-[#041627]/5 rounded-full px-2 py-0.5">
+              <Gauge className="w-3 h-3 text-[#fea520]" />
+              {vehicle.currentMileage.toLocaleString("es-AR")} km
+            </span>
+          )}
           <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#041627] bg-[#eefcfd] border border-[#041627]/5 rounded-full px-2 py-0.5">
             <Fuel className="w-3 h-3 text-[#fea520]" />
             {FuelTypeLabel[vehicle.fuelType]}
@@ -81,6 +104,7 @@ function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
 export default function MyVehiclesPage() {
   const { customerId, fleetId } = useAuthStore();
   const [search, setSearch] = useState<string | undefined>(undefined);
+  const [mileageVehicle, setMileageVehicle] = useState<Vehicle | null>(null);
   // Por defecto alfabético (marca/modelo). El cliente puede cambiar a "plate" (patente ≈ antigüedad).
   const [sort, setSort] = useState<VehicleSort>("alphabetical");
   // Vencimientos es función plus — el banner solo aparece si está habilitada.
@@ -138,6 +162,11 @@ export default function MyVehiclesPage() {
 
       {/* ── Banner de vencimientos — solo si la función plus está habilitada ── */}
       {docsEnabled && <UpcomingExpirationsBanner />}
+
+      {/* ── Recordatorio de kilometraje (sobre lo cargado hasta ahora) ──────── */}
+      {!isLoading && (
+        <MileageReminderBanner dueCount={items.filter((v) => v.mileageUpdateDue).length} />
+      )}
 
       {/* ── Buscador ────────────────────────────────────────────────────────── */}
       <SearchInput
@@ -216,7 +245,9 @@ export default function MyVehiclesPage() {
             Tus autos registrados
           </p>
           <div className="space-y-3 animate-[fadeIn_0.2s_ease-out]">
-            {items.map((v) => <VehicleCard key={v.id} vehicle={v} />)}
+            {items.map((v) => (
+              <VehicleCard key={v.id} vehicle={v} onUpdateMileage={setMileageVehicle} />
+            ))}
           </div>
 
           {/* Cargar más — pide la siguiente página de a 20 al backend */}
@@ -230,6 +261,14 @@ export default function MyVehiclesPage() {
             </button>
           )}
         </div>
+      )}
+
+      {/* ── Modal de actualización de kilometraje ───────────────────────────── */}
+      {mileageVehicle && (
+        <UpdateMileageModal
+          vehicle={mileageVehicle}
+          onClose={() => setMileageVehicle(null)}
+        />
       )}
 
     </div>

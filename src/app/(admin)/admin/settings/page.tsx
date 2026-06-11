@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Building2, Car, Save, Settings as SettingsIcon } from "lucide-react";
+import { Building2, Car, Gauge, Save, Settings as SettingsIcon } from "lucide-react";
 
 import { PageHeader } from "@/components/shared/PageHeader";
 import { useWorkshopSettings, useUpdateWorkshopSettings } from "@/hooks/useSettings";
@@ -18,6 +18,11 @@ const workshopSchema = z.object({
     .int("Tiene que ser un número entero")
     .min(1, "La capacidad mínima es 1")
     .max(50, "La capacidad máxima es 50"),
+  mileageReminderDays: z
+    .number({ message: M.notNumber })
+    .int("Tiene que ser un número entero")
+    .min(1, "El mínimo es 1 día")
+    .max(365, "El máximo es 365 días"),
 });
 
 type WorkshopFormValues = z.infer<typeof workshopSchema>;
@@ -35,17 +40,23 @@ export default function SettingsPage() {
     formState: { errors, isDirty },
   } = useForm<WorkshopFormValues>({
     resolver: zodResolver(workshopSchema),
-    defaultValues: { physicalCapacity: 6 },
+    defaultValues: { physicalCapacity: 6, mileageReminderDays: 14 },
   });
 
   // Cuando llegan los settings del back, reseteamos el form con esos valores.
   useEffect(() => {
-    if (settings) reset({ physicalCapacity: settings.physicalCapacity });
+    if (settings) reset({
+      physicalCapacity:    settings.physicalCapacity,
+      mileageReminderDays: settings.mileageReminderDays,
+    });
   }, [settings, reset]);
 
   const onSubmit = (values: WorkshopFormValues) => {
     updateMutation.mutate(values, {
-      onSuccess: (data) => reset({ physicalCapacity: data.physicalCapacity }),
+      onSuccess: (data) => reset({
+        physicalCapacity:    data.physicalCapacity,
+        mileageReminderDays: data.mileageReminderDays,
+      }),
     });
   };
 
@@ -107,6 +118,33 @@ export default function SettingsPage() {
               <p className="text-[11px] text-[#44474c]/70">
                 Cantidad de vehículos que el taller puede albergar simultáneamente.
                 Se usa en el dashboard para mostrar la ocupación.
+              </p>
+            </div>
+
+            {/* Recordatorio de kilometraje */}
+            <div className="space-y-1.5">
+              <label
+                htmlFor="mileageReminderDays"
+                className="text-[11px] font-bold uppercase tracking-widest text-[#041627] flex items-center gap-1.5"
+              >
+                <Gauge className="w-3.5 h-3.5 text-[#44474c]/60" />
+                Recordatorio de kilometraje (días)
+              </label>
+              <input
+                id="mileageReminderDays"
+                type="number"
+                min={1}
+                max={365}
+                className="w-32 px-3 py-2.5 text-sm rounded-xl border border-[#c4c6cd] bg-white text-[#041627] focus:outline-none focus:ring-2 focus:ring-[#041627]/20 focus:border-[#041627] transition-all"
+                {...register("mileageReminderDays", { valueAsNumber: true })}
+              />
+              {errors.mileageReminderDays && (
+                <p className="text-xs text-red-500">{errors.mileageReminderDays.message}</p>
+              )}
+              <p className="text-[11px] text-[#44474c]/70">
+                Cada cuántos días se le pide al cliente que actualice el kilometraje de sus
+                vehículos. El aviso se apaga solo cuando hay una lectura reciente
+                (incluido el ingreso al taller).
               </p>
             </div>
 
