@@ -77,7 +77,7 @@ export default function MyOrdersPage() {
       <div className="bg-[#041627] text-white rounded-2xl p-5 shadow-md shadow-[#041627]/10 relative overflow-hidden">
         {/* Decoración circular de fondo */}
         <div className="absolute -right-10 -bottom-10 w-28 h-28 rounded-full bg-white/5 pointer-events-none" />
-        <div className="relative z-10 space-y-3">
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
           <div className="flex items-center gap-2">
             <ClipboardList className="w-5 h-5 text-[#fea520]" />
             <h1 className="text-lg font-extrabold tracking-wide">
@@ -89,7 +89,7 @@ export default function MyOrdersPage() {
           {!isLoading && approval.length > 0 && (
             <button
               onClick={() => setTab("approval")}
-              className="w-full flex items-center gap-2.5 bg-gradient-to-r from-[#fea520] to-[#fec15d] text-[#041627] rounded-xl px-4 py-3 shadow-md shadow-[#fea520]/20 active:scale-[0.98] transition-transform text-left"
+              className="w-full lg:w-auto lg:shrink-0 flex items-center gap-2.5 bg-gradient-to-r from-[#fea520] to-[#fec15d] text-[#041627] rounded-xl px-4 py-3 shadow-md shadow-[#fea520]/20 active:scale-[0.98] transition-transform text-left"
             >
               <Sparkles className="w-4 h-4 shrink-0 animate-pulse" />
               <span className="text-xs font-extrabold leading-snug">
@@ -104,12 +104,14 @@ export default function MyOrdersPage() {
       </div>
 
       {/* ── Búsqueda + Tabs ─────────────────────────────────────────────────── */}
-      <SearchInput
-        placeholder="Buscar por patente..."
-        onChange={handleSearch}
-      />
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+        <SearchInput
+          placeholder="Buscar por patente..."
+          onChange={handleSearch}
+          className="sm:w-72"
+        />
 
-      <div className="flex bg-white border border-[#c4c6cd]/60 p-1 rounded-xl gap-0.5 shadow-sm">
+        <div className="flex bg-white border border-[#c4c6cd]/60 p-1 rounded-xl gap-0.5 shadow-sm sm:ml-auto">
         {TABS.map(({ key, label, count }) => (
           <button
             key={key}
@@ -136,11 +138,12 @@ export default function MyOrdersPage() {
             </span>
           </button>
         ))}
+        </div>
       </div>
 
       {/* ── Estados de carga / error ────────────────────────────────────────── */}
       {isLoading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
           {[...Array(4)].map((_, i) => <OrderCardSkeleton key={i} />)}
         </div>
       )}
@@ -197,11 +200,11 @@ export default function MyOrdersPage() {
       {/* ── Contenido del tab ───────────────────────────────────────────────── */}
       {!isLoading && !isError && shown.length > 0 && (
         tab === "history" ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 animate-[fadeIn_0.2s_ease-out]">
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-2.5 animate-[fadeIn_0.2s_ease-out]">
             {shown.map((o) => <HistoryOrderRow key={o.id} order={o} />)}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 animate-[fadeIn_0.2s_ease-out]">
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 animate-[fadeIn_0.2s_ease-out]">
             {shown.map((o) => <OrderCard key={o.id} order={o} />)}
           </div>
         )

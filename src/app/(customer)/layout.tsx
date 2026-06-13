@@ -62,15 +62,22 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
 
   const { logout } = useAuth();
   const fullName = useAuthStore((s) => s.fullName);
+  const pathname = usePathname();
 
   const greeting = fullName ? `Hola, ${fullName.split(" ")[0]}` : "Hola";
+
+  // El listado de órdenes es la sección "data-heavy": en desktop se ensancha para
+  // mostrar las órdenes en grilla y no desperdiciar la pantalla. El resto del
+  // módulo se mantiene como columna angosta (mobile-first).
+  const isOrdersList = pathname === "/my-orders";
+  const shellWidth   = isOrdersList ? "max-w-lg lg:max-w-6xl" : "max-w-lg";
 
   return (
     <div className="min-h-screen bg-[#f4f6f8] flex flex-col">
 
       {/* ── Header ──────────────────────────────────────────────────────────── */}
       <header className="sticky top-0 z-30 bg-[#041627] text-white border-b border-[#fea520]/20 shadow-[0_4px_20px_rgba(4,22,39,0.15)]">
-        <div className="flex items-center justify-between px-4 h-14 max-w-lg mx-auto">
+        <div className={`flex items-center justify-between px-4 h-14 ${shellWidth} mx-auto`}>
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#fea520] to-[#fec15d] flex items-center justify-center shrink-0 shadow-md shadow-[#fea520]/20">
               <Car className="w-4.5 h-4.5 text-[#041627]" strokeWidth={2.5} />
@@ -102,7 +109,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* ── Contenido ───────────────────────────────────────────────────────── */}
-      <main className="flex-1 max-w-lg mx-auto w-full px-4 pt-5 pb-24">
+      <main className={`flex-1 ${shellWidth} mx-auto w-full px-4 pt-5 pb-24`}>
         {children}
       </main>
 
