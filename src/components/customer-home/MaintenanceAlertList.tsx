@@ -1,8 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { Disc3, Droplet, BatteryWarning, ChevronRight, type LucideIcon } from "lucide-react";
+import {
+  Disc3, Droplet, BatteryWarning, ChevronRight, AlertTriangle, Clock,
+  type LucideIcon,
+} from "lucide-react";
 
+import { PlateBadge } from "@/components/shared/PlateBadge";
 import {
   MaintenanceAlert,
   MaintenanceAlertSeverity,
@@ -15,63 +19,124 @@ const TYPE_ICON: Record<MaintenanceAlertType, LucideIcon> = {
   [MaintenanceAlertType.Battery]: BatteryWarning,
 };
 
+interface VehicleGroup {
+  vehicleId: string;
+  licensePlate: string;
+  brand: string;
+  model: string;
+  alerts: MaintenanceAlert[];
+  /** El vehículo tiene al menos una alerta crítica → manda el rojo. */
+  critical: boolean;
+}
+
 /**
- * Alertas de mantenimiento en el Inicio, una card por vehículo afectado. Cada
- * una linkea al detalle del vehículo (donde está la card completa del sistema).
- * El color marca la urgencia: rojo crítico, ámbar advertencia.
+ * Agrupa las alertas (que el backend devuelve por vehículo+sistema) en una por
+ * vehículo. Dentro de cada grupo el orden se preserva tal cual viene del server
+ * (críticas primero). Ordena los vehículos: los que tienen alguna crítica arriba.
+ */
+function groupByVehicle(alerts: MaintenanceAlert[]): VehicleGroup[] {
+  const map = new Map<string, MaintenanceAlert[]>();
+  for (const alert of alerts) {
+    const existing = map.get(alert.vehicleId);
+    if (existing) existing.push(alert);
+    else map.set(alert.vehicleId, [alert]);
+  }
+
+  return Array.from(map.values())
+    .map((list): VehicleGroup => ({
+      vehicleId:    list[0].vehicleId,
+      licensePlate: list[0].licensePlate,
+      brand:        list[0].brand,
+      model:        list[0].model,
+      alerts:       list,
+      critical:     list.some((a) => a.severity === MaintenanceAlertSeverity.Critical),
+    }))
+    .sort((a, b) => {
+      if (a.critical !== b.critical) return a.critical ? -1 : 1;
+      return a.licensePlate.localeCompare(b.licensePlate);
+    });
+}
+
+/**
+ * Alertas de mantenimiento del Inicio: una card por vehículo afectado, con sus
+ * alertas (cubiertas / aceite / batería) adentro. La card entera linkea al
+ * detalle del vehículo, donde está cada sistema completo. El color marca la
+ * urgencia: rojo si hay alguna crítica, ámbar si solo hay advertencias.
  */
 export function MaintenanceAlertList({ alerts }: { alerts: MaintenanceAlert[] }) {
   if (alerts.length === 0) return null;
 
   return (
     <>
-      {alerts.map((alert) => {
-        const Icon = TYPE_ICON[alert.type] ?? Disc3;
-        const critical = alert.severity === MaintenanceAlertSeverity.Critical;
-
-        return (
-          <Link
-            key={`${alert.vehicleId}-${alert.type}`}
-            href={`/my-vehicles/${alert.vehicleId}`}
-            className={`flex items-center gap-3 bg-white rounded-2xl border shadow-sm p-4 active:scale-[0.98] hover:shadow-md transition-all ${
-              critical ? "border-red-200" : "border-[#fea520]/40"
-            }`}
-          >
-            <div
-              className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                critical ? "bg-red-50" : "bg-[#fea520]/15"
-              }`}
-            >
-              <Icon className={`w-5 h-5 ${critical ? "text-red-500" : "text-[#e8951d]"}`} strokeWidth={2} />
-            </div>
-
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <p className="text-xs font-extrabold text-[#041627]">
-                  {alert.title} · {alert.licensePlate}
-                </p>
-                <span
-                  className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded ${
-                    critical
-                      ? "bg-red-50 text-red-600 border border-red-200"
-                      : "bg-[#fea520]/15 text-[#865300] border border-[#fea520]/40"
-                  }`}
-                >
-                  {critical ? "Urgente" : "Atención"}
-                </span>
-              </div>
-              <p className="text-[11px] font-semibold text-[#44474c]/80 mt-0.5 leading-snug">
-                {alert.detail}
-              </p>
-              <p className="text-[10px] font-semibold text-[#44474c]/55 mt-0.5">
-                {alert.brand} {alert.model}
-              </p>
-            </div>
-
-            <ChevronRight className={`w-4 h-4 shrink-0 ${critical ? "text-red-300" : "text-[#fea520]"}`} />
-          </Link>
-        );
-      })}
+      {groupByVehicle(alerts).map((group) => (
+        <VehicleAlertCard key={group.vehicleId} group={group} />
+      ))}
     </>
+  );
+}
+
+function VehicleAlertCard({ group }: { group: VehicleGroup }) {
+  const { vehicleId, licensePlate, brand, model, alerts, critical } = group;
+
+  return (
+    <Link
+      href={`/my-vehicles/${vehicleId}`}
+      className={`block bg-white rounded-2xl border shadow-sm overflow-hidden active:scale-[0.99] hover:shadow-md transition-all ${
+        critical ? "border-red-200" : "border-[#fea520]/40"
+      }`}
+    >
+      {/* Header: vehículo + peor severidad */}
+      <div className="flex items-start justify-between gap-2.5 p-4">
+        <div className="min-w-0">
+          <PlateBadge plate={licensePlate} size="sm" />
+          <p className="text-[11px] font-semibold text-[#44474c]/70 mt-1 truncate">
+            {brand} {model}
+          </p>
+        </div>
+        {critical ? (
+          <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-red-50 text-red-600 border border-red-200 shrink-0">
+            <AlertTriangle className="w-3 h-3" />
+            Urgente
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-[#fea520]/15 text-[#865300] border border-[#fea520]/40 shrink-0">
+            <Clock className="w-3 h-3" />
+            Atención
+          </span>
+        )}
+      </div>
+
+      {/* Una fila por sistema (cada una con su propio color) */}
+      <div className="border-t border-[#041627]/5">
+        {alerts.map((alert, i) => {
+          const Icon = TYPE_ICON[alert.type] ?? Disc3;
+          const sub  = alert.severity === MaintenanceAlertSeverity.Critical;
+          return (
+            <div
+              key={alert.type}
+              className={`flex items-center gap-3 px-4 py-2.5 ${i > 0 ? "border-t border-[#041627]/5" : ""}`}
+            >
+              <div
+                className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                  sub ? "bg-red-50" : "bg-[#fea520]/15"
+                }`}
+              >
+                <Icon className={`w-4 h-4 ${sub ? "text-red-500" : "text-[#e8951d]"}`} strokeWidth={2} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold text-[#041627]">{alert.title}</p>
+                <p className="text-[11px] font-semibold text-[#44474c]/80 leading-snug">{alert.detail}</p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Footer / CTA */}
+      <div className="flex items-center justify-between px-4 py-2.5 border-t border-[#041627]/5 bg-[#f4f6f8]">
+        <span className="text-[11px] font-bold text-[#44474c]/70">Ver detalle del vehículo</span>
+        <ChevronRight className={`w-4 h-4 ${critical ? "text-red-300" : "text-[#fea520]"}`} />
+      </div>
+    </Link>
   );
 }
