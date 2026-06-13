@@ -86,20 +86,20 @@ function VehicleAlertCard({ group }: { group: VehicleGroup }) {
       }`}
     >
       {/* Header: vehículo + peor severidad */}
-      <div className="flex items-start justify-between gap-2.5 p-4">
+      <div className="flex items-center justify-between gap-2.5 p-4">
         <div className="min-w-0">
-          <PlateBadge plate={licensePlate} size="sm" />
+          <PlateBadge plate={licensePlate} size="lg" />
           <p className="text-[11px] font-semibold text-[#44474c]/70 mt-1 truncate">
             {brand} {model}
           </p>
         </div>
         {critical ? (
-          <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-red-50 text-red-600 border border-red-200 shrink-0">
+          <span className="inline-flex items-center gap-1 text-[12px] font-black uppercase tracking-wider px-4 py-1 rounded bg-red-50 text-red-600 border border-red-200 shrink-0">
             <AlertTriangle className="w-3 h-3" />
             Urgente
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-[#fea520]/15 text-[#865300] border border-[#fea520]/40 shrink-0">
+          <span className="inline-flex items-center gap-1 text-[12px] font-black uppercase tracking-wider px-4 py-1 rounded bg-[#fea520]/15 text-[#865300] border border-[#fea520]/40 shrink-0">
             <Clock className="w-3 h-3" />
             Atención
           </span>
