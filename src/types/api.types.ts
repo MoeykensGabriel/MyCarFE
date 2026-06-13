@@ -1026,6 +1026,32 @@ export interface UpdateWorkshopSettingsRequest {
   mileageReminderDays: number;
 }
 
+// ─── Resumen de mantenimiento (alertas del Inicio) ───────────────────────────
+
+export enum MaintenanceAlertType {
+  Tire = 0,
+  Oil = 1,
+  Battery = 2,
+}
+
+export enum MaintenanceAlertSeverity {
+  Warning = 0,
+  Critical = 1,
+}
+
+export interface MaintenanceAlert {
+  type: MaintenanceAlertType;
+  severity: MaintenanceAlertSeverity;
+  vehicleId: string;
+  licensePlate: string;
+  brand: string;
+  model: string;
+  /** Etiqueta corta del sistema, ej. "Cubiertas". */
+  title: string;
+  /** Frase accionable, ej. "2 cubiertas en estado crítico — cambio inmediato". */
+  detail: string;
+}
+
 // ─── Errores RFC 7807 ─────────────────────────────────────────────────────────
 
 export interface ProblemDetails {

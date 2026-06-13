@@ -7,9 +7,11 @@ import {
 } from "lucide-react";
 
 import { MileageReminderBanner } from "@/components/vehicle-mileage/MileageReminderBanner";
+import { MaintenanceAlertList } from "@/components/customer-home/MaintenanceAlertList";
 import { WorkOrderStatus } from "@/lib/enums";
 import { useWorkOrders } from "@/hooks/useWorkOrders";
 import { useVehicles } from "@/hooks/useVehicles";
+import { useMaintenanceSummary } from "@/hooks/useMaintenanceSummary";
 import { useAuthStore } from "@/store/auth.store";
 import { WorkOrder } from "@/types/api.types";
 
@@ -36,9 +38,11 @@ export default function CustomerHomePage() {
 
   const { data: ordersData, isLoading: ordersLoading } = useWorkOrders({ pageSize: 50, ...ownerParams });
   const { data: vehiclesData, isLoading: vehiclesLoading } = useVehicles({ pageSize: 100, ...ownerParams });
+  const { data: alertsData, isLoading: alertsLoading } = useMaintenanceSummary();
 
   const orders   = ordersData?.items ?? [];
   const vehicles = vehiclesData?.items ?? [];
+  const alerts   = alertsData ?? [];
 
   const activeOrders   = orders.filter((o) => !isFinished(o));
   const pendingApproval = orders.filter(
@@ -47,8 +51,8 @@ export default function CustomerHomePage() {
   const vehiclesDue   = vehicles.filter((v) => v.mileageUpdateDue);
   const vehicleCount  = vehiclesData?.totalCount ?? vehicles.length;
 
-  const isLoading  = ordersLoading || vehiclesLoading;
-  const allClear   = !isLoading && pendingApproval.length === 0 && vehiclesDue.length === 0;
+  const isLoading  = ordersLoading || vehiclesLoading || alertsLoading;
+  const allClear   = !isLoading && pendingApproval.length === 0 && vehiclesDue.length === 0 && alerts.length === 0;
 
   return (
     <div className="space-y-4 pb-4">
@@ -59,7 +63,7 @@ export default function CustomerHomePage() {
         <div className="relative z-10">
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-[#fea520]" />
-            <h1 className="text-lg font-extrabold tracking-wide">Tu resumen</h1>
+            <h1 className="text-lg font-extrabold tracking-wide">Inicio</h1>
           </div>
           <p className="text-xs text-white/60 mt-1 leading-snug max-w-[280px]">
             Todo lo que necesitás saber de tus vehículos, en un solo lugar.
@@ -101,6 +105,9 @@ export default function CustomerHomePage() {
               <ChevronRight className="w-5 h-5 shrink-0" />
             </Link>
           )}
+
+          {/* Alertas de mantenimiento de los vehículos (cubiertas) */}
+          <MaintenanceAlertList alerts={alerts} />
 
           {/* Kilometraje por actualizar (reutiliza el banner de Mis Vehículos) */}
           {vehiclesDue.length > 0 && (
@@ -175,7 +182,7 @@ export default function CustomerHomePage() {
       {!isLoading && (
         <p className="flex items-center gap-1.5 text-[10px] text-[#44474c]/50 leading-relaxed px-1 pt-1">
           <Gauge className="w-3 h-3 shrink-0" />
-          Próximamente: avisos de aceite, batería y cubiertas de todos tus vehículos, acá mismo.
+          Próximamente: avisos de aceite y batería de todos tus vehículos, acá mismo.
         </p>
       )}
     </div>

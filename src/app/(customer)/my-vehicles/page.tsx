@@ -150,7 +150,7 @@ export default function MyVehiclesPage() {
           {!isLoading && (
             <div className="mt-3 pt-3 border-t border-white/10">
               <p className="text-[10px] text-white/50 font-bold uppercase tracking-wider">
-                Vehículos Registrados
+                Vehículos Registrados En El Sistema
               </p>
               <p className="text-xl font-black text-[#fea520] mt-0.5">
                 {totalCount === 0 ? "0" : `${totalCount} unidad${totalCount !== 1 ? "es" : ""}`}
