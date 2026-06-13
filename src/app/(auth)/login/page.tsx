@@ -153,6 +153,7 @@ export default function LoginPage() {
                   type="email"
                   placeholder="usuario@ejemplo.com"
                   autoComplete="email"
+                  suppressHydrationWarning
                   aria-invalid={!!errors.email}
                   className={`w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border bg-white text-[#041627] placeholder:text-[#44474c]/40 focus:outline-none focus:ring-2 focus:ring-[#041627]/20 focus:border-[#041627] transition-all ${
                     errors.email
@@ -185,6 +186,7 @@ export default function LoginPage() {
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   autoComplete="current-password"
+                  suppressHydrationWarning
                   aria-invalid={!!errors.password}
                   className={`w-full pl-10 pr-11 py-2.5 text-sm rounded-xl border bg-white text-[#041627] placeholder:text-[#44474c]/40 focus:outline-none focus:ring-2 focus:ring-[#041627]/20 focus:border-[#041627] transition-all ${
                     errors.password
