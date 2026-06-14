@@ -16,9 +16,11 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { Pagination } from "@/components/shared/Pagination";
 import { SearchInput } from "@/components/shared/SearchInput";
 import { OpenOrderModal } from "@/components/shared/OpenOrderModal";
+import { PlateBadge } from "@/components/shared/PlateBadge";
 import { FuelTypeLabel, VehicleBodyTypeLabel } from "@/lib/enums";
 import { useVehicle, useVehicles } from "@/hooks/useVehicles";
 import { workOrdersService } from "@/services/work-orders.service";
+import { Vehicle } from "@/types/api.types";
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────
 
@@ -244,32 +246,36 @@ export default function VehiclesPage() {
 
         {/* Tabla */}
         <div className="flex-1 min-w-0 space-y-3">
-          <div className="bg-white rounded-xl border border-[#c4c6cd] shadow-sm overflow-hidden">
-            {isLoading ? (
-              <div className="divide-y divide-[#c4c6cd]/40">
-                {[...Array(8)].map((_, i) => (
-                  <div key={i} className="flex items-center gap-4 px-6 py-4">
-                    <div className="w-10 h-10 rounded-full bg-[#c4c6cd]/30 animate-pulse shrink-0" />
-                    <div className="flex-1 space-y-2">
-                      <div className="h-4 w-40 bg-[#c4c6cd]/30 rounded animate-pulse" />
-                      <div className="h-3 w-24 bg-[#c4c6cd]/20 rounded animate-pulse" />
-                    </div>
-                    <div className="h-3 w-20 bg-[#c4c6cd]/20 rounded animate-pulse" />
+          {/* ── Estados ─────────────────────────────────────────────────────── */}
+          {isLoading ? (
+            <div className="bg-white rounded-xl border border-[#c4c6cd] shadow-sm overflow-hidden divide-y divide-[#c4c6cd]/40">
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className="flex items-center gap-4 px-4 sm:px-6 py-4">
+                  <div className="w-10 h-10 rounded-xl bg-[#c4c6cd]/30 animate-pulse shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 w-40 max-w-[60%] bg-[#c4c6cd]/30 rounded animate-pulse" />
+                    <div className="h-3 w-24 bg-[#c4c6cd]/20 rounded animate-pulse" />
                   </div>
-                ))}
-              </div>
-            ) : isError ? (
-              <p className="px-6 py-8 text-sm text-red-500 text-center">Error al cargar los vehículos.</p>
-            ) : items.length === 0 ? (
-              <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
-                <Car className="w-10 h-10 text-[#c4c6cd]" />
-                <p className="text-sm font-semibold text-[#041627]">Sin vehículos</p>
-                <p className="text-xs text-[#44474c]">
-                  {search ? "Probá con otro término de búsqueda." : "No hay vehículos registrados."}
-                </p>
-              </div>
-            ) : (
-              <>
+                  <div className="h-3 w-20 bg-[#c4c6cd]/20 rounded animate-pulse hidden sm:block" />
+                </div>
+              ))}
+            </div>
+          ) : isError ? (
+            <div className="bg-white rounded-xl border border-[#c4c6cd] shadow-sm px-6 py-8 text-center">
+              <p className="text-sm text-red-500">Error al cargar los vehículos.</p>
+            </div>
+          ) : items.length === 0 ? (
+            <div className="bg-white rounded-xl border border-[#c4c6cd] shadow-sm flex flex-col items-center gap-3 px-6 py-16 text-center">
+              <Car className="w-10 h-10 text-[#c4c6cd]" />
+              <p className="text-sm font-semibold text-[#041627]">Sin vehículos</p>
+              <p className="text-xs text-[#44474c]">
+                {search ? "Probá con otro término de búsqueda." : "No hay vehículos registrados."}
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* ── Tabla (desktop) ───────────────────────────────────────────── */}
+              <div className="hidden lg:block bg-white rounded-xl border border-[#c4c6cd] shadow-sm overflow-hidden">
                 {/* Cabecera */}
                 <div className="grid grid-cols-[1fr_1fr_130px_120px_56px] gap-4 px-6 py-3 bg-[#eefcfd] border-b border-[#c4c6cd]/60">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-[#44474c]/70">Vehículo</p>
@@ -293,13 +299,11 @@ export default function VehiclesPage() {
                             : "hover:bg-[#eefcfd]/60 border-l-transparent"
                         }`}
                       >
-                        {/* Vehículo — patente grande, modelo + año al lado */}
+                        {/* Vehículo — patente (PlateBadge), modelo + año debajo */}
                         <div className="flex items-center gap-3 min-w-0">
                           <VehicleAvatar size="sm" />
                           <div className="min-w-0">
-                            <p className="font-mono font-black text-[#041627] text-sm leading-none tracking-wide truncate">
-                              {v.licensePlate}
-                            </p>
+                            <PlateBadge plate={v.licensePlate} size="sm" />
                             <p className="text-xs text-[#44474c] truncate mt-1">
                               {v.brand} {v.model} · {v.year}
                             </p>
@@ -331,18 +335,35 @@ export default function VehiclesPage() {
                     );
                   })}
                 </div>
-              </>
-            )}
 
-            {/* Footer */}
-            {!isLoading && !isError && data && (
-              <div className="px-6 py-3 bg-[#eefcfd]/60 border-t border-[#c4c6cd]/60">
-                <p className="text-xs text-[#44474c]/70">
-                  Mostrando {items.length} de {data.totalCount.toLocaleString("es-AR")} vehículos
-                </p>
+                {/* Footer */}
+                {data && (
+                  <div className="px-6 py-3 bg-[#eefcfd]/60 border-t border-[#c4c6cd]/60">
+                    <p className="text-xs text-[#44474c]/70">
+                      Mostrando {items.length} de {data.totalCount.toLocaleString("es-AR")} vehículos
+                    </p>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+
+              {/* ── Cards (mobile / tablet) ───────────────────────────────────── */}
+              <div className="lg:hidden space-y-3">
+                {items.map((v) => (
+                  <VehicleMobileCard
+                    key={v.id}
+                    vehicle={v}
+                    selected={selectedId === v.id}
+                    onSelect={(id) => setSelectedId((prev) => (prev === id ? null : id))}
+                  />
+                ))}
+                {data && (
+                  <p className="text-xs text-[#44474c]/70 px-1 pt-1">
+                    Mostrando {items.length} de {data.totalCount.toLocaleString("es-AR")} vehículos
+                  </p>
+                )}
+              </div>
+            </>
+          )}
 
           {data && (
             <Pagination
@@ -365,5 +386,57 @@ export default function VehiclesPage() {
         )}
       </div>
     </div>
+  );
+}
+
+// ─── Card de vehículo para mobile / tablet ────────────────────────────────────
+// La tabla de 5 columnas no entra en pantallas chicas. Abajo de lg cada vehículo
+// es una card que SELECCIONA igual que la fila (abre el panel de detalle, que en
+// mobile aparece debajo de la lista). La patente usa el PlateBadge compartido.
+
+function VehicleMobileCard({
+  vehicle: v,
+  selected,
+  onSelect,
+}: {
+  vehicle: Vehicle;
+  selected: boolean;
+  onSelect: (id: string) => void;
+}) {
+  return (
+    <button
+      onClick={() => onSelect(v.id)}
+      className={`w-full text-left bg-white rounded-xl border shadow-sm p-4 transition-all ${
+        selected
+          ? "border-[#fea520] ring-1 ring-[#fea520]/40"
+          : "border-[#c4c6cd] hover:border-[#fea520]/40 active:scale-[0.99]"
+      }`}
+    >
+      {/* Patente + vehículo + km */}
+      <div className="flex items-center gap-3">
+        <VehicleAvatar size="sm" />
+        <div className="min-w-0 flex-1">
+          <PlateBadge plate={v.licensePlate} size="sm" />
+          <p className="text-xs text-[#44474c] truncate mt-1">
+            {v.brand} {v.model} · {v.year}
+          </p>
+        </div>
+        <div className="flex items-center gap-1 text-sm text-[#041627] tabular-nums shrink-0">
+          <Gauge className="w-3.5 h-3.5 text-[#44474c]/50" />
+          {v.currentMileage.toLocaleString("es-AR")} km
+        </div>
+      </div>
+
+      {/* Titular + tipo */}
+      <div className="flex items-end justify-between gap-3 mt-3 pt-3 border-t border-[#c4c6cd]/40">
+        <p className="text-sm text-[#041627] truncate min-w-0">
+          <span className="text-[#44474c]/70">Titular: </span>
+          {v.registrationHolderFirstName} {v.registrationHolderLastName}
+        </p>
+        <span className="text-[10px] font-medium text-[#44474c]/70 shrink-0 text-right">
+          {VehicleBodyTypeLabel[v.vehicleBodyType]} · {FuelTypeLabel[v.fuelType]}
+        </span>
+      </div>
+    </button>
   );
 }
