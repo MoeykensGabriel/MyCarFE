@@ -15,6 +15,7 @@ import { WorkOrderStatus, WorkOrderStatusConfig } from "@/lib/enums";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { useWorkOrders } from "@/hooks/useWorkOrders";
 import { WorkOrdersParams } from "@/services/work-orders.service";
+import { WorkOrder } from "@/types/api.types";
 
 const ALL_STATUSES = Object.values(WorkOrderStatus).filter(
   (v) => typeof v === "number"
@@ -109,39 +110,42 @@ export default function WorkOrdersPage() {
           <ChevronRight className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#44474c]/50 rotate-90 pointer-events-none" />
         </div>
 
-        {/* Búsqueda */}
+        {/* Búsqueda — full width en mobile, fija en desktop */}
         <SearchInput
           placeholder="Buscar patente o nombre..."
           onChange={handleSearch}
-          className="w-56"
+          className="w-full sm:w-56"
         />
       </div>
 
-      {/* ── Tabla ───────────────────────────────────────────────────────────── */}
-      <div className="bg-white rounded-xl border border-[#c4c6cd] shadow-sm overflow-hidden">
-        {isLoading ? (
-          <div className="divide-y divide-[#c4c6cd]/40">
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="flex items-center gap-4 px-6 py-4">
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 w-40 bg-[#c4c6cd]/30 rounded animate-pulse" />
-                  <div className="h-3 w-24 bg-[#c4c6cd]/20 rounded animate-pulse" />
-                </div>
-                <div className="h-6 w-20 bg-[#c4c6cd]/20 rounded-full animate-pulse" />
-                <div className="h-4 w-16 bg-[#c4c6cd]/20 rounded animate-pulse" />
+      {/* ── Estados ─────────────────────────────────────────────────────────── */}
+      {isLoading ? (
+        <div className="bg-white rounded-xl border border-[#c4c6cd] shadow-sm overflow-hidden divide-y divide-[#c4c6cd]/40">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="flex items-center gap-4 px-4 sm:px-6 py-4">
+              <div className="flex-1 space-y-2">
+                <div className="h-4 w-40 max-w-[60%] bg-[#c4c6cd]/30 rounded animate-pulse" />
+                <div className="h-3 w-24 bg-[#c4c6cd]/20 rounded animate-pulse" />
               </div>
-            ))}
-          </div>
-        ) : isError ? (
-          <p className="px-6 py-8 text-sm text-red-500 text-center">Error al cargar las órdenes.</p>
-        ) : items.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
-            <ClipboardList className="w-10 h-10 text-[#c4c6cd]" />
-            <p className="text-sm font-semibold text-[#041627]">Sin órdenes</p>
-            <p className="text-xs text-[#44474c]">No hay órdenes para los filtros seleccionados.</p>
-          </div>
-        ) : (
-          <>
+              <div className="h-6 w-20 bg-[#c4c6cd]/20 rounded-full animate-pulse" />
+              <div className="h-4 w-16 bg-[#c4c6cd]/20 rounded animate-pulse hidden sm:block" />
+            </div>
+          ))}
+        </div>
+      ) : isError ? (
+        <div className="bg-white rounded-xl border border-[#c4c6cd] shadow-sm px-6 py-8 text-center">
+          <p className="text-sm text-red-500">Error al cargar las órdenes.</p>
+        </div>
+      ) : items.length === 0 ? (
+        <div className="bg-white rounded-xl border border-[#c4c6cd] shadow-sm flex flex-col items-center gap-3 px-6 py-16 text-center">
+          <ClipboardList className="w-10 h-10 text-[#c4c6cd]" />
+          <p className="text-sm font-semibold text-[#041627]">Sin órdenes</p>
+          <p className="text-xs text-[#44474c]">No hay órdenes para los filtros seleccionados.</p>
+        </div>
+      ) : (
+        <>
+          {/* ── Tabla (desktop) ─────────────────────────────────────────────── */}
+          <div className="hidden lg:block bg-white rounded-xl border border-[#c4c6cd] shadow-sm overflow-hidden">
             {/* Cabecera */}
             <div className="grid grid-cols-[1fr_1fr_150px_110px_90px_56px] gap-4 px-6 py-3 bg-[#eefcfd] border-b border-[#c4c6cd]/60">
               <p className="text-[10px] font-bold uppercase tracking-widest text-[#44474c]/70">Vehículo</p>
@@ -207,18 +211,30 @@ export default function WorkOrdersPage() {
                 </div>
               ))}
             </div>
-          </>
-        )}
 
-        {/* Footer */}
-        {!isLoading && !isError && data && (
-          <div className="px-6 py-3 bg-[#eefcfd]/60 border-t border-[#c4c6cd]/60">
-            <p className="text-xs text-[#44474c]/70">
-              Mostrando {items.length} de {data.totalCount.toLocaleString("es-AR")} órdenes
-            </p>
+            {/* Footer */}
+            {data && (
+              <div className="px-6 py-3 bg-[#eefcfd]/60 border-t border-[#c4c6cd]/60">
+                <p className="text-xs text-[#44474c]/70">
+                  Mostrando {items.length} de {data.totalCount.toLocaleString("es-AR")} órdenes
+                </p>
+              </div>
+            )}
           </div>
-        )}
-      </div>
+
+          {/* ── Cards (mobile / tablet) ─────────────────────────────────────── */}
+          <div className="lg:hidden space-y-3">
+            {items.map((order) => (
+              <WorkOrderMobileCard key={order.id} order={order} />
+            ))}
+            {data && (
+              <p className="text-xs text-[#44474c]/70 px-1 pt-1">
+                Mostrando {items.length} de {data.totalCount.toLocaleString("es-AR")} órdenes
+              </p>
+            )}
+          </div>
+        </>
+      )}
 
       {data && (
         <Pagination
@@ -230,5 +246,54 @@ export default function WorkOrdersPage() {
         />
       )}
     </div>
+  );
+}
+
+// ─── Card de orden para mobile / tablet ───────────────────────────────────────
+// Misma información que una fila de la tabla, reorganizada para pantalla angosta:
+// la tabla de 6 columnas no entra en un celular, así que abajo de lg mostramos
+// cada orden como una tarjeta apilada y tocable.
+
+function WorkOrderMobileCard({ order }: { order: WorkOrder }) {
+  return (
+    <Link
+      href={`/admin/work-orders/${order.id}`}
+      className="block bg-white rounded-xl border border-[#c4c6cd] shadow-sm p-4 border-l-4 border-l-transparent active:scale-[0.99] hover:border-l-[#fea520] hover:shadow-md transition-all"
+    >
+      {/* Vehículo + estado */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-[#041627] truncate">
+            {order.vehicleBrand} {order.vehicleModel}
+          </p>
+          <span className="inline-flex items-center gap-1 text-xs font-mono text-[#44474c] mt-0.5">
+            <Tag className="w-3 h-3 shrink-0" />
+            {order.vehicleLicensePlate}
+          </span>
+        </div>
+        <div className="shrink-0">
+          <StatusBadge status={order.currentStatus} />
+        </div>
+      </div>
+
+      {/* Propietario */}
+      <div className="flex items-center gap-1.5 mt-3 min-w-0">
+        <User className="w-3.5 h-3.5 text-[#44474c]/50 shrink-0" />
+        <p className="text-sm text-[#041627] truncate">{order.ownerName ?? "—"}</p>
+        {order.fleetIdAtEntry && (
+          <span className="text-[9px] font-bold uppercase tracking-wider text-[#44474c]/60 bg-[#eefcfd] border border-[#c4c6cd]/60 px-1.5 py-0.5 rounded shrink-0">
+            Flota
+          </span>
+        )}
+      </div>
+
+      {/* Fecha + total */}
+      <div className="flex items-center justify-between mt-3 pt-3 border-t border-[#c4c6cd]/40">
+        <span className="text-xs text-[#44474c]">{formatDate(order.createdAt)}</span>
+        <span className="text-sm font-bold text-[#041627] tabular-nums bg-[#041627]/5 px-2 py-0.5 rounded-lg">
+          {formatCurrency(order.totalAmount)}
+        </span>
+      </div>
+    </Link>
   );
 }
