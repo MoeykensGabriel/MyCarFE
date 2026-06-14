@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useDebouncedCallback } from "use-debounce";
 import { toast } from "sonner";
 import {
-  Building2, ChevronRight, Mail, Phone,
+  Building2, ChevronRight, Mail, Phone, MapPin,
   X, Car, ClipboardPlus, ExternalLink, Tag,
 } from "lucide-react";
 
@@ -16,6 +16,7 @@ import { SearchInput } from "@/components/shared/SearchInput";
 import { OpenOrderModal } from "@/components/shared/OpenOrderModal";
 import { useFleet, useFleets } from "@/hooks/useFleets";
 import { workOrdersService } from "@/services/work-orders.service";
+import { Fleet } from "@/types/api.types";
 
 // ─── Panel de detalle de flota ────────────────────────────────────────────────
 
@@ -199,31 +200,35 @@ export default function FleetsPage() {
 
         {/* Tabla */}
         <div className="flex-1 min-w-0 space-y-3">
-          <div className="bg-white rounded-xl border border-[#c4c6cd] shadow-sm overflow-hidden">
-            {isLoading ? (
-              <div className="divide-y divide-[#c4c6cd]/40">
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className="flex items-center gap-4 px-6 py-4">
-                    <div className="w-10 h-10 rounded-full bg-[#c4c6cd]/30 animate-pulse shrink-0" />
-                    <div className="flex-1 space-y-2">
-                      <div className="h-4 w-48 bg-[#c4c6cd]/30 rounded animate-pulse" />
-                      <div className="h-3 w-28 bg-[#c4c6cd]/20 rounded animate-pulse" />
-                    </div>
+          {/* ── Estados ─────────────────────────────────────────────────────── */}
+          {isLoading ? (
+            <div className="bg-white rounded-xl border border-[#c4c6cd] shadow-sm overflow-hidden divide-y divide-[#c4c6cd]/40">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="flex items-center gap-4 px-4 sm:px-6 py-4">
+                  <div className="w-10 h-10 rounded-full bg-[#c4c6cd]/30 animate-pulse shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 w-48 max-w-[60%] bg-[#c4c6cd]/30 rounded animate-pulse" />
+                    <div className="h-3 w-28 bg-[#c4c6cd]/20 rounded animate-pulse" />
                   </div>
-                ))}
-              </div>
-            ) : isError ? (
-              <p className="px-6 py-8 text-sm text-red-500 text-center">Error al cargar las flotas.</p>
-            ) : items.length === 0 ? (
-              <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
-                <Building2 className="w-10 h-10 text-[#c4c6cd]" />
-                <p className="text-sm font-semibold text-[#041627]">Sin flotas</p>
-                <p className="text-xs text-[#44474c]">
-                  {search ? "Probá con otro término de búsqueda." : "No hay flotas registradas."}
-                </p>
-              </div>
-            ) : (
-              <>
+                </div>
+              ))}
+            </div>
+          ) : isError ? (
+            <div className="bg-white rounded-xl border border-[#c4c6cd] shadow-sm px-6 py-8 text-center">
+              <p className="text-sm text-red-500">Error al cargar las flotas.</p>
+            </div>
+          ) : items.length === 0 ? (
+            <div className="bg-white rounded-xl border border-[#c4c6cd] shadow-sm flex flex-col items-center gap-3 px-6 py-16 text-center">
+              <Building2 className="w-10 h-10 text-[#c4c6cd]" />
+              <p className="text-sm font-semibold text-[#041627]">Sin flotas</p>
+              <p className="text-xs text-[#44474c]">
+                {search ? "Probá con otro término de búsqueda." : "No hay flotas registradas."}
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* ── Tabla (desktop) ───────────────────────────────────────────── */}
+              <div className="hidden lg:block bg-white rounded-xl border border-[#c4c6cd] shadow-sm overflow-hidden">
                 {/* Cabecera */}
                 <div className="grid grid-cols-[1fr_120px_1fr_1fr_56px] gap-4 px-6 py-3 bg-[#eefcfd] border-b border-[#c4c6cd]/60">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-[#44474c]/70">Empresa</p>
@@ -284,18 +289,35 @@ export default function FleetsPage() {
                     );
                   })}
                 </div>
-              </>
-            )}
 
-            {/* Footer */}
-            {!isLoading && !isError && data && (
-              <div className="px-6 py-3 bg-[#eefcfd]/60 border-t border-[#c4c6cd]/60">
-                <p className="text-xs text-[#44474c]/70">
-                  Mostrando {items.length} de {data.totalCount.toLocaleString("es-AR")} flotas
-                </p>
+                {/* Footer */}
+                {data && (
+                  <div className="px-6 py-3 bg-[#eefcfd]/60 border-t border-[#c4c6cd]/60">
+                    <p className="text-xs text-[#44474c]/70">
+                      Mostrando {items.length} de {data.totalCount.toLocaleString("es-AR")} flotas
+                    </p>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+
+              {/* ── Cards (mobile / tablet) ───────────────────────────────────── */}
+              <div className="lg:hidden space-y-3">
+                {items.map((f) => (
+                  <FleetMobileCard
+                    key={f.id}
+                    fleet={f}
+                    selected={selectedId === f.id}
+                    onSelect={(id) => setSelectedId((prev) => (prev === id ? null : id))}
+                  />
+                ))}
+                {data && (
+                  <p className="text-xs text-[#44474c]/70 px-1 pt-1">
+                    Mostrando {items.length} de {data.totalCount.toLocaleString("es-AR")} flotas
+                  </p>
+                )}
+              </div>
+            </>
+          )}
 
           {data && (
             <Pagination
@@ -318,5 +340,70 @@ export default function FleetsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+// ─── Card de flota para mobile / tablet ───────────────────────────────────────
+// La tabla de 5 columnas no entra en pantallas chicas. Abajo de lg cada flota es
+// una card que SELECCIONA igual que la fila (abre el panel de detalle, que en
+// mobile aparece debajo de la lista).
+
+function FleetMobileCard({
+  fleet: f,
+  selected,
+  onSelect,
+}: {
+  fleet: Fleet;
+  selected: boolean;
+  onSelect: (id: string) => void;
+}) {
+  const hasContact = !!f.email || !!f.phone || !!f.address;
+
+  return (
+    <button
+      onClick={() => onSelect(f.id)}
+      className={`w-full text-left bg-white rounded-xl border shadow-sm p-4 transition-all ${
+        selected
+          ? "border-[#fea520] ring-1 ring-[#fea520]/40"
+          : "border-[#c4c6cd] hover:border-[#fea520]/40 active:scale-[0.99]"
+      }`}
+    >
+      {/* Empresa + CUIT */}
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-full bg-[#041627] text-white flex items-center justify-center shrink-0">
+          <Building2 className="w-4 h-4" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-[#041627] truncate">{f.companyName}</p>
+          {f.taxId && (
+            <p className="text-xs font-mono text-[#44474c]/80 mt-0.5">CUIT {f.taxId}</p>
+          )}
+        </div>
+      </div>
+
+      {/* Contacto + dirección */}
+      {hasContact && (
+        <div className="mt-3 pt-3 border-t border-[#c4c6cd]/40 space-y-1.5">
+          {f.email && (
+            <span className="flex items-center gap-1.5 text-xs text-[#44474c] truncate">
+              <Mail className="w-3.5 h-3.5 text-[#44474c]/50 shrink-0" />
+              {f.email}
+            </span>
+          )}
+          {f.phone && (
+            <span className="flex items-center gap-1.5 text-xs text-[#44474c]">
+              <Phone className="w-3.5 h-3.5 text-[#44474c]/50 shrink-0" />
+              {f.phone}
+            </span>
+          )}
+          {f.address && (
+            <span className="flex items-center gap-1.5 text-xs text-[#44474c] truncate">
+              <MapPin className="w-3.5 h-3.5 text-[#44474c]/50 shrink-0" />
+              {f.address}
+            </span>
+          )}
+        </div>
+      )}
+    </button>
   );
 }
