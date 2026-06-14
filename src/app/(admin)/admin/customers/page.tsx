@@ -333,25 +333,31 @@ export default function CustomersPage() {
 
         {/* Tabla */}
         <div className="flex-1 min-w-0 space-y-3">
-          <div className="bg-white rounded-xl border border-[#c4c6cd] shadow-sm overflow-hidden">
-            {isLoading ? (
-              <div className="divide-y divide-[#c4c6cd]/40">
-                {[...Array(8)].map((_, i) => (
-                  <div key={i} className="flex items-center gap-4 px-6 py-4">
-                    <div className="w-11 h-11 rounded-xl bg-[#c4c6cd]/30 animate-pulse shrink-0" />
-                    <div className="flex-1 space-y-2">
-                      <div className="h-4 w-40 bg-[#c4c6cd]/30 rounded animate-pulse" />
-                      <div className="h-3 w-28 bg-[#c4c6cd]/20 rounded animate-pulse" />
-                    </div>
+          {/* ── Estados ─────────────────────────────────────────────────────── */}
+          {isLoading ? (
+            <div className="bg-white rounded-xl border border-[#c4c6cd] shadow-sm overflow-hidden divide-y divide-[#c4c6cd]/40">
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className="flex items-center gap-4 px-4 sm:px-6 py-4">
+                  <div className="w-11 h-11 rounded-xl bg-[#c4c6cd]/30 animate-pulse shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 w-40 max-w-[60%] bg-[#c4c6cd]/30 rounded animate-pulse" />
+                    <div className="h-3 w-28 bg-[#c4c6cd]/20 rounded animate-pulse" />
                   </div>
-                ))}
-              </div>
-            ) : isError ? (
-              <p className="px-6 py-8 text-sm text-red-500 text-center font-medium">Error al cargar los clientes.</p>
-            ) : items.length === 0 ? (
-              <p className="px-6 py-8 text-sm text-[#44474c] text-center font-semibold bg-slate-50">No hay clientes.</p>
-            ) : (
-              <>
+                </div>
+              ))}
+            </div>
+          ) : isError ? (
+            <div className="bg-white rounded-xl border border-[#c4c6cd] shadow-sm px-6 py-8 text-center">
+              <p className="text-sm text-red-500 font-medium">Error al cargar los clientes.</p>
+            </div>
+          ) : items.length === 0 ? (
+            <div className="bg-white rounded-xl border border-[#c4c6cd] shadow-sm px-6 py-8 text-center">
+              <p className="text-sm text-[#44474c] font-semibold">No hay clientes.</p>
+            </div>
+          ) : (
+            <>
+              {/* ── Tabla (desktop) ───────────────────────────────────────────── */}
+              <div className="hidden lg:block bg-white rounded-xl border border-[#c4c6cd] shadow-sm overflow-hidden">
                 {/* Cabecera */}
                 <div className="grid grid-cols-[1fr_1fr_100px_90px] gap-4 px-6 py-3.5 bg-[#eefcfd] border-b border-[#c4c6cd]/60">
                   <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#041627]/70">Nombre / Documento</p>
@@ -408,18 +414,35 @@ export default function CustomersPage() {
                     );
                   })}
                 </div>
-              </>
-            )}
 
-            {/* Footer con conteo */}
-            {!isLoading && !isError && data && (
-              <div className="px-6 py-3 bg-[#eefcfd]/60 border-t border-[#c4c6cd]/60">
-                <p className="text-xs text-[#44474c]/70">
-                  Mostrando {items.length} de {data.totalCount.toLocaleString("es-AR")} clientes
-                </p>
+                {/* Footer con conteo */}
+                {data && (
+                  <div className="px-6 py-3 bg-[#eefcfd]/60 border-t border-[#c4c6cd]/60">
+                    <p className="text-xs text-[#44474c]/70">
+                      Mostrando {items.length} de {data.totalCount.toLocaleString("es-AR")} clientes
+                    </p>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+
+              {/* ── Cards (mobile / tablet) ───────────────────────────────────── */}
+              <div className="lg:hidden space-y-3">
+                {items.map((c) => (
+                  <CustomerMobileCard
+                    key={c.id}
+                    customer={c}
+                    selected={selectedId === c.id}
+                    onSelect={selectRow}
+                  />
+                ))}
+                {data && (
+                  <p className="text-xs text-[#44474c]/70 px-1 pt-1">
+                    Mostrando {items.length} de {data.totalCount.toLocaleString("es-AR")} clientes
+                  </p>
+                )}
+              </div>
+            </>
+          )}
 
           {data && (
             <Pagination
@@ -441,5 +464,60 @@ export default function CustomersPage() {
         )}
       </div>
     </div>
+  );
+}
+
+// ─── Card de cliente para mobile / tablet ─────────────────────────────────────
+// La tabla de 4 columnas no entra en pantallas chicas. Abajo de lg mostramos cada
+// cliente como una card que, igual que la fila, SELECCIONA (abre el panel de
+// detalle, que en mobile aparece debajo de la lista).
+
+function CustomerMobileCard({
+  customer,
+  selected,
+  onSelect,
+}: {
+  customer: Customer;
+  selected: boolean;
+  onSelect: (id: string) => void;
+}) {
+  return (
+    <button
+      onClick={() => onSelect(customer.id)}
+      className={`w-full text-left bg-white rounded-xl border shadow-sm p-4 transition-all ${
+        selected
+          ? "border-[#fea520] ring-1 ring-[#fea520]/40"
+          : "border-[#c4c6cd] hover:border-[#fea520]/40 active:scale-[0.99]"
+      }`}
+    >
+      {/* Nombre + documento + tipo */}
+      <div className="flex items-start gap-3">
+        <Avatar customer={customer} size="sm" />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-bold text-[#041627] truncate tracking-tight">
+            {customer.firstName} {customer.lastName}
+          </p>
+          <p className="text-[11px] text-[#44474c]/75 font-mono font-semibold truncate mt-0.5">
+            {DocumentTypeLabel[customer.documentType]} {customer.documentNumber}
+          </p>
+        </div>
+        <div className="shrink-0">
+          <TypeBadge isFleet={!!customer.fleetId} />
+        </div>
+      </div>
+
+      {/* Contacto + alta */}
+      <div className="flex items-end justify-between gap-3 mt-3 pt-3 border-t border-[#c4c6cd]/40">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-[#041627] truncate">{customer.email}</p>
+          {customer.phone && (
+            <p className="text-xs text-[#44474c]/85 font-medium truncate mt-0.5">{customer.phone}</p>
+          )}
+        </div>
+        <span className="text-xs font-semibold text-[#44474c] whitespace-nowrap shrink-0">
+          {formatDate(customer.createdAt)}
+        </span>
+      </div>
+    </button>
   );
 }
