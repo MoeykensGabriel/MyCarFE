@@ -197,6 +197,49 @@ export default function AreasPage() {
     deleteArea.mutate(id, { onSettled: () => setConfirmingDelete(null) });
   }
 
+  // Bloque de acciones (editar / activar / eliminar) — compartido entre la fila
+  // de la tabla (desktop) y la card (mobile) para no duplicar lógica.
+  const renderActions = (area: Area) => (
+    <div className="flex items-center gap-1 justify-end shrink-0">
+      <button
+        onClick={() => setEditing(area)}
+        title="Editar"
+        className="p-1.5 rounded-md text-[#44474c] hover:bg-[#eefcfd] hover:text-[#041627] transition-colors"
+      >
+        <Pencil className="w-4 h-4" />
+      </button>
+      <button
+        onClick={() => handleToggleActive(area)}
+        disabled={updateArea.isPending}
+        title={area.isActive ? "Desactivar" : "Reactivar"}
+        className={`p-1.5 rounded-md transition-colors disabled:opacity-50 ${
+          area.isActive
+            ? "text-red-600 hover:bg-red-50"
+            : "text-green-700 hover:bg-green-50"
+        }`}
+      >
+        {area.isActive ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+      </button>
+      {area.isActive && confirmingDelete === area.id && (
+        <div className="flex items-center gap-1 pl-2 border-l border-[#c4c6cd]">
+          <button
+            onClick={() => handleDelete(area.id)}
+            disabled={deleteArea.isPending}
+            className="px-2 py-1 text-[10px] font-bold rounded bg-red-500 text-white hover:bg-red-600 disabled:opacity-50"
+          >
+            <Check className="w-3 h-3" />
+          </button>
+          <button
+            onClick={() => setConfirmingDelete(null)}
+            className="px-2 py-1 text-[10px] font-bold rounded bg-[#eefcfd] text-[#041627] border border-[#c4c6cd]"
+          >
+            <X className="w-3 h-3" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="space-y-5">
       {/* Header */}
@@ -233,23 +276,28 @@ export default function AreasPage() {
         }
       />
 
-      {/* Tabla */}
-      <div className="bg-white rounded-xl border border-[#c4c6cd] shadow-sm overflow-hidden">
-        {isLoading ? (
-          <div className="divide-y divide-[#c4c6cd]/40">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="flex items-center gap-4 px-6 py-4">
-                <div className="h-4 w-48 bg-[#c4c6cd]/30 rounded animate-pulse" />
-                <div className="ml-auto h-5 w-16 bg-[#c4c6cd]/20 rounded animate-pulse" />
-              </div>
-            ))}
-          </div>
-        ) : isError ? (
-          <p className="px-6 py-8 text-sm text-red-500 text-center">Error al cargar las áreas.</p>
-        ) : items.length === 0 ? (
-          <p className="px-6 py-8 text-sm text-[#44474c] text-center">No hay áreas registradas.</p>
-        ) : (
-          <>
+      {/* ── Estados ─────────────────────────────────────────────────────────── */}
+      {isLoading ? (
+        <div className="bg-white rounded-xl border border-[#c4c6cd] shadow-sm overflow-hidden divide-y divide-[#c4c6cd]/40">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="flex items-center gap-4 px-4 sm:px-6 py-4">
+              <div className="h-4 w-48 max-w-[60%] bg-[#c4c6cd]/30 rounded animate-pulse" />
+              <div className="ml-auto h-5 w-16 bg-[#c4c6cd]/20 rounded animate-pulse" />
+            </div>
+          ))}
+        </div>
+      ) : isError ? (
+        <div className="bg-white rounded-xl border border-[#c4c6cd] shadow-sm px-6 py-8 text-center">
+          <p className="text-sm text-red-500">Error al cargar las áreas.</p>
+        </div>
+      ) : items.length === 0 ? (
+        <div className="bg-white rounded-xl border border-[#c4c6cd] shadow-sm px-6 py-8 text-center">
+          <p className="text-sm text-[#44474c]">No hay áreas registradas.</p>
+        </div>
+      ) : (
+        <>
+          {/* ── Tabla (desktop) ─────────────────────────────────────────────── */}
+          <div className="hidden lg:block bg-white rounded-xl border border-[#c4c6cd] shadow-sm overflow-hidden">
             <div className="grid grid-cols-[1fr_120px_160px] gap-4 px-6 py-3 bg-[#eefcfd] border-b border-[#c4c6cd]/60">
               <p className="text-[10px] font-bold uppercase tracking-widest text-[#44474c]/70">Nombre</p>
               <p className="text-[10px] font-bold uppercase tracking-widest text-[#44474c]/70">Estado</p>
@@ -264,46 +312,7 @@ export default function AreasPage() {
                 >
                   <span className="text-sm font-medium text-[#041627] truncate">{area.name}</span>
                   <ActiveBadge isActive={area.isActive} />
-                  <div className="flex items-center gap-1 justify-end">
-                    <button
-                      onClick={() => setEditing(area)}
-                      title="Editar"
-                      className="p-1.5 rounded-md text-[#44474c] hover:bg-[#eefcfd] hover:text-[#041627] transition-colors"
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleToggleActive(area)}
-                      disabled={updateArea.isPending}
-                      title={area.isActive ? "Desactivar" : "Reactivar"}
-                      className={`p-1.5 rounded-md transition-colors disabled:opacity-50 ${
-                        area.isActive
-                          ? "text-red-600 hover:bg-red-50"
-                          : "text-green-700 hover:bg-green-50"
-                      }`}
-                    >
-                      {area.isActive ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                    {area.isActive && (
-                      confirmingDelete === area.id ? (
-                        <div className="flex items-center gap-1 pl-2 border-l border-[#c4c6cd]">
-                          <button
-                            onClick={() => handleDelete(area.id)}
-                            disabled={deleteArea.isPending}
-                            className="px-2 py-1 text-[10px] font-bold rounded bg-red-500 text-white hover:bg-red-600 disabled:opacity-50"
-                          >
-                            <Check className="w-3 h-3" />
-                          </button>
-                          <button
-                            onClick={() => setConfirmingDelete(null)}
-                            className="px-2 py-1 text-[10px] font-bold rounded bg-[#eefcfd] text-[#041627] border border-[#c4c6cd]"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                      ) : null
-                    )}
-                  </div>
+                  {renderActions(area)}
                 </div>
               ))}
             </div>
@@ -313,9 +322,30 @@ export default function AreasPage() {
                 {items.length} de {all.length} {all.length === 1 ? "área" : "áreas"}
               </p>
             </div>
-          </>
-        )}
-      </div>
+          </div>
+
+          {/* ── Cards (mobile / tablet) ───────────────────────────────────────── */}
+          <div className="lg:hidden space-y-3">
+            {items.map((area) => (
+              <div
+                key={area.id}
+                className="bg-white rounded-xl border border-[#c4c6cd] shadow-sm p-4 flex items-center justify-between gap-3"
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-[#041627] truncate">{area.name}</p>
+                  <div className="mt-1.5">
+                    <ActiveBadge isActive={area.isActive} />
+                  </div>
+                </div>
+                {renderActions(area)}
+              </div>
+            ))}
+            <p className="text-xs text-[#44474c]/70 px-1 pt-1">
+              {items.length} de {all.length} {all.length === 1 ? "área" : "áreas"}
+            </p>
+          </div>
+        </>
+      )}
 
       {/* Modal crear */}
       {showCreate && <AreaFormModal onClose={() => setShowCreate(false)} />}
