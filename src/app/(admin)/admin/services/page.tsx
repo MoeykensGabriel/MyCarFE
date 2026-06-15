@@ -196,16 +196,20 @@ function ServiceForm({
   );
 }
 
-// ─── Fila con confirmación de borrado inline ───────────────────────────────────
+// ─── Item de servicio (con confirmación de borrado inline) ──────────────────────
+// variant="row" → fila de la tabla (desktop); variant="card" → card (mobile).
+// La lógica de borrado se comparte; solo cambia la disposición.
 
-function ServiceRow({
+function ServiceItem({
   service,
   isSelected,
   onEdit,
+  variant,
 }: {
   service: CatalogService;
   isSelected: boolean;
   onEdit: (s: CatalogService) => void;
+  variant: "row" | "card";
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const { mutate: remove, isPending } = useDeleteCatalogService();
@@ -217,6 +221,59 @@ function ServiceRow({
       return;
     }
     remove(service.id);
+  }
+
+  const actions = (
+    <div className="flex items-center gap-1 shrink-0">
+      <button
+        onClick={() => onEdit(service)}
+        className="p-1.5 rounded-md text-[#44474c]/60 hover:text-[#041627] hover:bg-[#eefcfd] transition-colors"
+        title="Editar"
+      >
+        <Pencil className="w-3.5 h-3.5" />
+      </button>
+      <button
+        onClick={handleDelete}
+        disabled={isPending}
+        className={`p-1.5 rounded-md transition-colors disabled:opacity-40 ${
+          confirmDelete
+            ? "bg-red-500 text-white hover:bg-red-600"
+            : "text-[#44474c]/60 hover:text-red-500 hover:bg-red-50"
+        }`}
+        title={confirmDelete ? "Clic para confirmar" : "Eliminar"}
+      >
+        <Trash2 className="w-3.5 h-3.5" />
+      </button>
+    </div>
+  );
+
+  if (variant === "card") {
+    return (
+      <div
+        className={`bg-white rounded-xl border shadow-sm p-4 transition-all ${
+          isSelected ? "border-[#fea520] ring-1 ring-[#fea520]/40" : "border-[#c4c6cd]"
+        }`}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-[#041627] truncate">{service.name}</p>
+            {service.description && (
+              <p className="text-xs text-[#44474c] truncate mt-0.5">{service.description}</p>
+            )}
+          </div>
+          {actions}
+        </div>
+        <div className="flex items-center justify-between gap-3 mt-3 pt-3 border-t border-[#c4c6cd]/40">
+          <span className="flex items-center gap-1.5 text-sm text-[#44474c]">
+            <Clock className="w-3.5 h-3.5 text-[#44474c]/50" />
+            {formatDuration(service.estimatedDurationMinutes)}
+          </span>
+          <span className="text-sm font-bold text-[#041627] tabular-nums">
+            {formatCurrency(service.defaultPrice)}
+          </span>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -250,27 +307,7 @@ function ServiceRow({
       </div>
 
       {/* Acciones */}
-      <div className="flex items-center gap-1 shrink-0">
-        <button
-          onClick={() => onEdit(service)}
-          className="p-1.5 rounded-md text-[#44474c]/60 hover:text-[#041627] hover:bg-[#eefcfd] transition-colors"
-          title="Editar"
-        >
-          <Pencil className="w-3.5 h-3.5" />
-        </button>
-        <button
-          onClick={handleDelete}
-          disabled={isPending}
-          className={`p-1.5 rounded-md transition-colors disabled:opacity-40 ${
-            confirmDelete
-              ? "bg-red-500 text-white hover:bg-red-600"
-              : "text-[#44474c]/60 hover:text-red-500 hover:bg-red-50"
-          }`}
-          title={confirmDelete ? "Clic para confirmar" : "Eliminar"}
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-        </button>
-      </div>
+      {actions}
     </div>
   );
 }
@@ -325,70 +362,84 @@ export default function ServicesPage() {
       {/* ── Contenido principal ────────────────────────────────────────────── */}
       <div className="flex flex-col lg:flex-row gap-5 items-start">
 
-        {/* Tabla */}
-        <div className="flex-1 min-w-0">
-          <div className="bg-white rounded-xl border border-[#c4c6cd] shadow-sm overflow-hidden">
-
-            {/* Cabecera */}
-            <div className="grid grid-cols-[1fr_120px_90px_80px] gap-4 px-6 py-3 bg-[#eefcfd] border-b border-[#c4c6cd]/60">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-[#44474c]/70">Servicio</p>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-[#44474c]/70 text-right">Precio</p>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-[#44474c]/70">Duración</p>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-[#44474c]/70">Acciones</p>
-            </div>
-
-            {/* Contenido */}
-            {isLoading ? (
-              <div className="divide-y divide-[#c4c6cd]/40">
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className="flex items-center gap-4 px-6 py-4">
-                    <div className="flex-1 space-y-2">
-                      <div className="h-4 w-48 bg-[#c4c6cd]/30 rounded animate-pulse" />
-                      <div className="h-3 w-72 bg-[#c4c6cd]/20 rounded animate-pulse" />
-                    </div>
-                    <div className="h-4 w-20 bg-[#c4c6cd]/20 rounded animate-pulse" />
-                    <div className="h-4 w-12 bg-[#c4c6cd]/20 rounded animate-pulse" />
+        {/* Tabla / cards */}
+        <div className="flex-1 min-w-0 space-y-3">
+          {isLoading ? (
+            <div className="bg-white rounded-xl border border-[#c4c6cd] shadow-sm overflow-hidden divide-y divide-[#c4c6cd]/40">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="flex items-center gap-4 px-4 sm:px-6 py-4">
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 w-48 max-w-[60%] bg-[#c4c6cd]/30 rounded animate-pulse" />
+                    <div className="h-3 w-72 max-w-[80%] bg-[#c4c6cd]/20 rounded animate-pulse" />
                   </div>
-                ))}
-              </div>
-            ) : isError ? (
-              <p className="px-6 py-8 text-sm text-red-500 text-center">
-                Error al cargar el catálogo.
+                  <div className="h-4 w-20 bg-[#c4c6cd]/20 rounded animate-pulse" />
+                </div>
+              ))}
+            </div>
+          ) : isError ? (
+            <div className="bg-white rounded-xl border border-[#c4c6cd] shadow-sm px-6 py-8 text-center">
+              <p className="text-sm text-red-500">Error al cargar el catálogo.</p>
+            </div>
+          ) : services.length === 0 ? (
+            <div className="bg-white rounded-xl border border-[#c4c6cd] shadow-sm flex flex-col items-center gap-3 px-6 py-16 text-center">
+              <PackageOpen className="w-10 h-10 text-[#c4c6cd]" />
+              <p className="text-sm font-semibold text-[#041627]">
+                {search ? "Sin resultados" : "Catálogo vacío"}
               </p>
-            ) : services.length === 0 ? (
-              <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
-                <PackageOpen className="w-10 h-10 text-[#c4c6cd]" />
-                <p className="text-sm font-semibold text-[#041627]">
-                  {search ? "Sin resultados" : "Catálogo vacío"}
-                </p>
-                <p className="text-xs text-[#44474c]">
-                  {search
-                    ? "Probá con otro término de búsqueda."
-                    : "Creá el primer servicio para empezar."}
-                </p>
+              <p className="text-xs text-[#44474c]">
+                {search
+                  ? "Probá con otro término de búsqueda."
+                  : "Creá el primer servicio para empezar."}
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* ── Tabla (desktop) ───────────────────────────────────────────── */}
+              <div className="hidden lg:block bg-white rounded-xl border border-[#c4c6cd] shadow-sm overflow-hidden">
+                {/* Cabecera */}
+                <div className="grid grid-cols-[1fr_120px_90px_80px] gap-4 px-6 py-3 bg-[#eefcfd] border-b border-[#c4c6cd]/60">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-[#44474c]/70">Servicio</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-[#44474c]/70 text-right">Precio</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-[#44474c]/70">Duración</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-[#44474c]/70">Acciones</p>
+                </div>
+
+                <div className="divide-y divide-[#c4c6cd]/40">
+                  {services.map((s) => (
+                    <ServiceItem
+                      key={s.id}
+                      service={s}
+                      isSelected={selectedId === s.id}
+                      onEdit={(svc) => setPanel({ mode: "edit", service: svc })}
+                      variant="row"
+                    />
+                  ))}
+                </div>
+
+                <div className="px-6 py-3 bg-[#eefcfd]/60 border-t border-[#c4c6cd]/60">
+                  <p className="text-xs text-[#44474c]/70">
+                    {services.length} servicio{services.length !== 1 ? "s" : ""} encontrado{services.length !== 1 ? "s" : ""}
+                  </p>
+                </div>
               </div>
-            ) : (
-              <div className="divide-y divide-[#c4c6cd]/40">
+
+              {/* ── Cards (mobile / tablet) ───────────────────────────────────── */}
+              <div className="lg:hidden space-y-3">
                 {services.map((s) => (
-                  <ServiceRow
+                  <ServiceItem
                     key={s.id}
                     service={s}
                     isSelected={selectedId === s.id}
                     onEdit={(svc) => setPanel({ mode: "edit", service: svc })}
+                    variant="card"
                   />
                 ))}
-              </div>
-            )}
-
-            {/* Footer */}
-            {!isLoading && !isError && services.length > 0 && (
-              <div className="px-6 py-3 bg-[#eefcfd]/60 border-t border-[#c4c6cd]/60">
-                <p className="text-xs text-[#44474c]/70">
+                <p className="text-xs text-[#44474c]/70 px-1 pt-1">
                   {services.length} servicio{services.length !== 1 ? "s" : ""} encontrado{services.length !== 1 ? "s" : ""}
                 </p>
               </div>
-            )}
-          </div>
+            </>
+          )}
         </div>
 
         {/* Panel lateral */}
