@@ -152,6 +152,20 @@ export type BatteryFormState = {
   positiveTerminalSide: string; // "" = sin especificar
 };
 
+/**
+ * Deriva el estado de la batería a partir de la remanencia medida con tester.
+ * Alineado con las bandas de color de la ficha del cliente y con los umbrales de
+ * las alertas de mantenimiento: ≥75 Buena · 50–74 Regular · 25–49 Cambiar pronto · <25 Reemplazar.
+ * Así el mecánico no puede guardar "Buena con 10%": el estado se fija desde la medición.
+ */
+export function batteryStatusFromPct(pct: number): BatteryStatus {
+  const p = Math.max(0, Math.min(100, pct));
+  if (p >= 75) return BatteryStatus.Good;
+  if (p >= 50) return BatteryStatus.Fair;
+  if (p >= 25) return BatteryStatus.ReplaceSoon;
+  return BatteryStatus.Replace;
+}
+
 export function createBatteryState(): BatteryFormState {
   return {
     status: String(BatteryStatus.Good),

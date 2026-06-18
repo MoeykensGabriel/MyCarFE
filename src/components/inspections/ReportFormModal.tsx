@@ -27,6 +27,7 @@ import {
   TireRow,
   createBatteryState,
   buildBatteryPayload,
+  batteryStatusFromPct,
   BatteryFormState,
   createOilState,
   buildOilPayload,
@@ -65,7 +66,19 @@ export function ReportFormModal({ inspection, area, onClose }: Props) {
   const [batteryEnabled, setBatteryEnabled] = useState(false);
   const [battery, setBattery] = useState<BatteryFormState>(createBatteryState);
   const updateBattery = (field: keyof BatteryFormState, value: string) =>
-    setBattery((prev) => ({ ...prev, [field]: value }));
+    setBattery((prev) => {
+      const next = { ...prev, [field]: value };
+      // Forzamos el estado según la remanencia medida con tester: evita la
+      // inconsistencia de "Buena con 10%". Si se borra el %, el estado vuelve a
+      // ser editable a mano (caso sin medición).
+      if (field === "remainingPercentage" && value.trim() !== "") {
+        const pct = Math.round(Number(value));
+        if (Number.isFinite(pct)) {
+          next.status = String(batteryStatusFromPct(pct));
+        }
+      }
+      return next;
+    });
 
   const [oilEnabled, setOilEnabled] = useState(false);
   const [oil, setOil] = useState<OilFormState>(createOilState);

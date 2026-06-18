@@ -17,6 +17,9 @@ interface Props {
  * saber qué batería comprar si hay que reemplazarla.
  */
 export function BatterySection({ enabled, onEnabledChange, battery, onUpdate }: Props) {
+  // Con remanencia cargada, el estado se deriva del % y el select queda bloqueado.
+  const derivedFromPct = battery.remainingPercentage.trim() !== "";
+
   return (
     <div className="space-y-3 border-t border-[#041627]/5 pt-4">
       <div className="flex items-center justify-between">
@@ -42,14 +45,20 @@ export function BatterySection({ enabled, onEnabledChange, battery, onUpdate }: 
           <div>
             <label className={fieldLabelCls}>Estado</label>
             <select
-              className={fieldInputCls}
+              className={`${fieldInputCls}${derivedFromPct ? " opacity-60 cursor-not-allowed" : ""}`}
               value={battery.status}
               onChange={(e) => onUpdate("status", e.target.value)}
+              disabled={derivedFromPct}
             >
               {Object.entries(BatteryStatusLabel).map(([value, label]) => (
                 <option key={value} value={value}>{label}</option>
               ))}
             </select>
+            {derivedFromPct && (
+              <p className="text-[9px] text-[#44474c]/60 mt-0.5">
+                Se ajusta automáticamente según la remanencia.
+              </p>
+            )}
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
