@@ -26,25 +26,9 @@ export default function OrderCreatedPage() {
         });
         if (!cancelled) setOrder(data);
       } catch (err) {
-        console.warn("Backend order detail load failed, using mock data for presentation:", err);
+        console.error("No se pudo cargar el detalle de la orden:", err);
         if (!cancelled) {
-          // Generamos un mock de alta calidad para que el front luzca completo
-          const mockOrder: WorkOrder = {
-            id: id as string,
-            vehicleId: "veh-mock-999",
-            vehicleBrand: "Toyota",
-            vehicleModel: "Corolla",
-            vehicleLicensePlate: "AE789XY",
-            ownerName: "Juan Pérez",
-            mileageAtEntry: 45200,
-            currentStatus: 1, // En inspección
-            totalAmount: 0,
-            customerNote: "Revisar aire acondicionado y amortiguadores delanteros.",
-            serviceReason: "Mantenimiento general",
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          };
-          setOrder(mockOrder);
+          setError("No se pudo cargar la orden. Verificá que se haya creado correctamente e intentá de nuevo.");
         }
       } finally {
         if (!cancelled) setLoading(false);

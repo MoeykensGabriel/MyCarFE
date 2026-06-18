@@ -237,31 +237,36 @@ export function IntakeCreatedFlow({ order, loading, error, role }: IntakeCreated
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      {/* Alert Header */}
+      {/* Alert Header — verde si la orden cargó, rojo si falló */}
       <div className="bg-white rounded-xl border border-[#c4c6cd] shadow-sm overflow-hidden">
-        <div className="bg-emerald-50 border-b border-emerald-100 px-6 py-5 flex items-start gap-3">
-          <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0 mt-0.5" />
-          <div>
-            <h1 className="text-lg font-bold text-emerald-900">
-              Orden creada correctamente
-            </h1>
-            <p className="text-sm text-emerald-800/80 mt-0.5">
-              El cliente y vehículo quedaron registrados. El taller ya puede tomar el trabajo.
-            </p>
+        {error && !order ? (
+          <div className="bg-red-50 border-b border-red-100 px-6 py-5 flex items-start gap-3">
+            <AlertCircle className="w-6 h-6 text-red-600 shrink-0 mt-0.5" />
+            <div>
+              <h1 className="text-lg font-bold text-red-900">
+                No se pudo cargar la orden
+              </h1>
+              <p className="text-sm text-red-800/80 mt-0.5">{error}</p>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="bg-emerald-50 border-b border-emerald-100 px-6 py-5 flex items-start gap-3">
+            <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0 mt-0.5" />
+            <div>
+              <h1 className="text-lg font-bold text-emerald-900">
+                Orden creada correctamente
+              </h1>
+              <p className="text-sm text-emerald-800/80 mt-0.5">
+                El cliente y vehículo quedaron registrados. El taller ya puede tomar el trabajo.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Order Details */}
         <div className="px-6 py-5 space-y-4">
           {loading && (
             <p className="text-sm text-[#44474c]">Cargando detalle...</p>
-          )}
-
-          {error && (
-            <div className="flex items-start gap-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md px-3 py-2">
-              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-              <span>{error}</span>
-            </div>
           )}
 
           {order && (
@@ -287,7 +292,8 @@ export function IntakeCreatedFlow({ order, loading, error, role }: IntakeCreated
         </div>
 
         {/* --- STEP 1: UPLOADING PHOTOS --- */}
-        {photoStep === "photos" && (
+        {/* Sin orden cargada no se puede subir nada: ocultamos el paso de fotos. */}
+        {order && photoStep === "photos" && (
           <div className="border-t border-[#c4c6cd]/50 px-6 py-6 bg-[#fcfdff] space-y-6">
             {/* Reception Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2">
@@ -407,20 +413,20 @@ export function IntakeCreatedFlow({ order, loading, error, role }: IntakeCreated
                       </>
                     ) : (
                       /* Empty Upload Slot */
-                      <label 
+                      <label
                         htmlFor={`input-${slot.id}`}
-                        className="w-full h-full flex flex-col items-center justify-center p-3 cursor-pointer text-center select-none"
+                        className="w-full h-full flex flex-col items-center justify-center p-2 sm:p-3 cursor-pointer text-center select-none"
                       >
-                        <div className="text-slate-400 group-hover:text-[#fea520] transition-colors mb-2">
+                        <div className="text-slate-400 group-hover:text-[#fea520] transition-colors mb-1.5 sm:mb-2 [&>svg]:w-8 [&>svg]:h-8 sm:[&>svg]:w-10 sm:[&>svg]:h-10">
                           {slot.icon}
                         </div>
-                        <span className="text-xs font-bold text-[#041627] block truncate max-w-full">
+                        <span className="text-xs font-bold text-[#041627] block max-w-full px-1 leading-tight">
                           {slot.label}
                         </span>
-                        <span className="text-[10px] text-[#44474c]/70 block mt-0.5 leading-tight max-w-full truncate">
+                        <span className="text-[10px] text-[#44474c]/70 hidden sm:block mt-0.5 leading-tight max-w-full truncate">
                           {slot.description}
                         </span>
-                        <div className="mt-2.5 inline-flex items-center gap-1 text-[10px] font-bold text-[#fea520] bg-[#fea520]/10 px-2 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="mt-2.5 hidden sm:inline-flex items-center gap-1 text-[10px] font-bold text-[#fea520] bg-[#fea520]/10 px-2 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
                           <Upload className="w-2.5 h-2.5" />
                           Subir
                         </div>

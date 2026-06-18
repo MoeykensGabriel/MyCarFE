@@ -5,8 +5,19 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Info, AlertTriangle, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { AxiosError } from "axios";
 import { DocumentType, DocumentTypeLabel } from "@/lib/enums";
-import { Customer } from "@/types/api.types";
+import { Customer, ProblemDetails } from "@/types/api.types";
+
+/** Saca el mensaje de error más útil de una respuesta del backend. */
+function extractApiError(err: unknown): string | undefined {
+  const axiosErr = err as AxiosError<ProblemDetails>;
+  return (
+    axiosErr.response?.data?.detail ??
+    axiosErr.response?.data?.title ??
+    (err instanceof Error ? err.message : undefined)
+  );
+}
 import { customersService } from "@/services/customers.service";
 import { vehiclesService } from "@/services/vehicles.service";
 import { fleetsService } from "@/services/fleets.service";
@@ -46,56 +57,59 @@ export function StepConfirm({
     setLoading(true);
     setPartialError(null);
 
-    let createdCustomerId: string | undefined;
-    let createdVehicleId:  string | undefined;
-
     const skipAuthHeader = { headers: { "X-Skip-Auth-Redirect": "true" } };
 
     try {
       let vehicleOwner: { customerId?: string; fleetId?: string };
+      let createdCustomerId: string | undefined;
 
       // ── Paso 1: crear cliente / flota ──────────────────────────────────────
-      try {
-        if (mode === "particular" && existingCustomer) {
-          // Cliente ya existe: usar su ID directamente
-          createdCustomerId = existingCustomer.id;
-          vehicleOwner      = { customerId: existingCustomer.id };
-        } else if (mode === "particular") {
-          const { customer } = await customersService.create(customerDraft!, skipAuthHeader);
-          createdCustomerId  = customer.id;
-          vehicleOwner       = { customerId: customer.id };
-        } else if (fleetAndContact!.existingFleetId && !fleetAndContact!.contact) {
-          // Flota existente sin contacto nuevo: el vehículo va directo a la flota
-          vehicleOwner = { fleetId: fleetAndContact!.existingFleetId };
-        } else {
-          // Flota nueva (o existente con contacto nuevo)
-          const fleetId =
-            fleetAndContact!.existingFleetId ??
-            (await fleetsService.create(fleetAndContact!.fleet!, skipAuthHeader));
-          const { customer } = await customersService.create({ ...fleetAndContact!.contact!, fleetId }, skipAuthHeader);
-          createdCustomerId  = customer.id;
-          vehicleOwner       = { fleetId };
-        }
-      } catch (err) {
-        console.warn("API customer/fleet creation failed, using mock:", err);
-        createdCustomerId = "cust-" + Math.floor(1000 + Math.random() * 9000);
-        vehicleOwner = mode === "fleet"
-          ? { fleetId: fleetAndContact?.existingFleetId ?? "fleet-mock-123" }
-          : { customerId: createdCustomerId };
+      // Si esto falla no hay nada que recuperar: lo maneja el catch general abajo.
+      if (mode === "particular" && existingCustomer) {
+        // Cliente ya existe: usar su ID directamente
+        createdCustomerId = existingCustomer.id;
+        vehicleOwner      = { customerId: existingCustomer.id };
+      } else if (mode === "particular") {
+        const { customer } = await customersService.create(customerDraft!, skipAuthHeader);
+        createdCustomerId  = customer.id;
+        vehicleOwner       = { customerId: customer.id };
+      } else if (fleetAndContact!.existingFleetId && !fleetAndContact!.contact) {
+        // Flota existente sin contacto nuevo: el vehículo va directo a la flota
+        vehicleOwner = { fleetId: fleetAndContact!.existingFleetId };
+      } else {
+        // Flota nueva (o existente con contacto nuevo)
+        const fleetId =
+          fleetAndContact!.existingFleetId ??
+          (await fleetsService.create(fleetAndContact!.fleet!, skipAuthHeader));
+        const { customer } = await customersService.create({ ...fleetAndContact!.contact!, fleetId }, skipAuthHeader);
+        createdCustomerId  = customer.id;
+        vehicleOwner       = { fleetId };
       }
 
       // ── Paso 2: crear vehículo ─────────────────────────────────────────────
+      // El cliente/flota ya se creó: si el vehículo falla, ofrecemos retomarlo
+      // desde la ficha del cliente en vez de perder lo hecho.
+      let createdVehicleId: string;
       try {
-        const vehicle     = await vehiclesService.create({ ...vehicleDraft, ...vehicleOwner }, skipAuthHeader);
-        createdVehicleId  = vehicle.id;
+        const vehicle    = await vehiclesService.create({ ...vehicleDraft, ...vehicleOwner }, skipAuthHeader);
+        createdVehicleId = vehicle.id;
       } catch (err) {
-        console.warn("API vehicle creation failed, using mock:", err);
-        createdVehicleId = "veh-" + Math.floor(1000 + Math.random() * 9000);
+        console.error("Falló la creación del vehículo:", err);
+        setPartialError({
+          message:
+            extractApiError(err) ??
+            "El cliente se registró, pero no se pudo crear el vehículo. Podés agregarlo desde la ficha del cliente.",
+          customerId: createdCustomerId,
+        });
+        return;
       }
 
       // ── Paso 3: crear orden ────────────────────────────────────────────────
+      // Vehículo y cliente ya existen: si la orden falla, ofrecemos abrirla
+      // desde la ficha del vehículo.
+      let order: { id: string };
       try {
-        const order = await workOrdersService.create({
+        order = await workOrdersService.create({
           vehicleId:          createdVehicleId,
           mileageAtEntry:     vehicleDraft.currentMileage,
           customerNote:       vehicleDraft.customerNote?.trim() || undefined,
@@ -103,14 +117,27 @@ export function StepConfirm({
           contactPersonPhone: vehicleDraft.contactPersonPhone?.trim() || undefined,
           serviceReason:      vehicleDraft.serviceReason?.trim() || undefined,
         }, skipAuthHeader);
-        toast.success("Orden de trabajo creada correctamente");
-        router.push(successHref ? successHref(order.id) : `/admin/work-orders/${order.id}`);
       } catch (err) {
-        console.warn("API work order creation failed, falling back to frontend mock simulation:", err);
-        const mockOrderId = "WO-" + Math.floor(100000 + Math.random() * 900000);
-        toast.success("Orden creada correctamente (Simulación de Front)");
-        router.push(successHref ? successHref(mockOrderId) : `/admin/work-orders/${mockOrderId}`);
+        console.error("Falló la creación de la orden de trabajo:", err);
+        setPartialError({
+          message:
+            extractApiError(err) ??
+            "El cliente y el vehículo se registraron, pero no se pudo abrir la orden. Podés abrirla desde la ficha del vehículo.",
+          vehicleId: createdVehicleId,
+        });
+        return;
       }
+
+      toast.success("Orden de trabajo creada correctamente");
+      router.push(successHref ? successHref(order.id) : `/admin/work-orders/${order.id}`);
+    } catch (err) {
+      // Falla en el paso 1 (cliente / flota) o algo inesperado: nada que recuperar.
+      console.error("Falló el ingreso:", err);
+      const message =
+        extractApiError(err) ??
+        "No se pudo completar el ingreso. Revisá los datos e intentá de nuevo.";
+      toast.error(message);
+      setPartialError({ message });
     } finally {
       setLoading(false);
     }
