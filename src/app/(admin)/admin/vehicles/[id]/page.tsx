@@ -42,11 +42,13 @@ export default function VehicleDetailPage() {
 
   async function handleConfirmOrder({
     mileageAtEntry,
+    serviceReason,
     customerNote,
     contactPersonName,
     contactPersonPhone,
   }: {
     mileageAtEntry: number;
+    serviceReason: string;
     customerNote: string;
     contactPersonName?: string;
     contactPersonPhone?: string;
@@ -56,12 +58,14 @@ export default function VehicleDetailPage() {
       const order = await workOrdersService.create({
         vehicleId: vehicle.id,
         mileageAtEntry,
+        serviceReason,
         customerNote: customerNote || undefined,
         contactPersonName: contactPersonName || undefined,
         contactPersonPhone: contactPersonPhone || undefined,
       });
       toast.success("Orden de trabajo abierta");
-      router.push(`/admin/work-orders/${order.id}`);
+      // Continuamos al registro fotográfico de ingreso (mismo paso que el wizard).
+      router.push(`/admin/intake/created/${order.id}`);
     } catch {
       toast.error("No se pudo abrir la orden de trabajo");
       throw new Error();

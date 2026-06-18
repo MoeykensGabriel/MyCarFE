@@ -11,6 +11,7 @@ interface OpenOrderModalProps {
   initialContactPhone?: string;
   onConfirm: (data: {
     mileageAtEntry: number;
+    serviceReason: string;
     customerNote: string;
     contactPersonName?: string;
     contactPersonPhone?: string;
@@ -26,18 +27,26 @@ export function OpenOrderModal({
   onConfirm,
   onClose,
 }: OpenOrderModalProps) {
-  const [mileage,      setMileage]      = useState(initialMileage);
-  const [note,         setNote]         = useState("");
-  const [contactName,  setContactName]  = useState(initialContactName);
-  const [contactPhone, setContactPhone] = useState(initialContactPhone);
-  const [loading,      setLoading]      = useState(false);
+  const [mileage,       setMileage]       = useState(initialMileage);
+  const [serviceReason, setServiceReason] = useState("");
+  const [reasonError,   setReasonError]   = useState<string | null>(null);
+  const [note,          setNote]          = useState("");
+  const [contactName,   setContactName]   = useState(initialContactName);
+  const [contactPhone,  setContactPhone]  = useState(initialContactPhone);
+  const [loading,       setLoading]       = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    // El motivo de visita es obligatorio en el backend (guía la inspección).
+    if (!serviceReason.trim()) {
+      setReasonError("Indicá por qué viene el vehículo");
+      return;
+    }
     setLoading(true);
     try {
       await onConfirm({
         mileageAtEntry: mileage,
+        serviceReason: serviceReason.trim(),
         customerNote: note.trim(),
         contactPersonName: contactName.trim() || undefined,
         contactPersonPhone: contactPhone.trim() || undefined,
@@ -91,19 +100,43 @@ export function OpenOrderModal({
             </div>
           </div>
 
-          {/* Motivo de ingreso */}
+          {/* Motivo de visita (obligatorio) — guía la inspección colectiva */}
           <div className="space-y-1.5">
             <label className="text-[11px] font-bold uppercase tracking-widest text-[#041627]">
-              Motivo de ingreso{" "}
+              ¿Por qué trae el vehículo? <span className="text-red-500 normal-case">*</span>
+            </label>
+            <textarea
+              rows={3}
+              value={serviceReason}
+              onChange={(e) => {
+                setServiceReason(e.target.value);
+                if (reasonError) setReasonError(null);
+              }}
+              placeholder="Ej: Escuché un ruido en el motor al arrancar en frío..."
+              className={`w-full px-3 py-2.5 text-sm rounded-lg border text-[#041627] placeholder:text-[#44474c]/40 focus:outline-none focus:ring-2 focus:ring-[#041627]/20 focus:border-[#041627] resize-none transition-all ${
+                reasonError ? "border-red-400 focus:ring-red-200" : "border-[#c4c6cd]"
+              }`}
+              disabled={loading}
+            />
+            {reasonError && <p className="text-xs text-red-500">{reasonError}</p>}
+            <p className="text-[10px] text-[#44474c]/60">
+              Este texto guía a los mecánicos durante la inspección colectiva.
+            </p>
+          </div>
+
+          {/* Nota adicional (opcional) */}
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-bold uppercase tracking-widest text-[#041627]">
+              Nota adicional{" "}
               <span className="font-normal normal-case tracking-normal text-[#44474c]/50">
                 (opcional)
               </span>
             </label>
             <textarea
-              rows={3}
+              rows={2}
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Ej: Escuché un ruido en el motor al arrancar en frío..."
+              placeholder="Comentarios internos, observaciones del cliente, etc."
               className="w-full px-3 py-2.5 text-sm rounded-lg border border-[#c4c6cd] text-[#041627] placeholder:text-[#44474c]/40 focus:outline-none focus:ring-2 focus:ring-[#041627]/20 focus:border-[#041627] resize-none transition-all"
               disabled={loading}
             />

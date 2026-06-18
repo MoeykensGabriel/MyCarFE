@@ -55,11 +55,13 @@ export default function AddVehicleToFleetPage() {
 
   async function handleConfirmOrder({
     mileageAtEntry,
+    serviceReason,
     customerNote,
     contactPersonName,
     contactPersonPhone,
   }: {
     mileageAtEntry: number;
+    serviceReason: string;
     customerNote: string;
     contactPersonName?: string;
     contactPersonPhone?: string;
@@ -69,6 +71,7 @@ export default function AddVehicleToFleetPage() {
       const order = await workOrdersService.create({
         vehicleId:         pendingOrderVehicle.id,
         mileageAtEntry,
+        serviceReason,
         customerNote:      customerNote || undefined,
         contactPersonName: contactPersonName || undefined,
         contactPersonPhone: contactPersonPhone || undefined,

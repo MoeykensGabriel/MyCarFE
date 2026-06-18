@@ -55,7 +55,7 @@ function DetailPanel({
   const { data: vehicle, isLoading } = useVehicle(vehicleId);
 
   return (
-    <aside className="w-full lg:w-80 shrink-0 bg-white rounded-xl border border-[#c4c6cd] shadow-sm overflow-hidden flex flex-col self-start lg:sticky lg:top-0">
+    <aside className="fixed inset-x-0 bottom-0 z-50 w-full max-h-[85vh] overflow-y-auto rounded-t-2xl shadow-2xl flex flex-col bg-white border border-[#c4c6cd] lg:static lg:z-auto lg:max-h-none lg:overflow-hidden lg:rounded-xl lg:rounded-t-xl lg:w-80 lg:shrink-0 lg:self-start lg:sticky lg:top-0 lg:shadow-sm">
 
       {/* Header */}
       <div className="border-b border-[#c4c6cd]/60 px-5 py-4">
@@ -177,11 +177,13 @@ export default function VehiclesPage() {
 
   async function handleConfirmOrder({
     mileageAtEntry,
+    serviceReason,
     customerNote,
     contactPersonName,
     contactPersonPhone,
   }: {
     mileageAtEntry: number;
+    serviceReason: string;
     customerNote: string;
     contactPersonName?: string;
     contactPersonPhone?: string;
@@ -191,12 +193,16 @@ export default function VehiclesPage() {
       const order = await workOrdersService.create({
         vehicleId: pendingOrder.vehicleId,
         mileageAtEntry,
+        serviceReason,
         customerNote: customerNote || undefined,
         contactPersonName: contactPersonName || undefined,
         contactPersonPhone: contactPersonPhone || undefined,
       });
       toast.success("Orden de trabajo abierta");
-      router.push(`/admin/work-orders/${order.id}`);
+      // Continuamos al paso de fotos del ingreso (registro cosmético) — el mismo
+      // "tercer paso" del wizard de intake. Desde ahí se puede ir a la ficha o
+      // saltar las fotos.
+      router.push(`/admin/intake/created/${order.id}`);
     } catch {
       toast.error("No se pudo abrir la orden de trabajo");
       throw new Error(); // para que el modal no cierre solo
@@ -378,11 +384,18 @@ export default function VehiclesPage() {
 
         {/* Panel de detalle */}
         {selectedId && (
-          <DetailPanel
-            vehicleId={selectedId}
-            onClose={() => setSelectedId(null)}
-            onOpenOrder={setPendingOrder}
-          />
+          <>
+            {/* Backdrop (solo mobile): el panel es un bottom-sheet emergente */}
+            <div
+              className="lg:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+              onClick={() => setSelectedId(null)}
+            />
+            <DetailPanel
+              vehicleId={selectedId}
+              onClose={() => setSelectedId(null)}
+              onOpenOrder={(p) => { setPendingOrder(p); setSelectedId(null); }}
+            />
+          </>
         )}
       </div>
     </div>
