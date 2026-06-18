@@ -226,7 +226,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <SessionGuard>
-      <div className="flex h-screen overflow-hidden bg-[#eefcfd]">
+      <div className="flex min-h-screen lg:h-screen lg:overflow-hidden bg-[#eefcfd]">
 
         {/* ── Sidebar desktop (lg+) ─────────────────────────────────────── */}
         <aside className="hidden lg:flex lg:w-56 flex-col shrink-0 bg-[#041627] text-white/85 h-screen sticky top-0">
@@ -260,10 +260,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </aside>
 
         {/* ── Contenido principal ───────────────────────────────────────── */}
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <div className="flex-1 flex flex-col min-w-0 lg:overflow-hidden">
 
           {/* Header móvil */}
-          <header className="lg:hidden flex items-center justify-between px-4 h-14 bg-[#041627] shrink-0">
+          <header className="lg:hidden sticky top-0 z-30 flex items-center justify-between px-4 h-14 bg-[#041627] shrink-0">
             <div className="flex items-center gap-2">
               <Wrench className="w-4 h-4 text-[#fea520]" />
               <span className="text-sm font-bold text-white">MyCarApp</span>
@@ -277,7 +277,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </button>
           </header>
 
-          <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
+          <main className="flex-1 p-4 lg:p-8 lg:overflow-y-auto">
             {children}
           </main>
         </div>

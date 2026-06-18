@@ -403,30 +403,31 @@ export default function ReceptionistsPage() {
 
       <div className="flex flex-col lg:flex-row gap-5 items-start">
         <div className="flex-1 min-w-0 space-y-3">
-          <div className="bg-white rounded-xl border border-[#c4c6cd] shadow-sm overflow-hidden">
-            {isLoading ? (
-              <div className="divide-y divide-[#c4c6cd]/40">
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className="flex items-center gap-4 px-6 py-4">
-                    <div className="w-10 h-10 rounded-full bg-[#c4c6cd]/30 animate-pulse shrink-0" />
-                    <div className="flex-1 space-y-2">
-                      <div className="h-4 w-40 bg-[#c4c6cd]/30 rounded animate-pulse" />
-                      <div className="h-3 w-28 bg-[#c4c6cd]/20 rounded animate-pulse" />
-                    </div>
-                    <div className="h-5 w-16 bg-[#c4c6cd]/20 rounded animate-pulse" />
+          {isLoading ? (
+            <div className="bg-white rounded-xl border border-[#c4c6cd] shadow-sm overflow-hidden divide-y divide-[#c4c6cd]/40">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="flex items-center gap-4 px-4 sm:px-6 py-4">
+                  <div className="w-10 h-10 rounded-full bg-[#c4c6cd]/30 animate-pulse shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 w-40 max-w-[60%] bg-[#c4c6cd]/30 rounded animate-pulse" />
+                    <div className="h-3 w-28 bg-[#c4c6cd]/20 rounded animate-pulse" />
                   </div>
-                ))}
-              </div>
-            ) : isError ? (
-              <p className="px-6 py-8 text-sm text-red-500 text-center">
-                Error al cargar los recepcionistas.
-              </p>
-            ) : items.length === 0 ? (
-              <p className="px-6 py-8 text-sm text-[#44474c] text-center">
-                No hay recepcionistas.
-              </p>
-            ) : (
-              <>
+                  <div className="h-5 w-16 bg-[#c4c6cd]/20 rounded animate-pulse" />
+                </div>
+              ))}
+            </div>
+          ) : isError ? (
+            <div className="bg-white rounded-xl border border-[#c4c6cd] shadow-sm px-6 py-8 text-center">
+              <p className="text-sm text-red-500">Error al cargar los recepcionistas.</p>
+            </div>
+          ) : items.length === 0 ? (
+            <div className="bg-white rounded-xl border border-[#c4c6cd] shadow-sm px-6 py-8 text-center">
+              <p className="text-sm text-[#44474c]">No hay recepcionistas.</p>
+            </div>
+          ) : (
+            <>
+              {/* ── Tabla (desktop) ───────────────────────────────────────────── */}
+              <div className="hidden lg:block bg-white rounded-xl border border-[#c4c6cd] shadow-sm overflow-hidden">
                 <div className="grid grid-cols-[1fr_1fr_90px] gap-4 px-6 py-3 bg-[#eefcfd] border-b border-[#c4c6cd]/60">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-[#44474c]/70">Nombre</p>
                   <p className="text-[10px] font-bold uppercase tracking-widest text-[#44474c]/70">Email</p>
@@ -469,17 +470,34 @@ export default function ReceptionistsPage() {
                     );
                   })}
                 </div>
-              </>
-            )}
 
-            {!isLoading && !isError && data && (
-              <div className="px-6 py-3 bg-[#eefcfd]/60 border-t border-[#c4c6cd]/60">
-                <p className="text-xs text-[#44474c]/70">
-                  Mostrando {items.length} de {data.totalCount.toLocaleString("es-AR")} recepcionistas
-                </p>
+                {data && (
+                  <div className="px-6 py-3 bg-[#eefcfd]/60 border-t border-[#c4c6cd]/60">
+                    <p className="text-xs text-[#44474c]/70">
+                      Mostrando {items.length} de {data.totalCount.toLocaleString("es-AR")} recepcionistas
+                    </p>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+
+              {/* ── Cards (mobile / tablet) ───────────────────────────────────── */}
+              <div className="lg:hidden space-y-3">
+                {items.map((r) => (
+                  <ReceptionistMobileCard
+                    key={r.id}
+                    receptionist={r}
+                    selected={selectedId === r.id}
+                    onSelect={selectRow}
+                  />
+                ))}
+                {data && (
+                  <p className="text-xs text-[#44474c]/70 px-1 pt-1">
+                    Mostrando {items.length} de {data.totalCount.toLocaleString("es-AR")} recepcionistas
+                  </p>
+                )}
+              </div>
+            </>
+          )}
 
           {data && (
             <Pagination
@@ -504,5 +522,52 @@ export default function ReceptionistsPage() {
         <CreateReceptionistModal onClose={() => setShowCreate(false)} />
       )}
     </div>
+  );
+}
+
+// ─── Card de recepcionista para mobile / tablet ───────────────────────────────
+// La tabla de 3 columnas no entra en pantallas chicas. Abajo de lg cada
+// recepcionista es una card que SELECCIONA igual que la fila (abre el panel de
+// detalle, que en mobile aparece debajo de la lista).
+
+function ReceptionistMobileCard({
+  receptionist: r,
+  selected,
+  onSelect,
+}: {
+  receptionist: Receptionist;
+  selected: boolean;
+  onSelect: (id: string) => void;
+}) {
+  return (
+    <button
+      onClick={() => onSelect(r.id)}
+      className={`w-full text-left bg-white rounded-xl border shadow-sm p-4 transition-all ${
+        selected
+          ? "border-[#fea520] ring-1 ring-[#fea520]/40"
+          : "border-[#c4c6cd] hover:border-[#fea520]/40 active:scale-[0.99]"
+      }`}
+    >
+      {/* Nombre + email + estado */}
+      <div className="flex items-start gap-3">
+        <ReceptionistAvatar r={r} size="sm" />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-[#041627] truncate">
+            {r.firstName} {r.lastName}
+          </p>
+          <p className="text-sm text-[#041627] truncate mt-0.5">{r.email}</p>
+        </div>
+        <div className="shrink-0">
+          <ActiveBadge isActive={r.isActive} />
+        </div>
+      </div>
+
+      {/* Alta */}
+      <div className="flex items-center justify-end mt-3 pt-3 border-t border-[#c4c6cd]/40">
+        <span className="text-[10px] font-medium text-[#44474c]/60 whitespace-nowrap">
+          Desde {formatDate(r.createdAt)}
+        </span>
+      </div>
+    </button>
   );
 }
