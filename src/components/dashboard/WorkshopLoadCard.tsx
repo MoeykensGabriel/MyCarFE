@@ -1,6 +1,6 @@
 "use client";
 
-import { Car, Users, Activity, AlertCircle } from "lucide-react";
+import { Users, Activity } from "lucide-react";
 
 import { DashboardWorkshopLoad } from "@/types/api.types";
 import { formatEstimatedDuration } from "@/lib/format";
@@ -10,95 +10,41 @@ interface Props {
 }
 
 /**
- * Widget de carga del taller en tiempo real.
+ * Widget de carga de trabajo del taller.
  *
- * Pensado para que el admin pueda responder en 3 segundos preguntas como:
- *   "¿Puedo aceptar este trabajo para el viernes?"
- *   "¿Quién está más libre para asignarle algo?"
+ * El taller organiza la agenda/ocupación por fuera del sistema, así que este
+ * widget NO muestra capacidad ni turnos: solo la carga de trabajo (basada en las
+ * duraciones estimadas) para responder de un vistazo "¿quién está más libre?".
  *
- * Muestra 3 cosas:
- *  1. Vehículos en el taller vs capacidad física (ocupación)
- *  2. Carga total de trabajo pendiente (en horas)
- *  3. Carga por mecánico con barra visual (libre → ocupado → sobrecargado)
+ * Muestra:
+ *  1. Carga total de trabajo pendiente (en horas)
+ *  2. Carga por mecánico con barra visual (libre → ocupado → sobrecargado)
  */
 export function WorkshopLoadCard({ load }: Props) {
-  const occupancyPct = load.physicalCapacity > 0
-    ? Math.min(100, Math.round((load.vehiclesInShop / load.physicalCapacity) * 100))
-    : 0;
-
-  const isFull          = load.vehiclesInShop >= load.physicalCapacity;
-  const isNearlyFull    = !isFull && occupancyPct >= 80;
-
   return (
     <section className="bg-white rounded-xl border border-[#c4c6cd] shadow-sm overflow-hidden">
       {/* Header */}
-      <div className="border-b border-[#c4c6cd]/60 px-5 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Activity className="w-4 h-4 text-[#fea520]" />
-          <h2 className="text-sm font-semibold text-[#041627]">Carga del taller</h2>
-        </div>
-        {isFull && (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-red-50 text-red-700 border border-red-200">
-            <AlertCircle className="w-3 h-3" />
-            Lleno
-          </span>
-        )}
-        {isNearlyFull && (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200">
-            Casi lleno
-          </span>
-        )}
+      <div className="border-b border-[#c4c6cd]/60 px-5 py-4 flex items-center gap-2">
+        <Activity className="w-4 h-4 text-[#fea520]" />
+        <h2 className="text-sm font-semibold text-[#041627]">Carga del taller</h2>
       </div>
 
-      {/* Bloque ocupación + trabajo pendiente */}
-      <div className="px-5 py-4 grid grid-cols-2 gap-4 border-b border-[#c4c6cd]/40">
-        {/* Vehículos en el taller */}
-        <div>
-          <div className="flex items-center gap-1.5 mb-1.5">
-            <Car className="w-3.5 h-3.5 text-[#44474c]/60" />
-            <p className="text-[10px] font-bold uppercase tracking-widest text-[#44474c]/70">
-              En el taller
-            </p>
-          </div>
-          <p className="text-2xl font-bold text-[#041627] tabular-nums">
-            {load.vehiclesInShop}
-            <span className="text-sm font-normal text-[#44474c]/60"> / {load.physicalCapacity}</span>
-          </p>
-          {/* Barra de ocupación */}
-          <div className="w-full h-1.5 rounded-full bg-[#c4c6cd]/30 mt-2">
-            <div
-              className={`h-1.5 rounded-full transition-all ${
-                isFull ? "bg-red-500" : isNearlyFull ? "bg-amber-500" : "bg-emerald-500"
-              }`}
-              style={{ width: `${occupancyPct}%` }}
-            />
-          </div>
-          {/* Esperando retiro (Completed): ocupan lugar pero ya sin trabajo activo */}
-          {load.vehiclesAwaitingPickup > 0 && (
-            <p className="text-[10px] text-[#44474c]/70 mt-1.5">
-              <span className="font-bold text-[#041627]">{load.vehiclesAwaitingPickup}</span>{" "}
-              esperando retiro
-            </p>
-          )}
-        </div>
-
-        {/* Trabajo pendiente total */}
-        <div>
-          <div className="flex items-center gap-1.5 mb-1.5">
-            <Users className="w-3.5 h-3.5 text-[#44474c]/60" />
-            <p className="text-[10px] font-bold uppercase tracking-widest text-[#44474c]/70">
-              Trabajo pendiente
-            </p>
-          </div>
-          <p className="text-2xl font-bold text-[#041627] tabular-nums">
-            {load.totalPendingMinutes > 0
-              ? formatEstimatedDuration(load.totalPendingMinutes)
-              : "—"}
-          </p>
-          <p className="text-[10px] text-[#44474c]/60 mt-2">
-            Suma de servicios asignados sin completar
+      {/* Trabajo pendiente total */}
+      <div className="px-5 py-4 border-b border-[#c4c6cd]/40">
+        <div className="flex items-center gap-1.5 mb-1.5">
+          <Users className="w-3.5 h-3.5 text-[#44474c]/60" />
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[#44474c]/70">
+            Trabajo pendiente
           </p>
         </div>
+        <p className="text-2xl font-bold text-[#041627] tabular-nums">
+          {load.totalPendingMinutes > 0
+            ? formatEstimatedDuration(load.totalPendingMinutes)
+            : "—"}
+        </p>
+        <p className="text-[10px] text-[#44474c]/60 mt-2">
+          Suma de servicios asignados sin completar
+        </p>
       </div>
 
       {/* Carga por mecánico */}

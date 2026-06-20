@@ -22,7 +22,6 @@ import { InspectionPanel } from "@/components/work-orders/InspectionPanel";
 import { InspectionFindingsCard } from "@/components/work-orders/InspectionFindingsCard";
 import { InspectionProposalsCard } from "@/components/work-orders/InspectionProposalsCard";
 import { SendQuoteButton } from "@/components/work-orders/SendQuoteButton";
-import { ScheduleWorkOrderCard } from "@/components/work-orders/ScheduleWorkOrderCard";
 import { StockLookupModal } from "@/components/stock/StockLookupModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -355,9 +354,6 @@ export default function WorkOrderDetailPage() {
               </CardContent>
             </Card>
           )}
-
-          {/* Agenda / ocupación del taller (agendar por vehículo) */}
-          <ScheduleWorkOrderCard order={order} />
 
           {/* Motivo de visita (lo carga recepción al abrir la orden) */}
           {order.serviceReason && (
