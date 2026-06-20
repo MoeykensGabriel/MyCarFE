@@ -106,15 +106,30 @@ export default function CustomerHomePage() {
             </Link>
           )}
 
-          {/* Alertas de mantenimiento de los vehículos (cubiertas) */}
-          <MaintenanceAlertList alerts={alerts} />
-
-          {/* Kilometraje por actualizar (reutiliza el banner de Mis Vehículos) */}
-          {vehiclesDue.length > 0 && (
+          {/* Kilometraje: siempre visible. Verde suave si está al día, naranja
+              (el banner de Mis Vehículos) si hay vehículos por actualizar. */}
+          {vehicles.length > 0 && (
             <Link href="/my-vehicles" className="block active:scale-[0.99] transition-transform">
-              <MileageReminderBanner dueCount={vehiclesDue.length} />
+              {vehiclesDue.length > 0 ? (
+                <MileageReminderBanner dueCount={vehiclesDue.length} />
+              ) : (
+                <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-2xl p-4 shadow-sm">
+                  <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shrink-0 shadow-sm border border-emerald-200">
+                    <Gauge className="w-5 h-5 text-emerald-600" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-extrabold text-emerald-800">Kilometraje actualizado</p>
+                    <p className="text-[11px] font-semibold text-emerald-700/80 mt-0.5 leading-snug">
+                      Todos tus vehículos tienen el kilometraje al día.
+                    </p>
+                  </div>
+                </div>
+              )}
             </Link>
           )}
+
+          {/* Alertas de mantenimiento de los vehículos (cubiertas, aceite, batería) */}
+          <MaintenanceAlertList alerts={alerts} />
 
           {/* Todo al día */}
           {allClear && (
