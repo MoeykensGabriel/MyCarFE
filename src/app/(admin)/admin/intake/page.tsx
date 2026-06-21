@@ -9,9 +9,10 @@ import { StepCustomer }  from "@/components/intake/StepCustomer";
 import { StepFleet }     from "@/components/intake/StepFleet";
 import { StepVehicle }   from "@/components/intake/StepVehicle";
 import { StepConfirm }   from "@/components/intake/StepConfirm";
+import { StepMaintenanceAlerts } from "@/components/intake/StepMaintenanceAlerts";
 import { IntakeSummaryPanel } from "@/components/intake/IntakeSummaryPanel";
 import { useFleet } from "@/hooks/useFleets";
-import { Customer } from "@/types/api.types";
+import { Customer, MaintenanceAlertItemInput } from "@/types/api.types";
 import {
   IntakeMode,
   CustomerDraft,
@@ -23,6 +24,7 @@ const STEP_TITLES = [
   "¿Qué tipo de ingreso es?",
   "", // se sobreescribe con el modo
   "Datos del vehículo",
+  "Alertas de mantenimiento",
   "Revisión final",
 ];
 
@@ -34,10 +36,11 @@ export default function IntakePage() {
   const [existingCustomer, setExistingCustomer] = useState<Customer | undefined>();
   const [fleetAndContact,  setFleetAndContact]  = useState<FleetAndContactDraft | undefined>();
   const [vehicleDraft,     setVehicleDraft]     = useState<VehicleDraft | undefined>();
+  const [alertsDraft,      setAlertsDraft]      = useState<MaintenanceAlertItemInput[] | undefined>();
 
   const steps = mode === "fleet"
-    ? ["Empresa", "Vehículo", "Confirmar"]
-    : ["Cliente",  "Vehículo", "Confirmar"];
+    ? ["Empresa", "Vehículo", "Mantenimiento", "Confirmar"]
+    : ["Cliente",  "Vehículo", "Mantenimiento", "Confirmar"];
 
   const stepTitle =
     step === 1
@@ -137,14 +140,24 @@ export default function IntakePage() {
                 />
               )}
 
-              {step === 3 && vehicleDraft && mode && (
+              {step === 3 && (
+                <StepMaintenanceAlerts
+                  ownerLabel={ownerLabel}
+                  defaultItems={alertsDraft}
+                  onNext={(items) => { setAlertsDraft(items); setStep(4); }}
+                  onBack={() => setStep(2)}
+                />
+              )}
+
+              {step === 4 && vehicleDraft && mode && (
                 <StepConfirm
                   mode={mode}
                   customerDraft={customerDraft}
                   existingCustomer={existingCustomer}
                   fleetAndContact={fleetAndContact}
                   vehicleDraft={vehicleDraft}
-                  onBack={() => setStep(2)}
+                  maintenanceAlerts={alertsDraft}
+                  onBack={() => setStep(3)}
                   successHref={(orderId) => `/admin/intake/created/${orderId}`}
                 />
               )}

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import {
   Disc3, Droplet, BatteryWarning, ChevronRight, AlertTriangle, Clock,
+  Cog, Settings2, Wrench, Zap, Droplets, Bell,
   type LucideIcon,
 } from "lucide-react";
 
@@ -14,9 +15,15 @@ import {
 } from "@/types/api.types";
 
 const TYPE_ICON: Record<MaintenanceAlertType, LucideIcon> = {
-  [MaintenanceAlertType.Tire]:    Disc3,
-  [MaintenanceAlertType.Oil]:     Droplet,
-  [MaintenanceAlertType.Battery]: BatteryWarning,
+  [MaintenanceAlertType.Oil]:              Droplet,
+  [MaintenanceAlertType.Tires]:            Disc3,
+  [MaintenanceAlertType.Battery]:          BatteryWarning,
+  [MaintenanceAlertType.TimingKit]:        Cog,
+  [MaintenanceAlertType.Transmission]:     Settings2,
+  [MaintenanceAlertType.Differential]:     Wrench,
+  [MaintenanceAlertType.SparkPlugs]:       Zap,
+  [MaintenanceAlertType.InjectorCleaning]: Droplets,
+  [MaintenanceAlertType.Other]:            Bell,
 };
 
 interface VehicleGroup {
@@ -113,7 +120,7 @@ function VehicleAlertCard({ group }: { group: VehicleGroup }) {
           const sub  = alert.severity === MaintenanceAlertSeverity.Critical;
           return (
             <div
-              key={alert.type}
+              key={alert.id}
               className={`flex items-center gap-3 px-4 py-2.5 ${i > 0 ? "border-t border-[#041627]/5" : ""}`}
             >
               <div

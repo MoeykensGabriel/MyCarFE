@@ -7,7 +7,7 @@ import { Info, AlertTriangle, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { AxiosError } from "axios";
 import { DocumentType, DocumentTypeLabel } from "@/lib/enums";
-import { Customer, ProblemDetails } from "@/types/api.types";
+import { Customer, MaintenanceAlertItemInput, ProblemDetails } from "@/types/api.types";
 
 /** Saca el mensaje de error más útil de una respuesta del backend. */
 function extractApiError(err: unknown): string | undefined {
@@ -22,6 +22,7 @@ import { customersService } from "@/services/customers.service";
 import { vehiclesService } from "@/services/vehicles.service";
 import { fleetsService } from "@/services/fleets.service";
 import { workOrdersService } from "@/services/work-orders.service";
+import { maintenanceAlertsService } from "@/services/maintenance-alerts.service";
 import { StepNav, Tag, SummaryItem } from "./ui";
 import { IntakeMode, CustomerDraft, FleetAndContactDraft, VehicleDraft } from "./types";
 
@@ -31,6 +32,8 @@ interface Props {
   existingCustomer?: Customer;
   fleetAndContact?:  FleetAndContactDraft;
   vehicleDraft:      VehicleDraft;
+  /** Alertas de mantenimiento configuradas en el paso previo (se guardan tras crear el vehículo). */
+  maintenanceAlerts?: MaintenanceAlertItemInput[];
   onBack:            () => void;
   /** Builder del href post-creación. Si no se provee, va al detalle de admin. */
   successHref?:      (orderId: string) => string;
@@ -42,6 +45,7 @@ export function StepConfirm({
   existingCustomer,
   fleetAndContact,
   vehicleDraft,
+  maintenanceAlerts,
   onBack,
   successHref,
 }: Props) {
@@ -129,6 +133,20 @@ export function StepConfirm({
       }
 
       toast.success("Orden de trabajo creada correctamente");
+
+      // Alertas de mantenimiento configuradas en el ingreso. No bloquean el flujo:
+      // si fallan, se pueden cargar/editar después desde la ficha del vehículo.
+      if (maintenanceAlerts && maintenanceAlerts.length > 0) {
+        try {
+          await maintenanceAlertsService.set(createdVehicleId, maintenanceAlerts, skipAuthHeader);
+        } catch (err) {
+          console.error("No se pudieron guardar las alertas de mantenimiento:", err);
+          toast.error(
+            "La orden se creó, pero no se pudieron guardar las alertas. Configuralas desde la ficha del vehículo.",
+          );
+        }
+      }
+
       router.push(successHref ? successHref(order.id) : `/admin/work-orders/${order.id}`);
     } catch (err) {
       // Falla en el paso 1 (cliente / flota) o algo inesperado: nada que recuperar.

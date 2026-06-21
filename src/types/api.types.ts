@@ -1028,11 +1028,33 @@ export interface UpdateWorkshopSettingsRequest {
 
 // ─── Resumen de mantenimiento (alertas del Inicio) ───────────────────────────
 
+/**
+ * Categoría del ítem de mantenimiento. El recepcionista configura, por vehículo,
+ * cada cuántos km y/o meses dispara la alerta. Espeja 1:1 al enum del backend.
+ */
 export enum MaintenanceAlertType {
-  Tire = 0,
-  Oil = 1,
-  Battery = 2,
+  Oil = 0,              // Aceite
+  Tires = 1,            // Cubiertas
+  Battery = 2,          // Batería
+  TimingKit = 3,        // Kit de distribución
+  Transmission = 4,     // Transmisión
+  Differential = 5,     // Diferenciales
+  SparkPlugs = 6,       // Bujías
+  InjectorCleaning = 7, // Limpieza de inyectores
+  Other = 8,            // Otro
 }
+
+export const MaintenanceAlertTypeLabel: Record<MaintenanceAlertType, string> = {
+  [MaintenanceAlertType.Oil]:              "Aceite",
+  [MaintenanceAlertType.Tires]:            "Cubiertas",
+  [MaintenanceAlertType.Battery]:          "Batería",
+  [MaintenanceAlertType.TimingKit]:        "Kit de distribución",
+  [MaintenanceAlertType.Transmission]:     "Transmisión",
+  [MaintenanceAlertType.Differential]:     "Diferenciales",
+  [MaintenanceAlertType.SparkPlugs]:       "Bujías",
+  [MaintenanceAlertType.InjectorCleaning]: "Limpieza de inyectores",
+  [MaintenanceAlertType.Other]:            "Otro",
+};
 
 export enum MaintenanceAlertSeverity {
   Warning = 0,
@@ -1040,6 +1062,7 @@ export enum MaintenanceAlertSeverity {
 }
 
 export interface MaintenanceAlert {
+  id: string;
   type: MaintenanceAlertType;
   severity: MaintenanceAlertSeverity;
   vehicleId: string;
@@ -1048,8 +1071,33 @@ export interface MaintenanceAlert {
   model: string;
   /** Etiqueta corta del sistema, ej. "Cubiertas". */
   title: string;
-  /** Frase accionable, ej. "2 cubiertas en estado crítico — cambio inmediato". */
+  /** Frase accionable, ej. "Próximo en 1.000 km". */
   detail: string;
+}
+
+/** Item de entrada para configurar/editar alertas (PUT). id null = nueva. */
+export interface MaintenanceAlertItemInput {
+  id?: string | null;
+  itemType: MaintenanceAlertType;
+  title?: string | null;
+  description?: string | null;
+  intervalKm?: number | null;
+  intervalMonths?: number | null;
+}
+
+/** Alerta configurada de un vehículo (GET/PUT/reset), con estado calculado. */
+export interface MaintenanceAlertConfig {
+  id: string;
+  itemType: MaintenanceAlertType;
+  title: string;
+  description?: string | null;
+  intervalKm?: number | null;
+  intervalMonths?: number | null;
+  baselineMileage: number;
+  baselineDate: string;
+  kmRemaining?: number | null;
+  daysRemaining?: number | null;
+  severity?: MaintenanceAlertSeverity | null;
 }
 
 // ─── Errores RFC 7807 ─────────────────────────────────────────────────────────
