@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { BackButton } from "@/components/shared/BackButton";
 import { OpenOrderModal } from "@/components/shared/OpenOrderModal";
 import { VehicleTiresCard } from "@/components/vehicle-tires/VehicleTiresCard";
+import { MaintenanceAlertsCard } from "@/components/vehicle-maintenance/MaintenanceAlertsCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   DocumentTypeLabel,
@@ -165,6 +166,9 @@ export default function VehicleDetailPage() {
 
           {/* Cubiertas */}
           <VehicleTiresCard vehicleId={vehicle.id} defaultMileage={vehicle.currentMileage} />
+
+          {/* Alertas de mantenimiento configurables */}
+          <MaintenanceAlertsCard vehicleId={vehicle.id} currentMileage={vehicle.currentMileage} />
 
           {/* Titular registral */}
           <Card>
