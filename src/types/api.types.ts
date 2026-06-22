@@ -251,7 +251,6 @@ export interface WorkOrderService {
 
   // Cotización item-by-item (S4-04+)
   approvalStatus?: QuoteItemApprovalStatus;
-  alternativeGroupId?: string | null;
   frozenAt?: string | null;
 }
 
@@ -637,18 +636,12 @@ export interface WorkOrderPart {
   /** Código de proveedor en GestionPGB. Null = repuesto custom (no va al depósito). */
   productCode: string | null;
   name: string;
-  /** Costo interno del taller. NO se muestra al cliente. */
+  /** Precio de venta unitario (lo que ve y paga el cliente). Lo fija la oficina/admin. */
   unitPrice: number;
-  /** Precio que ve el cliente en el PDF (markup). Si es null, se usa unitPrice. */
-  customerUnitPrice: number | null;
   quantity: number;
-  /** Subtotal a costo interno (unitPrice × quantity). */
+  /** Subtotal (unitPrice × quantity) — lo que va al PDF y al total. */
   subtotal: number;
-  /** Subtotal de cara al cliente (precio cliente × quantity) — lo que va al PDF/total. */
-  customerSubtotal: number;
   tier: WorkOrderPartTier;
-  /** Si tiene valor, este repuesto pertenece a un grupo de alternativas (cliente elige uno). */
-  alternativeGroupId: string | null;
   approvalStatus: QuoteItemApprovalStatus;
   /** Si tiene valor, el repuesto fue congelado al enviar el presupuesto y no es editable. */
   frozenAt: string | null;
@@ -660,12 +653,10 @@ export interface AddWorkOrderPartRequest {
   workOrderId: string;
   productCode?: string;
   name: string;
+  /** Precio de venta unitario. */
   unitPrice: number;
-  /** Precio cliente (PDF). Si se omite/null, el cliente ve el costo interno. */
-  customerUnitPrice?: number | null;
   quantity: number;
   tier: WorkOrderPartTier;
-  alternativeGroupId?: string;
 }
 
 export interface UpdateWorkOrderPartRequest {
@@ -673,12 +664,10 @@ export interface UpdateWorkOrderPartRequest {
   partId: string;
   productCode?: string;
   name: string;
+  /** Precio de venta unitario. */
   unitPrice: number;
-  /** Precio cliente (PDF). Si se omite/null, el cliente ve el costo interno. */
-  customerUnitPrice?: number | null;
   quantity: number;
   tier: WorkOrderPartTier;
-  alternativeGroupId?: string;
 }
 
 export interface CreateWorkOrderRequest {
@@ -728,8 +717,6 @@ export interface ApprovalServiceItem {
   unitPrice: number;
   quantity: number;
   subtotal: number;
-  /** Si tiene valor: item pertenece a un grupo de alternativas (cliente elige exactamente uno). */
-  alternativeGroupId?: string | null;
 }
 
 export interface ApprovalPartItem {
@@ -740,7 +727,6 @@ export interface ApprovalPartItem {
   quantity: number;
   subtotal: number;
   tier: WorkOrderPartTier;
-  alternativeGroupId?: string | null;
 }
 
 export interface ApproveQuotePreview {

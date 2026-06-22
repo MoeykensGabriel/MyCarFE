@@ -150,6 +150,21 @@ export function useRemoveWorkOrderService(workOrderId: string) {
   });
 }
 
+export function useUpdateWorkOrderServicePrice(workOrderId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ serviceId, price }: { serviceId: string; price: number }) =>
+      workOrdersService.updateServicePrice(workOrderId, serviceId, price),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(workOrderKeys.detail(workOrderId), updated);
+      queryClient.invalidateQueries({ queryKey: workOrderKeys.lists() });
+    },
+    onError: (err) => {
+      toast.error(extractError(err, "No se pudo actualizar el precio del servicio"));
+    },
+  });
+}
+
 // ─── Repuestos (parts) ────────────────────────────────────────────────────────
 // Patrón: el BE devuelve el WorkOrderDetail completo, así que actualizamos la cache
 // directamente con setQueryData para evitar un refetch innecesario. Si falla, igual

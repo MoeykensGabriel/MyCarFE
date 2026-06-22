@@ -262,42 +262,13 @@ export default function WorkOrderDetailPage() {
               en sus inspecciones). El admin elige cuáles pasan al presupuesto. */}
           {isDiagnosing && <InspectionProposalsCard workOrderId={order.id} />}
 
-          {/* Servicios */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">
-                Servicios
-                {(order.services?.length ?? 0) > 0 && (
-                  <span className="ml-2 text-xs font-normal text-muted-foreground">
-                    ({order.services!.length})
-                  </span>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ServicesList
-                workOrderId={order.id}
-                services={order.services ?? []}
-                totalAmount={order.totalAmount}
-                editable={isDiagnosing}
-                workOrderStatus={status}
-              />
-            </CardContent>
-          </Card>
-
-          {/* Repuestos — solo visible si hay parts cargados o si está en Diagnosing */}
-          {((order.parts?.length ?? 0) > 0 || isDiagnosing) && (
+          {/* Presupuesto — UNA card con Servicios + Repuestos + Total, con precios
+              editables (servicio y repuesto) antes de presupuestar (Diagnosing). */}
+          {((order.services?.length ?? 0) > 0 || (order.parts?.length ?? 0) > 0 || isDiagnosing) && (
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between gap-2">
-                  <CardTitle className="text-base">
-                    Repuestos
-                    {(order.parts?.length ?? 0) > 0 && (
-                      <span className="ml-2 text-xs font-normal text-muted-foreground">
-                        ({order.parts!.length})
-                      </span>
-                    )}
-                  </CardTitle>
+                  <CardTitle className="text-base">Presupuesto</CardTitle>
                   {isDiagnosing && (
                     <Button
                       variant="outline"
@@ -311,46 +282,56 @@ export default function WorkOrderDetailPage() {
                   )}
                 </div>
               </CardHeader>
-              <CardContent>
-                <PartsList
-                  workOrderId={order.id}
-                  parts={order.parts ?? []}
-                  editable={isDiagnosing}
-                />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Total global (servicios + repuestos) — solo si hay algo cargado */}
-          {((order.services?.length ?? 0) > 0 || (order.parts?.length ?? 0) > 0) && (
-            <div className="bg-gradient-to-r from-[#041627] to-[#0a2947] rounded-xl border border-[#041627] p-5 flex items-center justify-between shadow-md transition-all duration-300 hover:shadow-lg text-white">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center text-white shrink-0 border border-white/20">
-                  <ClipboardList className="w-5 h-5 text-[#fea520]" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-white tracking-wide">Total presupuestado</h3>
-                  <p className="text-[11px] text-white/70">Suma total de todos los servicios y repuestos</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <span className="text-[10px] uppercase font-extrabold tracking-widest text-[#fea520]/80 block mb-0.5">Monto Estimado</span>
-                <span className="text-2xl font-black text-white tabular-nums tracking-tight">
-                  {formatCurrency(order.totalAmount)}
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* Agregar al presupuesto — paneles debajo del Total para no tapar la sumatoria */}
-          {isDiagnosing && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Agregar al presupuesto</CardTitle>
-              </CardHeader>
               <CardContent className="space-y-5">
-                <AddServicePanel workOrderId={order.id} />
-                <AddPartPanel workOrderId={order.id} />
+
+                {/* Servicios */}
+                <div className="space-y-2">
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+                    Servicios{(order.services?.length ?? 0) > 0 ? ` (${order.services!.length})` : ""}
+                  </p>
+                  <ServicesList
+                    workOrderId={order.id}
+                    services={order.services ?? []}
+                    editable={isDiagnosing}
+                    workOrderStatus={status}
+                  />
+                </div>
+
+                {/* Repuestos */}
+                <div className="space-y-2 border-t pt-4">
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+                    Repuestos{(order.parts?.length ?? 0) > 0 ? ` (${order.parts!.length})` : ""}
+                  </p>
+                  <PartsList
+                    workOrderId={order.id}
+                    parts={order.parts ?? []}
+                    editable={isDiagnosing}
+                  />
+                </div>
+
+                {/* Agregar items (solo Diagnosing) */}
+                {isDiagnosing && (
+                  <div className="border-t pt-1">
+                    <AddServicePanel workOrderId={order.id} />
+                    <AddPartPanel workOrderId={order.id} />
+                  </div>
+                )}
+
+                {/* Total */}
+                <div className="border-t pt-4 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-lg bg-[#041627]/5 flex items-center justify-center shrink-0">
+                      <ClipboardList className="w-4 h-4 text-[#fea520]" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-[#041627]">Total presupuestado</h3>
+                      <p className="text-[11px] text-muted-foreground">Suma de servicios y repuestos</p>
+                    </div>
+                  </div>
+                  <span className="text-2xl font-black text-[#041627] tabular-nums tracking-tight">
+                    {formatCurrency(order.totalAmount)}
+                  </span>
+                </div>
               </CardContent>
             </Card>
           )}

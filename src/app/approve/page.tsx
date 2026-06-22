@@ -6,7 +6,6 @@ import {
   AlertTriangle,
   Car,
   CheckCircle2,
-  Layers,
   Package,
   Wrench,
   XCircle,
@@ -35,60 +34,30 @@ interface ItemRow {
   quantity: number;
   unitPrice: number;
   subtotal: number;
-  alternativeGroupId?: string | null;
-}
-
-/** Separa items en standalone (checkbox) y groups (radio). */
-function partition(items: ItemRow[]): {
-  standalone: ItemRow[];
-  groups: Map<string, ItemRow[]>;
-} {
-  const standalone: ItemRow[] = [];
-  const groups = new Map<string, ItemRow[]>();
-  for (const it of items) {
-    if (!it.alternativeGroupId) {
-      standalone.push(it);
-      continue;
-    }
-    const arr = groups.get(it.alternativeGroupId) ?? [];
-    arr.push(it);
-    groups.set(it.alternativeGroupId, arr);
-  }
-  // Si un grupo tiene un solo item, lo tratamos como standalone (defensa: no debería pasar
-  // porque el BE valida ≥2 al enviar, pero protegemos al usuario de una UI rota).
-  for (const [gid, arr] of groups) {
-    if (arr.length < 2) {
-      standalone.push(...arr);
-      groups.delete(gid);
-    }
-  }
-  return { standalone, groups };
 }
 
 function serviceToRow(s: ApprovalServiceItem): ItemRow {
   return {
-    kind:               "service",
-    id:                 s.id,
-    name:               s.name,
-    description:        s.description,
-    quantity:           s.quantity,
-    unitPrice:          s.unitPrice,
-    subtotal:           s.subtotal,
-    alternativeGroupId: s.alternativeGroupId ?? null,
+    kind:        "service",
+    id:          s.id,
+    name:        s.name,
+    description: s.description,
+    quantity:    s.quantity,
+    unitPrice:   s.unitPrice,
+    subtotal:    s.subtotal,
   };
 }
 
 function partToRow(p: ApprovalPartItem): ItemRow {
   return {
-    kind:               "part",
-    id:                 p.id,
-    name:               p.name,
-    productCode:        p.productCode,
-    tier:               p.tier,
-    quantity:           p.quantity,
-    unitPrice:          p.unitPrice,
-    subtotal:           p.subtotal,
-    alternativeGroupId: p.alternativeGroupId ?? null,
+    kind:        "part",
+    id:          p.id,
+    name:        p.name,
+    productCode: p.productCode,
+    tier:        p.tier,
+    quantity:    p.quantity,
+    unitPrice:   p.unitPrice,
+    subtotal:    p.subtotal,
   };
 }
 
@@ -121,9 +90,8 @@ function ApproveContent() {
   const [preview,  setPreview]  = useState<ApproveQuotePreview | null>(null);
   const [errorMsg, setErrorMsg] = useState<string>("");
 
-  // Selección: items standalone aprobados + elección por grupo
+  // Selección: el cliente tilda los items que aprueba.
   const [approvedStandaloneIds, setApprovedStandaloneIds] = useState<Set<string>>(new Set());
-  const [groupSelection,        setGroupSelection]        = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     if (!token) {
@@ -140,11 +108,10 @@ function ApproveContent() {
           return;
         }
 
-        // Default: marcamos todos los standalone como aprobados (UX cómoda — el cliente
-        // los puede desmarcar). Los grupos arrancan sin selección — el cliente debe elegir.
+        // Default: marcamos todos los items como aprobados (UX cómoda — el cliente
+        // los puede desmarcar).
         const rows = [...data.services.map(serviceToRow), ...data.parts.map(partToRow)];
-        const { standalone } = partition(rows);
-        setApprovedStandaloneIds(new Set(standalone.map((r) => r.id)));
+        setApprovedStandaloneIds(new Set(rows.map((r) => r.id)));
 
         setPreview(data);
         setState("preview");
@@ -163,27 +130,17 @@ function ApproveContent() {
     return [...preview.services.map(serviceToRow), ...preview.parts.map(partToRow)];
   }, [preview]);
 
-  const { standalone, groups } = useMemo(() => partition(allRows), [allRows]);
-
-  // IDs aprobados finales: standalones tildados + elegido de cada grupo
-  const approvedIds = useMemo(() => {
-    const ids = new Set<string>(approvedStandaloneIds);
-    for (const picked of groupSelection.values()) ids.add(picked);
-    return ids;
-  }, [approvedStandaloneIds, groupSelection]);
+  // Todos los items son standalone (sin alternativas): el cliente tilda los que aprueba.
+  const standalone = allRows;
+  const approvedIds = approvedStandaloneIds;
 
   const totalSelected = useMemo(
     () => allRows.filter((r) => approvedIds.has(r.id)).reduce((acc, r) => acc + r.subtotal, 0),
     [allRows, approvedIds],
   );
 
-  const allGroupsResolved = useMemo(
-    () => Array.from(groups.keys()).every((gid) => groupSelection.has(gid)),
-    [groups, groupSelection],
-  );
-
   const atLeastOneApproved = approvedIds.size > 0;
-  const canSubmit          = allGroupsResolved && atLeastOneApproved && state === "preview";
+  const canSubmit          = atLeastOneApproved && state === "preview";
 
   // ── Handlers ────────────────────────────────────────────────────────────────
 
@@ -192,14 +149,6 @@ function ApproveContent() {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else              next.add(id);
-      return next;
-    });
-  }
-
-  function pickFromGroup(groupId: string, itemId: string) {
-    setGroupSelection((prev) => {
-      const next = new Map(prev);
-      next.set(groupId, itemId);
       return next;
     });
   }
@@ -268,11 +217,8 @@ function ApproveContent() {
 
   // ── Vista preview con selección ─────────────────────────────────────────────
 
-  // Filtramos por tipo para mostrar standalone separados en secciones,
-  // pero los grupos los renderizamos en su propio bloque arriba (cross-type-safe).
   const standaloneServices = standalone.filter((r) => r.kind === "service");
   const standaloneParts    = standalone.filter((r) => r.kind === "part");
-  const groupEntries       = Array.from(groups.entries());
 
   return (
     <main className="min-h-screen bg-[#f5f6f8] px-4 py-10 pb-32">
@@ -302,25 +248,7 @@ function ApproveContent() {
           </div>
         </div>
 
-        {/* ── Grupos de alternativas (radio) ──────────────────────────────── */}
-        {groupEntries.length > 0 && (
-          <div className="space-y-3">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-[#44474c]/70 pl-1">
-              Tenés que elegir una opción en cada grupo
-            </p>
-            {groupEntries.map(([groupId, items], idx) => (
-              <GroupCard
-                key={groupId}
-                index={idx + 1}
-                items={items}
-                selectedId={groupSelection.get(groupId)}
-                onSelect={(id) => pickFromGroup(groupId, id)}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* ── Servicios standalone (checkbox) ─────────────────────────────── */}
+        {/* ── Servicios (checkbox) ─────────────────────────────────────────── */}
         {standaloneServices.length > 0 && (
           <SectionCard title="Servicios" icon={<Wrench className="w-3.5 h-3.5" />}>
             {standaloneServices.map((r) => (
@@ -368,12 +296,7 @@ function ApproveContent() {
             </p>
           </div>
 
-          {!allGroupsResolved && (
-            <p className="text-[11px] text-[#fea520] font-semibold">
-              Falta elegir una opción en {groupEntries.length - groupSelection.size} grupo(s).
-            </p>
-          )}
-          {allGroupsResolved && !atLeastOneApproved && (
+          {!atLeastOneApproved && (
             <p className="text-[11px] text-[#fea520] font-semibold">
               Tenés que aprobar al menos un item.
             </p>
@@ -458,67 +381,3 @@ function CheckboxRow({
   );
 }
 
-function GroupCard({
-  index,
-  items,
-  selectedId,
-  onSelect,
-}: {
-  index: number;
-  items: ItemRow[];
-  selectedId?: string;
-  onSelect: (id: string) => void;
-}) {
-  const resolved = !!selectedId;
-  return (
-    <div
-      className={`bg-white rounded-xl border shadow-sm overflow-hidden ${
-        resolved ? "border-[#c4c6cd]" : "border-[#fea520]/50 ring-1 ring-[#fea520]/20"
-      }`}
-    >
-      <div className="px-5 py-3 bg-[#fea520]/10 border-b border-[#fea520]/30 flex items-center gap-2">
-        <Layers className="w-3.5 h-3.5 text-[#865300]" />
-        <p className="text-[10px] font-bold uppercase tracking-widest text-[#865300]">
-          Opción {index} — elegí una
-        </p>
-      </div>
-      <div className="divide-y divide-[#c4c6cd]/40">
-        {items.map((it) => {
-          const checked = selectedId === it.id;
-          return (
-            <label
-              key={it.id}
-              className={`flex items-start gap-3 px-5 py-3 cursor-pointer transition-colors ${
-                checked ? "bg-[#eefcfd]/30" : "hover:bg-gray-50"
-              }`}
-            >
-              <input
-                type="radio"
-                name={`group-${items[0].alternativeGroupId}`}
-                checked={checked}
-                onChange={() => onSelect(it.id)}
-                className="mt-1 w-4 h-4 border-[#c4c6cd] text-[#041627] focus:ring-[#041627]"
-              />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-[#041627]">{it.name}</p>
-                {it.description && (
-                  <p className="text-xs text-[#44474c]/70 mt-0.5">{it.description}</p>
-                )}
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1 text-[11px] text-[#44474c]/70">
-                  {it.productCode && <span className="font-mono">{it.productCode}</span>}
-                  {it.tier !== undefined && <span>{WorkOrderPartTierLabel[it.tier]}</span>}
-                  {it.quantity > 1 && (
-                    <span>{it.quantity} × {formatCurrency(it.unitPrice)}</span>
-                  )}
-                </div>
-              </div>
-              <p className="text-sm font-semibold text-[#041627] shrink-0 tabular-nums">
-                {formatCurrency(it.subtotal)}
-              </p>
-            </label>
-          );
-        })}
-      </div>
-    </div>
-  );
-}

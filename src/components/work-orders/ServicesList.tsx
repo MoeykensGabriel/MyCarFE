@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { CheckCircle2, Clock, Lock, PlayCircle, X } from "lucide-react";
 
 import { WorkOrderService } from "@/types/api.types";
@@ -14,7 +15,7 @@ import {
   WorkOrderServiceAssignmentStatus,
   WorkOrderStatus,
 } from "@/lib/enums";
-import { useRemoveWorkOrderService } from "@/hooks/useWorkOrders";
+import { useRemoveWorkOrderService, useUpdateWorkOrderServicePrice } from "@/hooks/useWorkOrders";
 import { MechanicAssignSelect } from "@/components/work-orders/MechanicAssignSelect";
 
 interface ServicesListProps {
@@ -133,15 +134,19 @@ function ServiceRow({
           </div>
         </div>
         <div className="flex items-center gap-3 shrink-0">
-          <span
-            className={`text-sm font-medium tabular-nums ${
-              s.approvalStatus === QuoteItemApprovalStatus.Rejected
-                ? "text-gray-400 line-through"
-                : "text-gray-900"
-            }`}
-          >
-            {formatCurrency(s.subtotal)}
-          </span>
+          {editable && !s.frozenAt ? (
+            <ServicePriceInput workOrderId={workOrderId} service={s} />
+          ) : (
+            <span
+              className={`text-sm font-medium tabular-nums ${
+                s.approvalStatus === QuoteItemApprovalStatus.Rejected
+                  ? "text-gray-400 line-through"
+                  : "text-gray-900"
+              }`}
+            >
+              {formatCurrency(s.subtotal)}
+            </span>
+          )}
           {editable && (
             <button
               onClick={onRemove}
@@ -184,6 +189,46 @@ function ServiceRow({
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── Precio editable inline ───────────────────────────────────────────────────
+// Edita el precio de venta del servicio (por unidad). Guarda al salir/Enter.
+
+function ServicePriceInput({
+  workOrderId,
+  service,
+}: {
+  workOrderId: string;
+  service: WorkOrderService;
+}) {
+  const { mutate, isPending } = useUpdateWorkOrderServicePrice(workOrderId);
+  const [value, setValue] = useState(String(service.priceSnapshot));
+
+  function save() {
+    const price = parseFloat(value);
+    if (isNaN(price) || price < 0 || price === service.priceSnapshot) {
+      setValue(String(service.priceSnapshot));
+      return;
+    }
+    mutate({ serviceId: service.id, price });
+  }
+
+  return (
+    <div className="flex items-center gap-1">
+      <span className="text-xs text-muted-foreground">$</span>
+      <input
+        type="number"
+        min={0}
+        step={0.01}
+        value={value}
+        disabled={isPending}
+        onChange={(e) => setValue(e.target.value)}
+        onBlur={save}
+        onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+        className="w-24 px-2 py-1 text-sm text-right rounded border border-[#c4c6cd] focus:outline-none focus:ring-2 focus:ring-[#041627]/20 focus:border-[#041627] tabular-nums disabled:opacity-50"
+      />
     </div>
   );
 }

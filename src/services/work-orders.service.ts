@@ -114,6 +114,15 @@ export const workOrdersService = {
     await apiClient.delete(`/api/work-orders/${id}/services/${serviceId}`);
   },
 
+  /** Edita el precio de venta de un servicio (precio único modificable, solo en Diagnosing). */
+  updateServicePrice: async (id: string, serviceId: string, price: number): Promise<WorkOrder> => {
+    const response = await apiClient.patch<WorkOrder>(
+      `/api/work-orders/${id}/services/${serviceId}/price`,
+      { price },
+    );
+    return normalizeWorkOrder(response.data);
+  },
+
   // ─── Repuestos (parts) ───────────────────────────────────────────────────
   // Los tres endpoints devuelven el WorkOrderDetail completo, pero acá tipamos
   // como WorkOrder porque los hooks invalidan la query y vuelven a leer el detalle.

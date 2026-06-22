@@ -8,16 +8,15 @@ import { formatCurrency } from "@/lib/format";
 import {
   QuoteItemApprovalStatus,
   QuoteItemApprovalStatusLabel,
-  WorkOrderPartTier,
   WorkOrderPartTierLabel,
 } from "@/lib/enums";
-import { useRemoveWorkOrderPart } from "@/hooks/useWorkOrders";
+import { useRemoveWorkOrderPart, useUpdateWorkOrderPart } from "@/hooks/useWorkOrders";
 import { EditPartDialog } from "./EditPartDialog";
 
 interface PartsListProps {
   workOrderId: string;
   parts: WorkOrderPart[];
-  /** Si true, permite editar/quitar repuestos (solo en Diagnosing). */
+  /** Si true, permite editar precio/quitar repuestos (solo en Diagnosing). */
   editable?: boolean;
 }
 
@@ -35,49 +34,19 @@ export function PartsList({ workOrderId, parts, editable = false }: PartsListPro
     );
   }
 
-  // Agrupar visualmente por AlternativeGroupId — los del mismo grupo se muestran indentados
-  const standalone = parts.filter((p) => !p.alternativeGroupId);
-  const groupedMap = new Map<string, WorkOrderPart[]>();
-  for (const p of parts) {
-    if (!p.alternativeGroupId) continue;
-    const arr = groupedMap.get(p.alternativeGroupId) ?? [];
-    arr.push(p);
-    groupedMap.set(p.alternativeGroupId, arr);
-  }
-
   return (
     <>
       <div className="space-y-1">
-        {standalone.map((p) => (
+        {parts.map((p) => (
           <PartRow
             key={p.id}
+            workOrderId={workOrderId}
             part={p}
             editable={editable}
             onEdit={() => setEditing(p)}
             onRemove={() => removePart(p.id)}
             removing={isPending}
           />
-        ))}
-
-        {Array.from(groupedMap.entries()).map(([groupId, groupParts], idx) => (
-          <div
-            key={groupId}
-            className="border-l-2 border-amber-300 pl-3 ml-1 my-2 bg-amber-50/40 rounded-r-md"
-          >
-            <p className="text-[10px] font-bold uppercase tracking-widest text-amber-700/90 pt-2">
-              Alternativas (grupo {idx + 1}) — el cliente elige una
-            </p>
-            {groupParts.map((p) => (
-              <PartRow
-                key={p.id}
-                part={p}
-                editable={editable}
-                onEdit={() => setEditing(p)}
-                onRemove={() => removePart(p.id)}
-                removing={isPending}
-              />
-            ))}
-          </div>
         ))}
       </div>
 
@@ -96,12 +65,14 @@ export function PartsList({ workOrderId, parts, editable = false }: PartsListPro
 // ─── Fila ─────────────────────────────────────────────────────────────────────
 
 function PartRow({
+  workOrderId,
   part,
   editable,
   onEdit,
   onRemove,
   removing,
 }: {
+  workOrderId: string;
   part: WorkOrderPart;
   editable: boolean;
   onEdit: () => void;
@@ -136,24 +107,11 @@ function PartRow({
           </div>
 
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 ml-5 text-xs text-muted-foreground">
-            {part.productCode && (
-              <span className="font-mono">{part.productCode}</span>
-            )}
+            {part.productCode && <span className="font-mono">{part.productCode}</span>}
             <span>{WorkOrderPartTierLabel[part.tier]}</span>
             {part.quantity > 1 && (
               <span>
-                {part.quantity} × {formatCurrency(part.customerUnitPrice ?? part.unitPrice)}
-              </span>
-            )}
-            <span title="Costo interno del taller (no lo ve el cliente)">
-              Costo: {formatCurrency(part.unitPrice)}
-            </span>
-            {part.customerUnitPrice != null && part.customerUnitPrice !== part.unitPrice && (
-              <span
-                className="text-emerald-700"
-                title="Margen sobre el costo interno"
-              >
-                Margen: {formatCurrency(part.customerSubtotal - part.subtotal)}
+                {part.quantity} × {formatCurrency(part.unitPrice)}
               </span>
             )}
             <ApprovalBadge status={part.approvalStatus} />
@@ -161,21 +119,25 @@ function PartRow({
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          <span
-            className={`text-sm font-medium tabular-nums ${
-              part.approvalStatus === QuoteItemApprovalStatus.Rejected
-                ? "text-gray-400 line-through"
-                : "text-gray-900"
-            }`}
-          >
-            {formatCurrency(part.customerSubtotal)}
-          </span>
+          {canMutate ? (
+            <PartPriceInput workOrderId={workOrderId} part={part} />
+          ) : (
+            <span
+              className={`text-sm font-medium tabular-nums ${
+                part.approvalStatus === QuoteItemApprovalStatus.Rejected
+                  ? "text-gray-400 line-through"
+                  : "text-gray-900"
+              }`}
+            >
+              {formatCurrency(part.subtotal)}
+            </span>
+          )}
           {canMutate && (
             <>
               <button
                 onClick={onEdit}
                 className="text-muted-foreground hover:text-blue-600 transition-colors"
-                title="Editar repuesto"
+                title="Editar repuesto (nombre, código, cantidad)"
                 aria-label="Editar repuesto"
               >
                 <Pencil className="w-3.5 h-3.5" />
@@ -193,6 +155,52 @@ function PartRow({
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+// ─── Precio editable inline ───────────────────────────────────────────────────
+// Edita el precio de venta del repuesto sin abrir el diálogo. Guarda al salir/Enter
+// reusando el update completo (preserva nombre, código, cantidad y categoría).
+
+function PartPriceInput({ workOrderId, part }: { workOrderId: string; part: WorkOrderPart }) {
+  const { mutate: updatePart, isPending } = useUpdateWorkOrderPart(workOrderId);
+  const [value, setValue] = useState(String(part.unitPrice));
+
+  function save() {
+    const price = parseFloat(value);
+    if (isNaN(price) || price < 0 || price === part.unitPrice) {
+      setValue(String(part.unitPrice));
+      return;
+    }
+    updatePart({
+      partId: part.id,
+      data: {
+        workOrderId,
+        partId:      part.id,
+        productCode: part.productCode ?? undefined,
+        name:        part.name,
+        unitPrice:   price,
+        quantity:    part.quantity,
+        tier:        part.tier,
+      },
+    });
+  }
+
+  return (
+    <div className="flex items-center gap-1">
+      <span className="text-xs text-muted-foreground">$</span>
+      <input
+        type="number"
+        min={0}
+        step={0.01}
+        value={value}
+        disabled={isPending}
+        onChange={(e) => setValue(e.target.value)}
+        onBlur={save}
+        onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+        className="w-24 px-2 py-1 text-sm text-right rounded border border-[#c4c6cd] focus:outline-none focus:ring-2 focus:ring-[#041627]/20 focus:border-[#041627] tabular-nums disabled:opacity-50"
+      />
     </div>
   );
 }
