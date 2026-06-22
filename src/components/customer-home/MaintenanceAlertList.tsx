@@ -1,30 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import {
-  Disc3, Droplet, BatteryWarning, ChevronRight, AlertTriangle, Clock,
-  Cog, Settings2, Wrench, Zap, Droplets, Bell,
-  type LucideIcon,
-} from "lucide-react";
+import { ChevronRight, AlertTriangle, Clock } from "lucide-react";
 
 import { PlateBadge } from "@/components/shared/PlateBadge";
+import { MAINTENANCE_TYPE_ICON } from "@/components/vehicle-maintenance/alert-icons";
 import {
   MaintenanceAlert,
   MaintenanceAlertSeverity,
-  MaintenanceAlertType,
 } from "@/types/api.types";
-
-const TYPE_ICON: Record<MaintenanceAlertType, LucideIcon> = {
-  [MaintenanceAlertType.Oil]:              Droplet,
-  [MaintenanceAlertType.Tires]:            Disc3,
-  [MaintenanceAlertType.Battery]:          BatteryWarning,
-  [MaintenanceAlertType.TimingKit]:        Cog,
-  [MaintenanceAlertType.Transmission]:     Settings2,
-  [MaintenanceAlertType.Differential]:     Wrench,
-  [MaintenanceAlertType.SparkPlugs]:       Zap,
-  [MaintenanceAlertType.InjectorCleaning]: Droplets,
-  [MaintenanceAlertType.Other]:            Bell,
-};
 
 interface VehicleGroup {
   vehicleId: string;
@@ -87,7 +71,7 @@ function VehicleAlertCard({ group }: { group: VehicleGroup }) {
 
   return (
     <Link
-      href={`/my-vehicles/${vehicleId}`}
+      href={`/my-vehicles/${vehicleId}#mantenimiento`}
       className={`block bg-white rounded-2xl border shadow-sm overflow-hidden active:scale-[0.99] hover:shadow-md transition-all ${
         critical ? "border-red-200" : "border-[#fea520]/40"
       }`}
@@ -116,7 +100,7 @@ function VehicleAlertCard({ group }: { group: VehicleGroup }) {
       {/* Una fila por sistema (cada una con su propio color) */}
       <div className="border-t border-[#041627]/5">
         {alerts.map((alert, i) => {
-          const Icon = TYPE_ICON[alert.type] ?? Disc3;
+          const Icon = MAINTENANCE_TYPE_ICON[alert.type];
           const sub  = alert.severity === MaintenanceAlertSeverity.Critical;
           return (
             <div

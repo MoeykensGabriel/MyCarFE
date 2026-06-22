@@ -15,6 +15,7 @@ import { VehicleDocumentsCard } from "@/components/vehicle-documents/VehicleDocu
 import { CustomerTiresCard } from "@/components/vehicle-tires/CustomerTiresCard";
 import { CustomerBatteryCard } from "@/components/vehicle-battery/CustomerBatteryCard";
 import { CustomerOilCard } from "@/components/vehicle-oil/CustomerOilCard";
+import { CustomerMaintenanceAlertsCard } from "@/components/vehicle-maintenance/CustomerMaintenanceAlertsCard";
 import { TripStationQrCard } from "@/components/vehicle-trips/TripStationQrCard";
 import { UpdateMileageModal } from "@/components/vehicle-mileage/UpdateMileageModal";
 import { VehicleTripsHistoryCard } from "@/components/vehicle-trips/VehicleTripsHistoryCard";
@@ -189,6 +190,9 @@ export default function MyVehicleDetailPage() {
           <ChevronRight className="w-4 h-4 text-[#fea520]" />
         </div>
       </Link>
+
+      {/* ── Mantenimiento (alertas configuradas por el taller) ──────────────── */}
+      <CustomerMaintenanceAlertsCard vehicleId={vehicle.id} />
 
       {/* ── Vencimientos (VTV, póliza, patente) — función plus ──────────────── */}
       {canDocs ? (
