@@ -33,7 +33,6 @@ export function EditPartDialog({ workOrderId, part, open, onClose }: Props) {
             name:        part.name,
             unitPrice:   part.unitPrice,
             quantity:    part.quantity,
-            tier:        part.tier,
           }}
           submitLabel="Guardar cambios"
           submitting={isPending}
@@ -49,7 +48,6 @@ export function EditPartDialog({ workOrderId, part, open, onClose }: Props) {
                   name:        values.name,
                   unitPrice:   values.unitPrice,
                   quantity:    values.quantity,
-                  tier:        values.tier,
                 },
               },
               {

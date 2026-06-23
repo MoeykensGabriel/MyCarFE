@@ -8,7 +8,6 @@ import { formatCurrency } from "@/lib/format";
 import {
   QuoteItemApprovalStatus,
   QuoteItemApprovalStatusLabel,
-  WorkOrderPartTierLabel,
 } from "@/lib/enums";
 import { useRemoveWorkOrderPart, useUpdateWorkOrderPart } from "@/hooks/useWorkOrders";
 import { EditPartDialog } from "./EditPartDialog";
@@ -108,7 +107,6 @@ function PartRow({
 
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 ml-5 text-xs text-muted-foreground">
             {part.productCode && <span className="font-mono">{part.productCode}</span>}
-            <span>{WorkOrderPartTierLabel[part.tier]}</span>
             {part.quantity > 1 && (
               <span>
                 {part.quantity} × {formatCurrency(part.unitPrice)}
@@ -161,7 +159,7 @@ function PartRow({
 
 // ─── Precio editable inline ───────────────────────────────────────────────────
 // Edita el precio de venta del repuesto sin abrir el diálogo. Guarda al salir/Enter
-// reusando el update completo (preserva nombre, código, cantidad y categoría).
+// reusando el update completo (preserva nombre, código y cantidad).
 
 function PartPriceInput({ workOrderId, part }: { workOrderId: string; part: WorkOrderPart }) {
   const { mutate: updatePart, isPending } = useUpdateWorkOrderPart(workOrderId);
@@ -182,7 +180,6 @@ function PartPriceInput({ workOrderId, part }: { workOrderId: string; part: Work
         name:        part.name,
         unitPrice:   price,
         quantity:    part.quantity,
-        tier:        part.tier,
       },
     });
   }

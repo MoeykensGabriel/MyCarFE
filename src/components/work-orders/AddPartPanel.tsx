@@ -44,7 +44,6 @@ export function AddPartPanel({ workOrderId }: Props) {
               name:        values.name,
               unitPrice:   values.unitPrice,
               quantity:    values.quantity,
-              tier:        values.tier,
             },
             {
               onSuccess: () => setOpen(false),

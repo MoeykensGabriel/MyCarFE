@@ -18,7 +18,6 @@ import {
   ApproveQuotePreview,
 } from "@/types/api.types";
 import { formatCurrency } from "@/lib/format";
-import { WorkOrderPartTier, WorkOrderPartTierLabel } from "@/lib/enums";
 
 type PageState = "loading" | "preview" | "approving" | "success" | "error";
 
@@ -30,7 +29,6 @@ interface ItemRow {
   name: string;
   description?: string | null;
   productCode?: string | null;
-  tier?: WorkOrderPartTier;
   quantity: number;
   unitPrice: number;
   subtotal: number;
@@ -54,7 +52,6 @@ function partToRow(p: ApprovalPartItem): ItemRow {
     id:          p.id,
     name:        p.name,
     productCode: p.productCode,
-    tier:        p.tier,
     quantity:    p.quantity,
     unitPrice:   p.unitPrice,
     subtotal:    p.subtotal,
@@ -368,7 +365,6 @@ function CheckboxRow({
         )}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1 text-[11px] text-[#44474c]/70">
           {row.productCode && <span className="font-mono">{row.productCode}</span>}
-          {row.tier !== undefined && <span>{WorkOrderPartTierLabel[row.tier]}</span>}
           {row.quantity > 1 && (
             <span>{row.quantity} × {formatCurrency(row.unitPrice)}</span>
           )}

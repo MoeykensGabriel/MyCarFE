@@ -12,7 +12,6 @@ import {
   VehicleDocumentType,
   VehicleTripStatus,
   VehicleUseType,
-  WorkOrderPartTier,
   WorkOrderServiceAssignmentStatus,
   WorkOrderStatus,
 } from "@/lib/enums";
@@ -640,9 +639,7 @@ export interface WorkOrderPart {
   unitPrice: number;
   quantity: number;
   /** Subtotal (unitPrice × quantity) — lo que va al PDF y al total. */
-  subtotal: number;
-  tier: WorkOrderPartTier;
-  approvalStatus: QuoteItemApprovalStatus;
+  subtotal: number;  approvalStatus: QuoteItemApprovalStatus;
   /** Si tiene valor, el repuesto fue congelado al enviar el presupuesto y no es editable. */
   frozenAt: string | null;
   createdAt: string;
@@ -655,9 +652,7 @@ export interface AddWorkOrderPartRequest {
   name: string;
   /** Precio de venta unitario. */
   unitPrice: number;
-  quantity: number;
-  tier: WorkOrderPartTier;
-}
+  quantity: number;}
 
 export interface UpdateWorkOrderPartRequest {
   workOrderId: string;
@@ -666,9 +661,7 @@ export interface UpdateWorkOrderPartRequest {
   name: string;
   /** Precio de venta unitario. */
   unitPrice: number;
-  quantity: number;
-  tier: WorkOrderPartTier;
-}
+  quantity: number;}
 
 export interface CreateWorkOrderRequest {
   vehicleId: string;
@@ -725,9 +718,7 @@ export interface ApprovalPartItem {
   productCode?: string | null;
   unitPrice: number;
   quantity: number;
-  subtotal: number;
-  tier: WorkOrderPartTier;
-}
+  subtotal: number;}
 
 export interface ApproveQuotePreview {
   workOrderId: string;
@@ -1084,6 +1075,8 @@ export interface MaintenanceAlertConfig {
   kmRemaining?: number | null;
   daysRemaining?: number | null;
   severity?: MaintenanceAlertSeverity | null;
+  /** Motivo cuando la salud medida manda sobre el contador (ej. batería). Reemplaza al texto de km/tiempo. */
+  statusReason?: string | null;
 }
 
 // ─── Errores RFC 7807 ─────────────────────────────────────────────────────────

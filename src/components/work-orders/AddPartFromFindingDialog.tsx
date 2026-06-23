@@ -77,7 +77,6 @@ export function AddPartFromFindingDialog({
                 name:        values.name,
                 unitPrice:   values.unitPrice,
                 quantity:    values.quantity,
-                tier:        values.tier,
               },
               { onSuccess: onClose },
             );

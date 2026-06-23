@@ -85,20 +85,6 @@ export const AssignmentStatusLabel: Record<WorkOrderServiceAssignmentStatus, str
 
 // ─── Repuestos / Cotización item-por-item ──────────────────────────────────────
 
-export enum WorkOrderPartTier {
-  Generic     = 0,
-  Aftermarket = 1,
-  Original    = 2,
-  Custom      = 3,
-}
-
-export const WorkOrderPartTierLabel: Record<WorkOrderPartTier, string> = {
-  [WorkOrderPartTier.Generic]:     "Genérico",
-  [WorkOrderPartTier.Aftermarket]: "Aftermarket",
-  [WorkOrderPartTier.Original]:    "Original",
-  [WorkOrderPartTier.Custom]:      "Custom",
-};
-
 export enum QuoteItemApprovalStatus {
   Pending  = 0,
   Approved = 1,
