@@ -31,6 +31,7 @@ type EditRow = {
   severity?:      MaintenanceAlertSeverity | null;
   kmRemaining?:   number | null;
   daysRemaining?: number | null;
+  statusReason?:  string | null;
 };
 
 const TYPE_OPTIONS = Object.entries(MaintenanceAlertTypeLabel).map(([k, label]) => ({
@@ -54,6 +55,7 @@ function fromConfig(c: MaintenanceAlertConfig): EditRow {
     severity:      c.severity,
     kmRemaining:   c.kmRemaining,
     daysRemaining: c.daysRemaining,
+    statusReason:  c.statusReason,
   };
 }
 
@@ -265,13 +267,16 @@ function StatusLine({ row }: { row: EditRow }) {
   if (row.daysRemaining != null)
     parts.push(row.daysRemaining > 0 ? `${row.daysRemaining} días` : "tiempo cumplido");
 
+  // Si la salud medida es la que activa la alerta (ej. batería), ese motivo manda sobre el contador.
+  const detail = row.statusReason ?? (parts.length > 0 ? parts.join(" · ") : null);
+
   return (
     <div className="flex items-center gap-2 flex-wrap pt-0.5">
       <span className={`inline-flex items-center text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${chip.cls}`}>
         {chip.label}
       </span>
-      {parts.length > 0 && (
-        <span className="text-[11px] text-[#44474c]/70">{parts.join(" · ")}</span>
+      {detail && (
+        <span className="text-[11px] text-[#44474c]/70">{detail}</span>
       )}
     </div>
   );

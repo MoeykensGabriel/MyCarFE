@@ -27,6 +27,13 @@ function intervalText(c: MaintenanceAlertConfig): string {
 }
 
 function statusInfo(c: MaintenanceAlertConfig) {
+  const base = baseStatusInfo(c);
+  // Si la alerta trae un motivo explícito (ej. la salud medida de la batería), ese texto
+  // manda sobre el contador de km/tiempo.
+  return c.statusReason ? { ...base, detail: c.statusReason } : base;
+}
+
+function baseStatusInfo(c: MaintenanceAlertConfig) {
   if (c.severity === MaintenanceAlertSeverity.Critical) {
     return {
       pill: "bg-red-50 text-red-700 border-red-200",
