@@ -25,6 +25,7 @@ export interface WorkOrdersParams {
   vehicleId?: string;
   fleetId?: string;
   status?: number;
+  statuses?: number[]; // atajo multi-estado (ej. "Aprobadas en adelante"); se envía como CSV
   ownerType?: 1 | 2;   // 1 = Clientes, 2 = Flotas
   search?: string;     // patente, nombre, razón social
   page?: number;
@@ -46,8 +47,14 @@ function normalizeWorkOrder(o: WorkOrder): WorkOrder {
 
 export const workOrdersService = {
   getAll: async (params: WorkOrdersParams = {}): Promise<PagedResult<WorkOrder>> => {
+    const { statuses, ...rest } = params;
     const response = await apiClient.get<WorkOrder[] | PagedResult<WorkOrder>>("/api/work-orders", {
-      params: { page: 1, pageSize: 20, ...params },
+      params: {
+        page: 1,
+        pageSize: 20,
+        ...rest,
+        ...(statuses && statuses.length ? { statuses: statuses.join(",") } : {}),
+      },
     });
     const raw = response.data;
     if (Array.isArray(raw)) {

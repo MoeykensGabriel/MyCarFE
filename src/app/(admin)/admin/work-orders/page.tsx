@@ -21,6 +21,17 @@ const ALL_STATUSES = Object.values(WorkOrderStatus).filter(
   (v) => typeof v === "number"
 ) as WorkOrderStatus[];
 
+// "Aprobadas en adelante": presupuestos que pasaron la aprobación (para liquidar comisiones).
+const APPROVED_ONWARD: WorkOrderStatus[] = [
+  WorkOrderStatus.Approved,
+  WorkOrderStatus.InProgress,
+  WorkOrderStatus.Completed,
+  WorkOrderStatus.Delivered,
+];
+
+// Valor sentinel del select para el grupo "aprobadas en adelante".
+const APPROVED_ONWARD_VALUE = "approved-onward";
+
 const OWNER_TABS = [
   { label: "Todos",    value: undefined },
   { label: "Clientes", value: 1 as const },
@@ -97,10 +108,16 @@ export default function WorkOrdersPage() {
         <div className="relative">
           <select
             defaultValue=""
-            onChange={(e) => applyFilter({ status: e.target.value === "" ? undefined : Number(e.target.value) })}
+            onChange={(e) => {
+              const v = e.target.value;
+              if (v === "") applyFilter({ status: undefined, statuses: undefined });
+              else if (v === APPROVED_ONWARD_VALUE) applyFilter({ status: undefined, statuses: APPROVED_ONWARD });
+              else applyFilter({ status: Number(v), statuses: undefined });
+            }}
             className="appearance-none pl-3 pr-8 py-2 text-sm rounded-lg border border-[#c4c6cd] bg-white text-[#041627] focus:outline-none focus:ring-2 focus:ring-[#041627]/20 focus:border-[#041627] transition-all cursor-pointer"
           >
             <option value="">Todos los estados</option>
+            <option value={APPROVED_ONWARD_VALUE}>Aprobadas (en adelante)</option>
             {ALL_STATUSES.map((s) => (
               <option key={s} value={s}>
                 {WorkOrderStatusConfig[s].label}
