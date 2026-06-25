@@ -17,6 +17,8 @@ import {
 } from "@/lib/enums";
 import { useRemoveWorkOrderService, useUpdateWorkOrderServicePrice } from "@/hooks/useWorkOrders";
 import { MechanicAssignSelect } from "@/components/work-orders/MechanicAssignSelect";
+import { CopyRowButton } from "@/components/shared/CopyRowButton";
+import { serviceToRow } from "@/lib/quote-copy";
 
 interface ServicesListProps {
   workOrderId: string;
@@ -25,6 +27,8 @@ interface ServicesListProps {
   totalAmount?: number;
   /** Si true, permite quitar servicios (solo en Diagnosing). */
   editable?: boolean;
+  /** Si true, muestra un botón para copiar cada ítem (vista final/aprobada). */
+  copyable?: boolean;
   /** Estado actual de la WO. Determina si la asignación de mecánicos es editable. */
   workOrderStatus?: WorkOrderStatus;
 }
@@ -33,6 +37,7 @@ export function ServicesList({
   workOrderId,
   services,
   editable = false,
+  copyable = false,
   workOrderStatus,
 }: ServicesListProps) {
   const { mutate: removeService, isPending } = useRemoveWorkOrderService(workOrderId);
@@ -63,6 +68,7 @@ export function ServicesList({
           workOrderId={workOrderId}
           service={s}
           editable={editable}
+          copyable={copyable}
           canAssignMechanic={canAssignMechanic}
           onRemove={() => removeService(s.id)}
           removing={isPending}
@@ -79,6 +85,7 @@ function ServiceRow({
   workOrderId,
   service: s,
   editable,
+  copyable,
   canAssignMechanic,
   onRemove,
   removing,
@@ -86,6 +93,7 @@ function ServiceRow({
   workOrderId: string;
   service: WorkOrderService;
   editable: boolean;
+  copyable: boolean;
   canAssignMechanic: boolean;
   onRemove: () => void;
   removing: boolean;
@@ -158,6 +166,7 @@ function ServiceRow({
               <X className="w-4 h-4" />
             </button>
           )}
+          {copyable && <CopyRowButton text={serviceToRow(s)} label="servicio" />}
         </div>
       </div>
 

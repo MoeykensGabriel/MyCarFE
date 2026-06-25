@@ -11,15 +11,19 @@ import {
 } from "@/lib/enums";
 import { useRemoveWorkOrderPart, useUpdateWorkOrderPart } from "@/hooks/useWorkOrders";
 import { EditPartDialog } from "./EditPartDialog";
+import { CopyRowButton } from "@/components/shared/CopyRowButton";
+import { partToRow } from "@/lib/quote-copy";
 
 interface PartsListProps {
   workOrderId: string;
   parts: WorkOrderPart[];
   /** Si true, permite editar precio/quitar repuestos (solo en Diagnosing). */
   editable?: boolean;
+  /** Si true, muestra un botón para copiar cada ítem (vista final/aprobada). */
+  copyable?: boolean;
 }
 
-export function PartsList({ workOrderId, parts, editable = false }: PartsListProps) {
+export function PartsList({ workOrderId, parts, editable = false, copyable = false }: PartsListProps) {
   const [editing, setEditing] = useState<WorkOrderPart | null>(null);
   const { mutate: removePart, isPending } = useRemoveWorkOrderPart(workOrderId);
 
@@ -42,6 +46,7 @@ export function PartsList({ workOrderId, parts, editable = false }: PartsListPro
             workOrderId={workOrderId}
             part={p}
             editable={editable}
+            copyable={copyable}
             onEdit={() => setEditing(p)}
             onRemove={() => removePart(p.id)}
             removing={isPending}
@@ -67,6 +72,7 @@ function PartRow({
   workOrderId,
   part,
   editable,
+  copyable,
   onEdit,
   onRemove,
   removing,
@@ -74,6 +80,7 @@ function PartRow({
   workOrderId: string;
   part: WorkOrderPart;
   editable: boolean;
+  copyable: boolean;
   onEdit: () => void;
   onRemove: () => void;
   removing: boolean;
@@ -151,6 +158,7 @@ function PartRow({
               </button>
             </>
           )}
+          {copyable && <CopyRowButton text={partToRow(part)} label="repuesto" />}
         </div>
       </div>
     </div>

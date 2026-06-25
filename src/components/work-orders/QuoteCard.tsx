@@ -1,12 +1,15 @@
 "use client";
 
-import { ClipboardList, PackageSearch } from "lucide-react";
+import { ClipboardList, Copy, PackageSearch } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { WorkOrder } from "@/types/api.types";
 import { WorkOrderStatus } from "@/lib/enums";
 import { formatCurrency } from "@/lib/format";
+import { copyText } from "@/lib/clipboard";
+import { quoteItemsToRows } from "@/lib/quote-copy";
 import { ServicesList } from "./ServicesList";
 import { AddServicePanel } from "./AddServicePanel";
 import { PartsList } from "./PartsList";
@@ -24,6 +27,17 @@ interface Props {
  * (servicio y repuesto) mientras la orden está en Diagnosing.
  */
 export function QuoteCard({ order, status, isDiagnosing, onConsultStock }: Props) {
+  async function handleCopyAll() {
+    const rows = quoteItemsToRows(order.services ?? [], order.parts ?? []);
+    if (!rows) {
+      toast.error("No hay ítems para copiar");
+      return;
+    }
+    const ok = await copyText(rows);
+    if (ok) toast.success("Ítems copiados — pegalos en tu planilla");
+    else toast.error("No se pudo copiar");
+  }
+
   return (
             <Card>
               <CardHeader>
@@ -40,6 +54,17 @@ export function QuoteCard({ order, status, isDiagnosing, onConsultStock }: Props
                       Consultar stock
                     </Button>
                   )}
+                  {!isDiagnosing && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCopyAll}
+                      className="font-semibold"
+                    >
+                      <Copy className="w-4 h-4 mr-1.5" />
+                      Copiar todos
+                    </Button>
+                  )}
                 </div>
               </CardHeader>
               <CardContent className="space-y-5">
@@ -53,6 +78,7 @@ export function QuoteCard({ order, status, isDiagnosing, onConsultStock }: Props
                     workOrderId={order.id}
                     services={order.services ?? []}
                     editable={isDiagnosing}
+                    copyable={!isDiagnosing}
                     workOrderStatus={status}
                   />
                 </div>
@@ -66,6 +92,7 @@ export function QuoteCard({ order, status, isDiagnosing, onConsultStock }: Props
                     workOrderId={order.id}
                     parts={order.parts ?? []}
                     editable={isDiagnosing}
+                    copyable={!isDiagnosing}
                   />
                 </div>
 
