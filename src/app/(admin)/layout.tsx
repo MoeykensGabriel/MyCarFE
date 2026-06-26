@@ -21,6 +21,7 @@ import {
   CalendarDays,
   Building2,
   ChevronDown,
+  Receipt,
   type LucideIcon,
 } from "lucide-react";
 
@@ -37,6 +38,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { href: "/admin/dashboard",   label: "Dashboard",          Icon: LayoutDashboard },
   { href: "/admin/work-orders", label: "Órdenes de trabajo", Icon: ClipboardList   },
+  { href: "/admin/sales",       label: "Ventas",             Icon: Receipt         },
   { href: "/admin/calendar",    label: "Calendario",         Icon: CalendarDays    },
   { href: "/admin/customers",   label: "Clientes",           Icon: Users           },
   { href: "/admin/vehicles",    label: "Vehículos",          Icon: Car             },
