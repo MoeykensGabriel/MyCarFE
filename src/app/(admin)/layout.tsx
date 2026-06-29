@@ -27,18 +27,21 @@ import {
 
 import { SessionGuard } from "@/components/shared/SessionGuard";
 import { useAuth } from "@/hooks/useAuth";
+import { UserRole } from "@/lib/enums";
 
 interface NavItem {
   href?: string;
   label: string;
   Icon: LucideIcon;
+  /** Visible solo para Admin (info sensible / config / usuarios). El resto lo ve la oficina. */
+  adminOnly?: boolean;
   subItems?: { href: string; label: string; Icon: LucideIcon }[];
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { href: "/admin/dashboard",   label: "Dashboard",          Icon: LayoutDashboard },
+  { href: "/admin/dashboard",   label: "Dashboard",          Icon: LayoutDashboard, adminOnly: true },
   { href: "/admin/work-orders", label: "Órdenes de trabajo", Icon: ClipboardList   },
-  { href: "/admin/sales",       label: "Ventas",             Icon: Receipt         },
+  { href: "/admin/sales",       label: "Ventas",             Icon: Receipt,         adminOnly: true },
   { href: "/admin/calendar",    label: "Calendario",         Icon: CalendarDays    },
   { href: "/admin/customers",   label: "Clientes",           Icon: Users           },
   { href: "/admin/vehicles",    label: "Vehículos",          Icon: Car             },
@@ -46,6 +49,7 @@ const NAV_ITEMS: NavItem[] = [
   {
     label: "Empresa",
     Icon: Building2,
+    adminOnly: true,
     subItems: [
       { href: "/admin/areas",          label: "Áreas",              Icon: Layers          },
       { href: "/admin/mechanics",      label: "Mecánicos",          Icon: Wrench          },
@@ -54,7 +58,7 @@ const NAV_ITEMS: NavItem[] = [
     ]
   },
   { href: "/admin/stock",          label: "Stock",              Icon: Package         },
-  { href: "/admin/settings",    label: "Configuración",      Icon: Settings        },
+  { href: "/admin/settings",    label: "Configuración",      Icon: Settings,        adminOnly: true },
 ];
 
 const INTAKE_HREF = "/admin/intake";
@@ -64,6 +68,12 @@ const INTAKE_HREF = "/admin/intake";
 function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
   const pathname = usePathname();
   const { logout } = useAuth();
+
+  // El rol lo leemos de localStorage (lo setea el login), igual criterio que SessionGuard
+  // y el proxy. La oficina no ve los ítems solo-admin. El proxy igual bloquea por ruta.
+  const isAdmin =
+    typeof window !== "undefined" && localStorage.getItem("role") === UserRole.Admin;
+  const navItems = NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin);
 
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
@@ -111,7 +121,7 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
           <Wrench className="w-5 h-5 text-[#fea520] shrink-0" />
           <span className="text-lg font-bold tracking-tight text-white">MyCarApp</span>
         </div>
-        <p className="text-[11px] text-white/40 mt-0.5 ml-7">Panel Admin</p>
+        <p className="text-[11px] text-white/40 mt-0.5 ml-7">{isAdmin ? "Panel Admin" : "Oficina"}</p>
       </div>
 
       {/* CTA */}
@@ -128,7 +138,7 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
 
       {/* Nav */}
       <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
-        {NAV_ITEMS.map((item) => {
+        {navItems.map((item) => {
           if (item.subItems) {
             const isOpen = !!openMenus[item.label];
             const isAnySubActive = item.subItems.some(

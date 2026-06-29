@@ -51,7 +51,7 @@ export default function LoginPage() {
       const target =
         response.role === "Admin"        ? "/admin/dashboard"
       : response.role === "Mechanic"     ? "/mechanic/tasks"
-      : response.role === "Receptionist" ? "/reception/intake"
+      : response.role === "Receptionist" ? "/admin/work-orders"
       :                                    "/home";
 
       window.location.href = target;

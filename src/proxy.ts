@@ -4,6 +4,19 @@ import { NextRequest, NextResponse } from "next/server";
 // entra sin sesión — el token de la URL es la credencial, lo valida el backend.
 const PUBLIC_ROUTES = ["/login", "/approve", "/trip"];
 
+// Sub-rutas del panel reservadas SOLO para Admin: información sensible (dashboard,
+// ventas/comisiones), configuración de empresa (áreas, mecánicos, servicios), gestión
+// de usuarios (recepcionistas) y ajustes. La oficina entra al resto del panel pero acá no.
+const ADMIN_ONLY_PREFIXES = [
+  "/admin/dashboard",
+  "/admin/sales",
+  "/admin/areas",
+  "/admin/mechanics",
+  "/admin/receptionists",
+  "/admin/services",
+  "/admin/settings",
+];
+
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -22,9 +35,19 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // Rutas admin: solo Admin
-  if (pathname.startsWith("/admin") && role !== "Admin") {
-    return NextResponse.redirect(new URL("/login", request.url));
+  // Rutas del panel (/admin): entran Admin y Recepcionista (la oficina gestiona
+  // órdenes, clientes, vehículos, flotas, calendario, stock e ingreso desde acá).
+  if (pathname.startsWith("/admin")) {
+    if (role !== "Admin" && role !== "Receptionist") {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+    // Sub-rutas sensibles: solo Admin. Al recepcionista lo mandamos a su landing operativo.
+    if (
+      role !== "Admin" &&
+      ADMIN_ONLY_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"))
+    ) {
+      return NextResponse.redirect(new URL("/admin/work-orders", request.url));
+    }
   }
 
   // Rutas mechanic: solo Mechanic
