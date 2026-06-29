@@ -17,6 +17,8 @@ import {
   useSetVehicleMaintenanceAlerts,
   useResetMaintenanceAlert,
 } from "@/hooks/useVehicleMaintenanceAlerts";
+import { isFactoryMilestone } from "@/lib/maintenance-baseline";
+import { FactoryMilestoneField } from "./FactoryMilestoneField";
 
 interface Props {
   vehicleId: string;
@@ -28,6 +30,8 @@ type EditRow = {
   itemType:       MaintenanceAlertType;
   km:             string;
   months:         string;
+  /** Solo para alertas nuevas "desde fábrica": km del último cambio (override). */
+  lastService?:   string;
   severity?:      MaintenanceAlertSeverity | null;
   kmRemaining?:   number | null;
   daysRemaining?: number | null;
@@ -92,7 +96,7 @@ export function MaintenanceAlertsCard({ vehicleId, currentMileage }: Props) {
     // Tipo por defecto: el primero que no esté usado, o "Otro".
     const used = new Set(rows.map((r) => r.itemType));
     const next = TYPE_OPTIONS.find((o) => !used.has(o.value))?.value ?? MaintenanceAlertType.Other;
-    setRows((prev) => [...prev, { itemType: next, km: "", months: "" }]);
+    setRows((prev) => [...prev, { itemType: next, km: "", months: "", lastService: "" }]);
     setDirty(true);
   }
 
@@ -110,11 +114,26 @@ export function MaintenanceAlertsCard({ vehicleId, currentMileage }: Props) {
       return;
     }
 
+    // El "último cambio" (solo alertas nuevas desde fábrica) no puede superar el km actual.
+    const badLast = rows.some((r) => {
+      const last = toPosIntOrNull(r.lastService ?? "");
+      return !r.id && isFactoryMilestone(r.itemType) && last !== null && last > currentMileage;
+    });
+    if (badLast) {
+      setError(
+        `El "último cambio" no puede superar el km actual (${currentMileage.toLocaleString("es-AR")} km).`,
+      );
+      return;
+    }
+
     const items: MaintenanceAlertItemInput[] = rows.map((r) => ({
       id:             r.id ?? null,
       itemType:       r.itemType,
       intervalKm:     toPosIntOrNull(r.km),
       intervalMonths: toPosIntOrNull(r.months),
+      // Override solo al crear una alerta desde fábrica; en el resto el backend lo ignora.
+      lastServiceMileage:
+        !r.id && isFactoryMilestone(r.itemType) ? toPosIntOrNull(r.lastService ?? "") : null,
     }));
 
     try {
@@ -218,6 +237,17 @@ export function MaintenanceAlertsCard({ vehicleId, currentMileage }: Props) {
                     />
                   </div>
                 </div>
+
+                {!row.id && isFactoryMilestone(row.itemType) && (
+                  <FactoryMilestoneField
+                    type={row.itemType}
+                    intervalKm={toPosIntOrNull(row.km)}
+                    currentMileage={currentMileage}
+                    value={row.lastService ?? ""}
+                    onChange={(v) => update(idx, { lastService: v })}
+                    inputCls={inputCls}
+                  />
+                )}
 
                 {row.id && !dirty && <StatusLine row={row} />}
               </div>

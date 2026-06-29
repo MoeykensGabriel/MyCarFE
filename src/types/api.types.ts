@@ -1060,6 +1060,12 @@ export interface MaintenanceAlertItemInput {
   description?: string | null;
   intervalKm?: number | null;
   intervalMonths?: number | null;
+  /**
+   * Km del último cambio, si el recepcionista lo sabe (override de la línea base al crear
+   * una alerta "desde fábrica"). Null = el sistema la infiere alineando al múltiplo de
+   * fábrica. Solo aplica al crear, no al editar. Ver lib/maintenance-baseline.
+   */
+  lastServiceMileage?: number | null;
 }
 
 /** Alerta configurada de un vehículo (GET/PUT/reset), con estado calculado. */

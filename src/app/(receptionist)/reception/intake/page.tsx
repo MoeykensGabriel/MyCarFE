@@ -129,6 +129,7 @@ export default function ReceptionIntakePage() {
               {step === 3 && (
                 <StepMaintenanceAlerts
                   ownerLabel={ownerLabel}
+                  currentMileage={vehicleDraft?.currentMileage ?? 0}
                   defaultItems={alertsDraft}
                   onNext={(items) => { setAlertsDraft(items); setStep(4); }}
                   onBack={() => setStep(2)}
