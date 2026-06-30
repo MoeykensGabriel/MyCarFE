@@ -98,40 +98,49 @@ export default function LoginPage() {
 
   return (
     <main
-      className="min-h-screen flex items-center justify-center px-4 py-12"
+      className="relative min-h-screen flex items-center justify-center px-4 py-10 sm:py-12 overflow-hidden"
       style={{
-        background: "linear-gradient(135deg, #0a1f35 0%, #041627 50%, #0d2744 100%)",
+        background:
+          "radial-gradient(ellipse at top left, #0d2744 0%, transparent 55%)," +
+          "radial-gradient(ellipse at bottom right, #11526a 0%, transparent 55%)," +
+          "linear-gradient(135deg, #0a1f35 0%, #041627 50%, #061f2e 100%)",
       }}
     >
-      {/* Fondo con círculos decorativos */}
+      {/* Fondo con círculos decorativos animados */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-white/[0.02]" />
-        <div className="absolute -bottom-24 -right-24 w-80 h-80 rounded-full bg-[#fea520]/[0.04]" />
-        <div className="absolute top-1/2 left-1/4 w-64 h-64 rounded-full bg-white/[0.015]" />
+        <div className="absolute -top-32 -left-32 w-72 sm:w-96 h-72 sm:h-96 rounded-full bg-white/[0.02] blur-3xl" />
+        <div className="absolute -bottom-24 -right-24 w-64 sm:w-80 h-64 sm:h-80 rounded-full bg-[#fea520]/[0.05] blur-3xl" />
+        <div className="absolute top-1/2 left-1/4 w-48 sm:w-64 h-48 sm:h-64 rounded-full bg-[#11526a]/40 blur-3xl" />
       </div>
 
       {/* Card */}
-      <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
+      <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden ring-1 ring-black/5">
 
-        {/* Franja superior amber */}
-        <div className="h-1 w-full bg-[#fea520]" />
+        {/* Franja superior amber con glow */}
+        <div className="relative h-1.5 w-full bg-[#fea520]">
+          <div className="absolute inset-0 bg-[#fea520] blur-sm opacity-60" />
+        </div>
 
-        <div className="px-8 py-10">
+        <div className="px-6 sm:px-8 py-8 sm:py-10">
 
           {/* Brand */}
-          <div className="flex flex-col items-center mb-8">
-            <div className="w-14 h-14 rounded-2xl bg-[#041627] flex items-center justify-center mb-4 shadow-md">
+          <div className="flex flex-col items-center mb-6">
+            <div className="w-14 h-14 rounded-2xl bg-[#041627] flex items-center justify-center mb-4 shadow-lg ring-4 ring-[#041627]/10">
               <Wrench className="w-7 h-7 text-[#fea520]" />
             </div>
-            <h1 className="text-2xl font-bold text-[#041627] tracking-tight">MyCarApp</h1>
-            <p className="text-xs font-bold uppercase tracking-widest text-[#44474c]/60 mt-1">
-              Gestión de taller
-            </p>
+            <h1 className="text-2xl font-black text-[#041627] tracking-tight">MyCarApp</h1>
+            <div className="flex items-center gap-2 mt-1.5">
+              <span className="h-1 w-1 rounded-full bg-[#fea520]" />
+              <p className="text-[11px] font-bold uppercase tracking-widest text-[#44474c]/60">
+                Gestión de taller
+              </p>
+              <span className="h-1 w-1 rounded-full bg-[#fea520]" />
+            </div>
           </div>
 
           {/* Título de sección */}
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold text-[#041627]">Bienvenido</h2>
+          <div className="mb-5 sm:mb-6">
+            <h2 className="text-lg font-bold text-[#041627]">Bienvenido</h2>
             <p className="text-sm text-[#44474c] mt-0.5">Ingresá con tu cuenta para continuar</p>
           </div>
 
@@ -146,8 +155,8 @@ export default function LoginPage() {
               >
                 Email
               </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#44474c]/40" />
+              <div className="relative group">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#44474c]/40 group-focus-within:text-[#041627] transition-colors" />
                 <input
                   id="email"
                   type="email"
@@ -155,16 +164,16 @@ export default function LoginPage() {
                   autoComplete="email"
                   suppressHydrationWarning
                   aria-invalid={!!errors.email}
-                  className={`w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border bg-white text-[#041627] placeholder:text-[#44474c]/40 focus:outline-none focus:ring-2 focus:ring-[#041627]/20 focus:border-[#041627] transition-all ${
+                  className={`w-full pl-10 pr-4 py-2.5 sm:py-3 text-sm rounded-xl border bg-white text-[#041627] placeholder:text-[#44474c]/40 focus:outline-none focus:ring-2 focus:ring-[#041627]/20 focus:border-[#041627] transition-all ${
                     errors.email
                       ? "border-red-400 focus:ring-red-200 focus:border-red-400"
-                      : "border-[#c4c6cd]"
+                      : "border-[#c4c6cd] hover:border-[#041627]/30"
                   }`}
                   {...register("email")}
                 />
               </div>
               {errors.email && (
-                <p className="text-xs text-red-500 flex items-center gap-1">
+                <p className="text-xs text-red-500 flex items-center gap-1 animate-in fade-in slide-in-from-top-1 duration-200">
                   <AlertCircle className="w-3 h-3 shrink-0" />
                   {errors.email.message}
                 </p>
@@ -179,8 +188,8 @@ export default function LoginPage() {
               >
                 Contraseña
               </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#44474c]/40" />
+              <div className="relative group">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#44474c]/40 group-focus-within:text-[#041627] transition-colors" />
                 <input
                   id="password"
                   type={showPassword ? "text" : "password"}
@@ -188,10 +197,10 @@ export default function LoginPage() {
                   autoComplete="current-password"
                   suppressHydrationWarning
                   aria-invalid={!!errors.password}
-                  className={`w-full pl-10 pr-11 py-2.5 text-sm rounded-xl border bg-white text-[#041627] placeholder:text-[#44474c]/40 focus:outline-none focus:ring-2 focus:ring-[#041627]/20 focus:border-[#041627] transition-all ${
+                  className={`w-full pl-10 pr-11 py-2.5 sm:py-3 text-sm rounded-xl border bg-white text-[#041627] placeholder:text-[#44474c]/40 focus:outline-none focus:ring-2 focus:ring-[#041627]/20 focus:border-[#041627] transition-all ${
                     errors.password
                       ? "border-red-400 focus:ring-red-200 focus:border-red-400"
-                      : "border-[#c4c6cd]"
+                      : "border-[#c4c6cd] hover:border-[#041627]/30"
                   }`}
                   {...register("password")}
                 />
@@ -199,7 +208,7 @@ export default function LoginPage() {
                   type="button"
                   tabIndex={-1}
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 text-[#44474c]/50 hover:text-[#041627] transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded text-[#44474c]/50 hover:text-[#041627] hover:bg-[#eefcfd] transition-all"
                   aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                 >
                   {showPassword
@@ -209,7 +218,7 @@ export default function LoginPage() {
                 </button>
               </div>
               {errors.password && (
-                <p className="text-xs text-red-500 flex items-center gap-1">
+                <p className="text-xs text-red-500 flex items-center gap-1 animate-in fade-in slide-in-from-top-1 duration-200">
                   <AlertCircle className="w-3 h-3 shrink-0" />
                   {errors.password.message}
                 </p>
@@ -220,7 +229,7 @@ export default function LoginPage() {
             {serverError && (
               <div className="flex items-start gap-2.5 rounded-xl bg-red-50 border border-red-200 px-4 py-3">
                 <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-                <p className="text-sm text-red-600">{serverError}</p>
+                <p className="text-sm text-red-600 leading-snug">{serverError}</p>
               </div>
             )}
 
@@ -228,7 +237,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-3 mt-2 rounded-xl text-sm font-bold bg-[#fea520] text-[#041627] hover:bg-[#e8951d] active:scale-[0.98] transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
+              className="w-full py-3 sm:py-3.5 mt-2 rounded-xl text-sm font-black bg-[#fea520] text-[#041627] hover:bg-[#e8951d] hover:shadow-lg hover:shadow-[#fea520]/30 active:scale-[0.98] transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 disabled:hover:shadow-sm"
             >
               {isSubmitting ? (
                 <span className="flex items-center justify-center gap-2">
@@ -246,7 +255,7 @@ export default function LoginPage() {
         </div>
 
         {/* Footer de la card */}
-        <div className="px-8 py-4 bg-[#eefcfd]/60 border-t border-[#c4c6cd]/40 text-center">
+        <div className="px-6 sm:px-8 py-4 bg-[#eefcfd]/60 border-t border-[#c4c6cd]/40 text-center">
           <p className="text-xs text-[#44474c]/60">
             © {new Date().getFullYear()} MyCarApp · Gestión de taller
           </p>
