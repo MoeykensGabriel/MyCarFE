@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Building2, Car, ChevronRight, ClipboardList, Clock, User } from "lucide-react";
+import { Building2, Car, ChevronRight, ClipboardList, Clock, User, ExternalLink } from "lucide-react";
 
 import { WorkOrder } from "@/types/api.types";
 import { formatDateTime, formatCurrency } from "@/lib/format";
@@ -80,19 +80,22 @@ export function WorkOrderSummaryPanel({ order }: Props) {
                       <p className="text-sm font-semibold text-[#041627]">{order.ownerName ?? "—"}</p>
                     </dl>
                     
-                    <div className="pt-1.5 space-y-1">
+                    <div className="pt-1.5 grid grid-cols-2 gap-2">
                       <Link
                         href={`/admin/fleets/${order.fleetIdAtEntry}`}
-                        className="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:underline"
+                        className="group flex items-center gap-2 rounded-lg border border-[#041627]/15 bg-[#eefcfd]/50 px-3 py-2 text-[11px] font-bold text-[#041627] hover:border-[#fea520]/60 hover:bg-[#fea520]/10 hover:text-[#865300] transition-all"
                       >
-                        Ver flota <ChevronRight className="w-3 h-3" />
+                        <Building2 className="w-3.5 h-3.5 text-[#041627]/60 group-hover:text-[#fea520] transition-colors shrink-0" />
+                        <span className="truncate">Ver flota</span>
+                        <ChevronRight className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all shrink-0" />
                       </Link>
-                      <br />
                       <Link
                         href={`/admin/work-orders?fleetId=${order.fleetIdAtEntry}`}
-                        className="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:underline"
+                        className="group flex items-center gap-2 rounded-lg border border-[#041627]/15 bg-white px-3 py-2 text-[11px] font-bold text-[#041627] hover:border-[#041627]/40 transition-all"
                       >
-                        Otras órdenes de la flota <ChevronRight className="w-3 h-3" />
+                        <ClipboardList className="w-3.5 h-3.5 text-[#44474c]/60 group-hover:text-[#041627] transition-colors shrink-0" />
+                        <span className="truncate">Otras órdenes</span>
+                        <ChevronRight className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all shrink-0" />
                       </Link>
                     </div>
 
@@ -118,19 +121,22 @@ export function WorkOrderSummaryPanel({ order }: Props) {
                       <p className="text-sm font-semibold text-[#041627]">{order.ownerName ?? "—"}</p>
                     </dl>
                     
-                    <div className="pt-1.5 space-y-1">
+                    <div className="pt-1.5 grid grid-cols-2 gap-2">
                       <Link
                         href={`/admin/customers/${order.customerIdAtEntry}`}
-                        className="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:underline"
+                        className="group flex items-center gap-2 rounded-lg border border-[#041627]/15 bg-[#eefcfd]/50 px-3 py-2 text-[11px] font-bold text-[#041627] hover:border-[#fea520]/60 hover:bg-[#fea520]/10 hover:text-[#865300] transition-all"
                       >
-                        Ver ficha <ChevronRight className="w-3 h-3" />
+                        <User className="w-3.5 h-3.5 text-[#041627]/60 group-hover:text-[#fea520] transition-colors shrink-0" />
+                        <span className="truncate">Ver ficha</span>
+                        <ChevronRight className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all shrink-0" />
                       </Link>
-                      <br />
                       <Link
                         href={`/admin/work-orders?customerId=${order.customerIdAtEntry}`}
-                        className="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:underline"
+                        className="group flex items-center gap-2 rounded-lg border border-[#041627]/15 bg-white px-3 py-2 text-[11px] font-bold text-[#041627] hover:border-[#041627]/40 transition-all"
                       >
-                        Otras órdenes <ChevronRight className="w-3 h-3" />
+                        <ClipboardList className="w-3.5 h-3.5 text-[#44474c]/60 group-hover:text-[#041627] transition-colors shrink-0" />
+                        <span className="truncate">Otras órdenes</span>
+                        <ChevronRight className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all shrink-0" />
                       </Link>
                     </div>
                   </div>
@@ -152,23 +158,26 @@ export function WorkOrderSummaryPanel({ order }: Props) {
                   {order.vehicleLicensePlate && (
                     <p className="font-mono text-[#44474c] uppercase">Patente {order.vehicleLicensePlate}</p>
                   )}
-                  
-                  <div className="pt-1.5 space-y-1">
-                    <Link
-                      href={`/admin/vehicles/${order.vehicleId}`}
-                      className="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:underline"
-                    >
-                      Ver ficha <ChevronRight className="w-3 h-3" />
-                    </Link>
-                    <br />
-                    <Link
-                      href={`/admin/work-orders?vehicleId=${order.vehicleId}`}
-                      className="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:underline"
-                    >
-                      Otras órdenes <ChevronRight className="w-3 h-3" />
-                    </Link>
-                  </div>
                 </dl>
+                  
+                <div className="pt-1.5 grid grid-cols-2 gap-2">
+                  <Link
+                    href={`/admin/vehicles/${order.vehicleId}`}
+                    className="group flex items-center gap-2 rounded-lg border border-[#041627]/15 bg-[#eefcfd]/50 px-3 py-2 text-[11px] font-bold text-[#041627] hover:border-[#fea520]/60 hover:bg-[#fea520]/10 hover:text-[#865300] transition-all"
+                  >
+                    <Car className="w-3.5 h-3.5 text-[#041627]/60 group-hover:text-[#fea520] transition-colors shrink-0" />
+                    <span className="truncate">Ver ficha</span>
+                    <ChevronRight className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all shrink-0" />
+                  </Link>
+                  <Link
+                    href={`/admin/work-orders?vehicleId=${order.vehicleId}`}
+                    className="group flex items-center gap-2 rounded-lg border border-[#041627]/15 bg-white px-3 py-2 text-[11px] font-bold text-[#041627] hover:border-[#041627]/40 transition-all"
+                  >
+                    <ClipboardList className="w-3.5 h-3.5 text-[#44474c]/60 group-hover:text-[#041627] transition-colors shrink-0" />
+                    <span className="truncate">Otras órdenes</span>
+                    <ChevronRight className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all shrink-0" />
+                  </Link>
+                </div>
               </div>
               
               {/* ── Monto Total en Resumen ─────────────────────────────────── */}
