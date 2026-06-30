@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Check } from "lucide-react";
+import { AlertCircle, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -433,13 +433,16 @@ export function StepVehicle({
           form no avanza porque algo falla. Cubre el caso de errores en campos
           cuyo display de error podría estar oculto. */}
       {Object.keys(errors).length > 0 && (
-        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3">
-          <p className="text-sm font-semibold text-red-700">
-            Revisá los campos marcados antes de continuar.
-          </p>
-          <p className="text-xs text-red-600 mt-0.5">
-            {Object.keys(errors).length} campo{Object.keys(errors).length !== 1 ? "s" : ""} con error.
-          </p>
+        <div className="flex items-center gap-3 rounded-md border border-red-200 bg-red-50 px-4 py-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-red-700">
+              Revisá los campos marcados antes de continuar.
+            </p>
+            <p className="text-xs text-red-600/80 mt-0.5">
+              {Object.keys(errors).length} campo{Object.keys(errors).length !== 1 ? "s" : ""} con error — los que están en rojo arriba.
+            </p>
+          </div>
         </div>
       )}
 

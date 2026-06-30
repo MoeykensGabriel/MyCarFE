@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Trash2, User, Building2, Plus, type LucideIcon } from "lucide-react";
+import { Trash2, User, Building2, Plus, AlertCircle, type LucideIcon } from "lucide-react";
 
 import { BackButton } from "@/components/shared/BackButton";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { useSearchFleets } from "@/hooks/useFleets";
 import { useCreateSale } from "@/hooks/useSales";
 import { Customer, Fleet } from "@/types/api.types";
 import { formatCurrency } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 type BuyerType = "customer" | "fleet";
 interface ItemRow {
@@ -107,19 +108,28 @@ export default function NewSalePage() {
         </div>
 
         <div className="space-y-2">
-          {rows.map((row, i) => (
-            <ItemRowEditor
-              key={i}
-              row={row}
-              onChange={(patch) => updateRow(i, patch)}
-              onRemove={() => setRows((prev) => (prev.length === 1 ? prev : prev.filter((_, idx) => idx !== i)))}
-              canRemove={rows.length > 1}
-            />
-          ))}
+          {rows.map((row, i) => {
+            const isValid = (() => {
+              const p = parseFloat(row.unitPrice);
+              const q = parseInt(row.quantity, 10);
+              return row.name.trim().length > 0 && !isNaN(p) && p >= 0 && !isNaN(q) && q >= 1;
+            })();
+            const isDirty = row.name.trim().length > 0 || row.unitPrice.trim().length > 0 || row.quantity !== "1";
+            return (
+              <ItemRowEditor
+                key={i}
+                row={row}
+                onChange={(patch) => updateRow(i, patch)}
+                onRemove={() => setRows((prev) => (prev.length === 1 ? prev : prev.filter((_, idx) => idx !== i)))}
+                canRemove={rows.length > 1}
+                invalid={isDirty && !isValid}
+              />
+            );
+          })}
         </div>
 
-        <div className="flex justify-end items-center gap-2.5 pt-3 border-t">
-          <span className="text-sm text-muted-foreground">Total</span>
+        <div className="flex justify-end items-center gap-2.5 pt-3 border-t border-[#c4c6cd]/40">
+          <span className="text-sm text-[#44474c]/70">Total</span>
           <span className="text-2xl font-black text-[#041627] tabular-nums tracking-tight">
             {formatCurrency(total)}
           </span>
@@ -128,11 +138,14 @@ export default function NewSalePage() {
 
       <div className="flex flex-col items-end gap-1.5">
         {!canSubmit && !isPending && (
-          <p className="text-xs text-[#44474c]/70">
-            {!buyerSelected
-              ? "Elegí un cliente o flota para continuar."
-              : "Cargá al menos un repuesto con descripción y precio."}
-          </p>
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#fea520]/8 border border-[#fea520]/30">
+            <AlertCircle className="w-3.5 h-3.5 text-[#865300] shrink-0" />
+            <p className="text-xs text-[#041627] font-medium">
+              {!buyerSelected
+                ? "Elegí un cliente o flota para continuar."
+                : "Cargá al menos un repuesto con descripción y precio."}
+            </p>
+          </div>
         )}
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={() => router.push("/admin/sales")} disabled={isPending}>
@@ -279,14 +292,21 @@ function ItemRowEditor({
   onChange,
   onRemove,
   canRemove,
+  invalid,
 }: {
   row: ItemRow;
   onChange: (patch: Partial<ItemRow>) => void;
   onRemove: () => void;
   canRemove: boolean;
+  invalid: boolean;
 }) {
   return (
-    <div className="flex flex-wrap sm:flex-nowrap items-start gap-2">
+    <div
+      className={cn(
+        "flex flex-wrap sm:flex-nowrap items-start gap-2 rounded-lg px-2 py-2 transition-colors",
+        invalid && "bg-red-50/60 ring-1 ring-red-200/60"
+      )}
+    >
       <Input
         placeholder="Código"
         value={row.productCode}
@@ -299,7 +319,7 @@ function ItemRowEditor({
         value={row.name}
         onChange={(e) => onChange({ name: e.target.value })}
         maxLength={200}
-        className="w-full sm:flex-1"
+        className={cn("w-full sm:flex-1", invalid && !row.name.trim() && "border-red-300")}
       />
       <Input
         type="number"
@@ -308,7 +328,7 @@ function ItemRowEditor({
         placeholder="Precio"
         value={row.unitPrice}
         onChange={(e) => onChange({ unitPrice: e.target.value })}
-        className="w-full sm:w-28"
+        className={cn("w-full sm:w-28", invalid && (isNaN(parseFloat(row.unitPrice)) || parseFloat(row.unitPrice) < 0) && "border-red-300")}
       />
       <Input
         type="number"
@@ -317,7 +337,7 @@ function ItemRowEditor({
         placeholder="Cant."
         value={row.quantity}
         onChange={(e) => onChange({ quantity: e.target.value })}
-        className="w-full sm:w-20"
+        className={cn("w-full sm:w-20", invalid && (isNaN(parseInt(row.quantity, 10)) || parseInt(row.quantity, 10) < 1) && "border-red-300")}
       />
       <button
         type="button"

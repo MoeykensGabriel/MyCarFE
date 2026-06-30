@@ -2,7 +2,7 @@
  * Primitivos de UI compartidos dentro del wizard de intake.
  * Field, Section, StepNav, Tag, SummaryItem.
  */
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { AlertCircle, ArrowLeft, ArrowRight } from "lucide-react";
 
 // ─── Field ────────────────────────────────────────────────────────────────────
 
@@ -16,12 +16,29 @@ interface FieldProps {
 export function Field({ label, error, required, children }: FieldProps) {
   return (
     <div className="space-y-1.5">
-      <label className="text-[11px] font-bold uppercase tracking-widest text-[#041627]">
-        {label}
-        {required && <span className="text-[#fea520] ml-0.5">*</span>}
+      <label
+        className={`flex items-center justify-between gap-2 text-[11px] font-bold uppercase tracking-widest transition-colors ${
+          error ? "text-red-500" : "text-[#041627]"
+        }`}
+      >
+        <span>
+          {label}
+          {required && <span className="text-[#fea520] ml-0.5">*</span>}
+        </span>
+        {error && (
+          <span className="inline-flex items-center gap-1 normal-case tracking-normal text-[10px] font-semibold text-red-500 animate-in fade-in slide-in-from-top-1 duration-200">
+            <AlertCircle className="w-2.5 h-2.5 shrink-0" />
+            inválido
+          </span>
+        )}
       </label>
       {children}
-      {error && <p className="text-xs text-red-500">{error}</p>}
+      {error && (
+        <p className="flex items-start gap-1.5 text-xs text-red-600 mt-1 px-2 py-1.5 rounded-md bg-red-50 border border-red-200/60 animate-in fade-in slide-in-from-top-1 duration-200">
+          <AlertCircle className="w-3 h-3 shrink-0 mt-0.5" />
+          {error}
+        </p>
+      )}
     </div>
   );
 }
