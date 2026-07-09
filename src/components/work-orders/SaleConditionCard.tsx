@@ -20,11 +20,21 @@ import { formatCurrency } from "@/lib/format";
  * o sea: no pedir en vano).
  */
 export function SaleConditionCard({ order, status }: { order: WorkOrder; status: WorkOrderStatus }) {
+  // Editable mientras la orden está viva: los pedidos ya enviados al depósito llevan su
+  // snapshot congelado; editar acá afecta solo pedidos FUTUROS (adicionales aprobados
+  // en Approved/InProgress). Espeja EditableStatuses del BE (SetSaleCondition).
   const editable =
     status === WorkOrderStatus.Received ||
     status === WorkOrderStatus.UnderInspection ||
     status === WorkOrderStatus.Diagnosing ||
-    status === WorkOrderStatus.AwaitingApproval;
+    status === WorkOrderStatus.AwaitingApproval ||
+    status === WorkOrderStatus.Approved ||
+    status === WorkOrderStatus.InProgress;
+
+  // Falta la condición y hay repuestos de depósito: sin ella el presupuesto no se puede
+  // enviar (ni aprobar adicionales de depósito) — alerta visual para que nunca se olvide.
+  const hasDepotParts  = (order.parts ?? []).some((p) => !!p.productCode);
+  const needsCondition = editable && hasDepotParts && order.saleCondition == null;
 
   const { mutate: save, isPending } = useSetSaleCondition(order.id);
 
@@ -42,6 +52,7 @@ export function SaleConditionCard({ order, status }: { order: WorkOrder; status:
 
   const canSave =
     !isPending &&
+    parsed != null &&
     (!isOc || ocNumber.trim().length > 0) &&
     (!isContado || (deposit !== "" && Number(deposit) >= 0));
 
@@ -75,18 +86,31 @@ export function SaleConditionCard({ order, status }: { order: WorkOrder; status:
   }
 
   return (
-    <Card>
+    <Card className={needsCondition ? "border-red-300 bg-red-50/40" : undefined}>
       <CardHeader>
-        <CardTitle className="text-base flex items-center gap-2">
-          <HandCoins className="w-4 h-4 text-[#fea520]" />
+        <CardTitle className="text-base flex items-center gap-2 flex-wrap">
+          <HandCoins className={`w-4 h-4 ${needsCondition ? "text-red-600" : "text-[#fea520]"}`} />
           Condición de venta
+          {needsCondition && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-red-100 border border-red-300 text-red-800 text-[11px] font-bold whitespace-nowrap">
+              Falta cargar
+            </span>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        <p className="text-[11px] text-muted-foreground leading-relaxed">
-          Viaja al depósito al aprobar el presupuesto — es su criterio para pedir los
-          repuestos al proveedor.
-        </p>
+        {needsCondition ? (
+          <p className="text-[11px] text-red-700 leading-relaxed font-medium">
+            Hay repuestos de depósito y la condición no está cargada: sin ella no se puede
+            enviar el presupuesto ni aprobar adicionales — GestionPGB la necesita para
+            decidir la compra.
+          </p>
+        ) : (
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            Viaja al depósito al aprobar el presupuesto — es su criterio para pedir los
+            repuestos al proveedor.
+          </p>
+        )}
 
         <div className="space-y-1.5">
           <Label className="text-xs">Condición</Label>
