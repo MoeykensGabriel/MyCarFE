@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import {
   useInspectionReportsByWorkOrder,
   useMarkAreaNoFindings,
+  useMarkAreaSkipped,
   useCloseInspection,
 } from "@/hooks/useInspections";
 import { useAreas } from "@/hooks/useAreas";
@@ -29,16 +30,18 @@ import { Area, InspectionReport } from "@/types/api.types";
  *   - Reportado con hallazgos (mecánico)
  *   - Reportado sin hallazgos (mecánico)
  *   - Sin hallazgos (admin manual)
+ *   - Omitida (oficina, con motivo — nadie revisó el área; queda para la próxima visita)
  *   - Pendiente
  *
- * Permite al admin marcar áreas pendientes como "sin hallazgos" y, cuando todas
- * están cubiertas, cerrar la inspección — la orden pasa a Diagnosing (cotización).
+ * Permite al admin marcar áreas pendientes como "sin hallazgos" u omitirlas con motivo
+ * y, cuando todas están cubiertas, cerrar la inspección — la orden pasa a Diagnosing.
  */
 export function InspectionPanel({ workOrderId }: { workOrderId: string }) {
   const { data: areas,   isLoading: areasLoading }   = useAreas(false);
   const { data: reports, isLoading: reportsLoading } = useInspectionReportsByWorkOrder(workOrderId);
 
   const markNoFindings = useMarkAreaNoFindings(workOrderId);
+  const markSkipped = useMarkAreaSkipped(workOrderId);
   const closeInspection = useCloseInspection(workOrderId);
   const [confirmCloseOpen, setConfirmCloseOpen] = useState(false);
 
@@ -67,15 +70,19 @@ export function InspectionPanel({ workOrderId }: { workOrderId: string }) {
   const coveredCount = activeAreas.filter((a) => reportsByAreaId.has(a.id)).length;
   const allCovered  = coveredCount === activeAreas.length && activeAreas.length > 0;
 
-  // Resumen para el modal de cierre: áreas con novedades vs. sin novedades
-  // (sin novedades = el mecánico reportó sin hallazgos o el admin la marcó así).
+  // Resumen para el modal de cierre: con novedades / sin novedades / omitidas.
+  // Las omitidas van aparte — nadie las revisó, no cuentan como "sin novedades".
   const withFindings = activeAreas.filter((a) => {
     const r = reportsByAreaId.get(a.id);
-    return !!r && r.hasIssue && !r.isNoFindings;
+    return !!r && r.hasIssue && !r.isNoFindings && !r.isSkipped;
+  });
+  const skipped = activeAreas.filter((a) => {
+    const r = reportsByAreaId.get(a.id);
+    return !!r && r.isSkipped;
   });
   const withoutFindings = activeAreas.filter((a) => {
     const r = reportsByAreaId.get(a.id);
-    return !!r && (r.isNoFindings || !r.hasIssue);
+    return !!r && !r.isSkipped && (r.isNoFindings || !r.hasIssue);
   });
 
   return (
@@ -116,7 +123,10 @@ export function InspectionPanel({ workOrderId }: { workOrderId: string }) {
                 onMarkNoFindings={() =>
                   markNoFindings.mutate({ areaId: area.id })
                 }
-                marking={markNoFindings.isPending}
+                onMarkSkipped={(reason) =>
+                  markSkipped.mutate({ areaId: area.id, reason })
+                }
+                marking={markNoFindings.isPending || markSkipped.isPending}
               />
             ))}
           </ul>
@@ -127,6 +137,8 @@ export function InspectionPanel({ workOrderId }: { workOrderId: string }) {
       {confirmCloseOpen && (
         <CloseInspectionModal
           withFindings={withFindings}
+          skipped={skipped}
+          skippedReports={reportsByAreaId}
           withoutFindings={withoutFindings}
           pending={closeInspection.isPending}
           onConfirm={() =>
@@ -147,12 +159,16 @@ export function InspectionPanel({ workOrderId }: { workOrderId: string }) {
 
 function CloseInspectionModal({
   withFindings,
+  skipped,
+  skippedReports,
   withoutFindings,
   pending,
   onConfirm,
   onClose,
 }: {
   withFindings: Area[];
+  skipped: Area[];
+  skippedReports: Map<string, InspectionReport>;
   withoutFindings: Area[];
   pending: boolean;
   onConfirm: () => void;
@@ -220,6 +236,34 @@ function CloseInspectionModal({
             )}
           </div>
 
+          {/* Omitidas — nadie las revisó; quedan para la próxima visita */}
+          {skipped.length > 0 && (
+            <div className="space-y-1.5">
+              <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-amber-700">
+                <CircleDashed className="w-3.5 h-3.5" />
+                Omitidas — sin inspeccionar ({skipped.length})
+              </p>
+              <ul className="space-y-1">
+                {skipped.map((a) => (
+                  <li
+                    key={a.id}
+                    className="text-sm text-[#041627] rounded-lg bg-amber-50/70 border border-amber-200 px-3 py-2"
+                  >
+                    <span className="font-medium">{a.name}</span>
+                    {skippedReports.get(a.id)?.skipReason && (
+                      <span className="block text-xs text-amber-800 mt-0.5">
+                        Motivo: {skippedReports.get(a.id)!.skipReason}
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+              <p className="text-xs text-amber-800/80 pl-1">
+                Estas áreas quedan registradas para revisar en la próxima visita del vehículo.
+              </p>
+            </div>
+          )}
+
           {/* Sin hallazgos */}
           <div className="space-y-1.5">
             <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-green-700">
@@ -264,30 +308,119 @@ function AreaRow({
   area,
   report,
   onMarkNoFindings,
+  onMarkSkipped,
   marking,
 }: {
   area: Area;
   report?: InspectionReport;
   onMarkNoFindings: () => void;
+  onMarkSkipped: (reason: string) => void;
   marking: boolean;
 }) {
+  const [skipping, setSkipping] = useState(false);
+  const [skipReason, setSkipReason] = useState("");
+
   // ── Pendiente ──────────────────────────────────────────────────────────────
   if (!report) {
     return (
-      <li className="py-3 flex items-center gap-3">
-        <CircleDashed className="w-4 h-4 text-gray-300 shrink-0" />
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-900 truncate">{area.name}</p>
-          <p className="text-xs text-gray-500">Sin reporte aún</p>
+      <li className="py-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          {/* Cabecera: ícono + nombre del área (siempre legible, sin truncate) */}
+          <div className="flex items-start gap-2.5 flex-1 min-w-0">
+            <CircleDashed className="w-4 h-4 text-gray-300 shrink-0 mt-0.5" />
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-gray-900">{area.name}</p>
+              <p className="text-xs text-gray-500 mt-0.5">Sin reporte aún</p>
+            </div>
+          </div>
+          {/* Acciones: en mobile debajo del nombre, en desktop a la derecha */}
+          <div className="flex flex-wrap gap-2 sm:justify-end pl-6 sm:pl-0">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onMarkNoFindings}
+              disabled={marking || skipping}
+            >
+              {marking ? "..." : "Marcar sin novedades"}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-amber-700 hover:text-amber-800 hover:bg-amber-50"
+              onClick={() => setSkipping((v) => !v)}
+              disabled={marking}
+            >
+              Omitir
+            </Button>
+          </div>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onMarkNoFindings}
-          disabled={marking}
-        >
-          {marking ? "..." : "Marcar sin novedades"}
-        </Button>
+
+        {/* Panel inline: motivo obligatorio para omitir */}
+        {skipping && (
+          <div className="mt-2 ml-6 sm:ml-7 rounded-lg border border-amber-200 bg-amber-50/70 p-3 space-y-2">
+            <p className="text-xs text-amber-900">
+              El área queda <strong>sin inspeccionar</strong> y registrada para revisar en la
+              próxima visita. Indicá el motivo (mínimo 5 caracteres).
+            </p>
+            <input
+              type="text"
+              value={skipReason}
+              onChange={(e) => setSkipReason(e.target.value)}
+              placeholder='Ej: "Mecánico de frenos ocupado, cliente no podía esperar"'
+              maxLength={500}
+              className="w-full rounded-md border border-amber-300 bg-white px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+            />
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => { setSkipping(false); setSkipReason(""); }}
+                disabled={marking}
+              >
+                Cancelar
+              </Button>
+              <Button
+                size="sm"
+                className="bg-amber-600 hover:bg-amber-700"
+                disabled={marking || skipReason.trim().length < 5}
+                onClick={() => {
+                  onMarkSkipped(skipReason.trim());
+                  setSkipping(false);
+                  setSkipReason("");
+                }}
+              >
+                {marking ? "..." : "Confirmar omisión"}
+              </Button>
+            </div>
+          </div>
+        )}
+      </li>
+    );
+  }
+
+  // ── Omitida (oficina) — nadie la revisó ────────────────────────────────────
+  if (report.isSkipped) {
+    return (
+      <li className="py-3">
+        <div className="flex items-start gap-2.5">
+          <CircleDashed className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            {/* Nombre del área sin truncate para que siempre se lea completo en mobile */}
+            <p className="text-sm font-semibold text-gray-900">{area.name}</p>
+            {/* Badge en su propia línea para no comprimir el nombre */}
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 mt-1 rounded text-[10px] font-bold uppercase bg-amber-50 border border-amber-200 text-amber-700">
+              Omitida
+            </span>
+            <p className="text-xs text-gray-500 mt-1">
+              Sin inspeccionar · {formatDateTime(report.createdAt)}
+            </p>
+            {report.skipReason && (
+              <p className="text-xs text-amber-800 mt-1 bg-amber-50/70 border border-amber-100 rounded px-2 py-1 leading-relaxed">
+                Motivo: {report.skipReason}
+              </p>
+            )}
+          </div>
+        </div>
       </li>
     );
   }
@@ -295,11 +428,11 @@ function AreaRow({
   // ── Sin novedades (admin) ──────────────────────────────────────────────────
   if (report.isNoFindings) {
     return (
-      <li className="py-3 flex items-center gap-3">
-        <Lock className="w-4 h-4 text-gray-400 shrink-0" />
+      <li className="py-3 flex items-start gap-2.5">
+        <Lock className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-900 truncate">{area.name}</p>
-          <p className="text-xs text-gray-500">Marcada sin novedades (admin) · {formatDateTime(report.createdAt)}</p>
+          <p className="text-sm font-semibold text-gray-900">{area.name}</p>
+          <p className="text-xs text-gray-500 mt-0.5">Marcada sin novedades (admin) · {formatDateTime(report.createdAt)}</p>
         </div>
       </li>
     );
@@ -309,15 +442,15 @@ function AreaRow({
   if (!report.hasIssue) {
     return (
       <li className="py-3">
-        <div className="flex items-start gap-3">
+        <div className="flex items-start gap-2.5">
           <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">{area.name}</p>
-            <p className="text-xs text-gray-500">
+            <p className="text-sm font-semibold text-gray-900">{area.name}</p>
+            <p className="text-xs text-gray-500 mt-0.5">
               {report.mechanicFullName ?? "—"} · sin novedades · {formatDateTime(report.createdAt)}
             </p>
             {report.findings && (
-              <p className="text-xs text-gray-700 mt-1 italic whitespace-pre-wrap">
+              <p className="text-xs text-gray-700 mt-1 italic whitespace-pre-wrap leading-relaxed">
                 &ldquo;{report.findings}&rdquo;
               </p>
             )}
@@ -330,21 +463,22 @@ function AreaRow({
   // ── Con problema ───────────────────────────────────────────────────────────
   return (
     <li className="py-3">
-      <div className="flex items-start gap-3">
+      <div className="flex items-start gap-2.5">
         <AlertTriangle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
-            {area.name}
-            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-red-50 border border-red-200 text-red-700">
-              <Sparkles className="w-2.5 h-2.5 mr-0.5" />
+          {/* Nombre y badge en contenedor flex-wrap para que el badge baje solo si no cabe */}
+          <div className="flex items-start gap-2 flex-wrap">
+            <p className="text-sm font-semibold text-gray-900">{area.name}</p>
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-red-50 border border-red-200 text-red-700 shrink-0">
+              <Sparkles className="w-2.5 h-2.5" />
               Hay novedades
             </span>
-          </p>
-          <p className="text-xs text-gray-500">
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
             {report.mechanicFullName ?? "—"} · {formatDateTime(report.createdAt)}
           </p>
           {report.findings && (
-            <p className="text-sm text-gray-800 mt-1.5 whitespace-pre-wrap bg-red-50/60 border border-red-100 rounded px-3 py-2">
+            <p className="text-sm text-gray-800 mt-1.5 whitespace-pre-wrap bg-red-50/60 border border-red-100 rounded px-3 py-2 leading-relaxed">
               {report.findings}
             </p>
           )}

@@ -2,10 +2,13 @@
 
 import { useState } from "react";
 import { X, ClipboardPlus, Gauge } from "lucide-react";
+import { SkippedInspectionsAlert } from "@/components/inspections/SkippedInspectionsAlert";
 
 interface OpenOrderModalProps {
   /** Ej: "Toyota Hilux · ABC123" */
   vehicleLabel: string;
+  /** Si se pasa, muestra el aviso de áreas omitidas en la última visita del vehículo. */
+  vehicleId?: string;
   initialMileage?: number;
   initialContactName?: string;
   initialContactPhone?: string;
@@ -21,6 +24,7 @@ interface OpenOrderModalProps {
 
 export function OpenOrderModal({
   vehicleLabel,
+  vehicleId,
   initialMileage = 0,
   initialContactName = "",
   initialContactPhone = "",
@@ -78,6 +82,9 @@ export function OpenOrderModal({
         </div>
 
         <form onSubmit={handleSubmit} className="px-5 py-5 space-y-4">
+
+          {/* Áreas omitidas en la última visita — para que la omisión no se pierda */}
+          <SkippedInspectionsAlert vehicleId={vehicleId} />
 
           {/* Kilometraje */}
           <div className="space-y-1.5">

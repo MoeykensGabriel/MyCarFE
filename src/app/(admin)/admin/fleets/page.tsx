@@ -178,6 +178,7 @@ export default function FleetsPage() {
       {pendingOrder && (
         <OpenOrderModal
           vehicleLabel={pendingOrder.vehicleLabel}
+          vehicleId={pendingOrder.vehicleId}
           initialMileage={0}
           onConfirm={handleConfirmOrder}
           onClose={() => setPendingOrder(null)}

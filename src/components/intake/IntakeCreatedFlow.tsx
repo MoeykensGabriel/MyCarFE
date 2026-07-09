@@ -544,7 +544,7 @@ export function IntakeCreatedFlow({ order, loading, error, role }: IntakeCreated
                   Registro fotográfico omitido
                 </h3>
                 <p className="text-xs text-amber-800/80 mt-0.5">
-                  No se cargaron imágenes en esta ocasión. Podrá adjuntar fotografías y reportes del estado cosmético más adelante ingresando a la ficha del vehículo.
+                  No se cargaron imágenes en esta ocasión. Podrá completar el registro fotográfico del estado de ingreso más adelante desde la ficha de la orden.
                 </p>
               </div>
             </div>
@@ -567,7 +567,9 @@ export function IntakeCreatedFlow({ order, loading, error, role }: IntakeCreated
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {role === "admin" && order && (
+            {/* Tanto admin como recepción pueden entrar a la ficha (/admin/work-orders no es
+                admin-only en el proxy). Es la vía para completar las fotos si se saltó el paso. */}
+            {order && (
               <Link
                 href={`/admin/work-orders/${order.id}`}
                 className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold border border-[#041627] text-[#041627] hover:bg-slate-50 transition-colors ${

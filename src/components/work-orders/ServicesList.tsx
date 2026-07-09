@@ -15,7 +15,11 @@ import {
   WorkOrderServiceAssignmentStatus,
   WorkOrderStatus,
 } from "@/lib/enums";
-import { useRemoveWorkOrderService, useUpdateWorkOrderServicePrice } from "@/hooks/useWorkOrders";
+import {
+  useCompleteServiceAsWorkshop,
+  useRemoveWorkOrderService,
+  useUpdateWorkOrderServicePrice,
+} from "@/hooks/useWorkOrders";
 import { MechanicAssignSelect } from "@/components/work-orders/MechanicAssignSelect";
 import { CopyRowButton } from "@/components/shared/CopyRowButton";
 import { serviceToRow } from "@/lib/quote-copy";
@@ -140,6 +144,12 @@ function ServiceRow({
               readOnly={!canAssignMechanic}
             />
           </div>
+
+          {/* Trabajo en curso: la oficina puede finalizarlo en nombre del taller
+              (mecánico que no continúa). Liberar ya lo cubre la X de la asignación. */}
+          {canAssignMechanic && status === WorkOrderServiceAssignmentStatus.Accepted && (
+            <WorkshopCompleteControl workOrderId={workOrderId} workOrderServiceId={s.id} />
+          )}
         </div>
         <div className="flex items-center gap-3 shrink-0">
           {editable && !s.frozenAt ? (
@@ -159,11 +169,11 @@ function ServiceRow({
             <button
               onClick={onRemove}
               disabled={removing}
-              className="text-muted-foreground hover:text-red-500 disabled:opacity-40 transition-colors"
+              className="tap-target text-muted-foreground hover:text-red-500 disabled:opacity-40 transition-colors"
               title="Quitar servicio"
               aria-label="Quitar servicio"
             >
-              <X className="w-4 h-4" />
+              <X className="w-5 h-5 sm:w-4 sm:h-4" />
             </button>
           )}
           {copyable && <CopyRowButton text={serviceToRow(s)} label="servicio" />}
@@ -198,6 +208,79 @@ function ServiceRow({
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── Finalizar por taller ─────────────────────────────────────────────────────
+// Para trabajos en curso (Accepted) cuyo mecánico no va a continuar: admin/oficina
+// lo cierra en nombre del taller con una nota obligatoria (queda en el historial).
+
+function WorkshopCompleteControl({
+  workOrderId,
+  workOrderServiceId,
+}: {
+  workOrderId: string;
+  workOrderServiceId: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [notes, setNotes] = useState("");
+  const { mutate, isPending } = useCompleteServiceAsWorkshop(workOrderId);
+
+  const canConfirm = notes.trim().length >= 10 && !isPending;
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="mt-2 inline-flex items-center gap-1.5 px-3 py-2.5 sm:px-2 sm:py-1 rounded-md border border-emerald-300 bg-emerald-50 text-emerald-800 text-xs sm:text-[11px] font-semibold hover:bg-emerald-100 transition-colors"
+        title="Marcar el trabajo como terminado en nombre del taller (mecánico que no continúa)"
+      >
+        <CheckCircle2 className="w-4 h-4 sm:w-3 sm:h-3" />
+        Finalizar por taller
+      </button>
+    );
+  }
+
+  return (
+    <div className="mt-2 rounded-lg border border-emerald-200 bg-emerald-50/50 p-2.5 space-y-2">
+      <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-800">
+        Finalizar en nombre del taller
+      </p>
+      <textarea
+        rows={2}
+        autoFocus
+        placeholder="Qué se hizo / por qué lo cierra la oficina (mín. 10 caracteres)..."
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        maxLength={2000}
+        className="w-full px-2.5 py-1.5 text-xs rounded-md border border-emerald-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-300 resize-none"
+      />
+      <div className="flex gap-2 justify-end">
+        <button
+          type="button"
+          onClick={() => { setOpen(false); setNotes(""); }}
+          disabled={isPending}
+          className="px-3 py-2.5 sm:px-2.5 sm:py-1 rounded-md text-xs sm:text-[11px] font-semibold text-gray-600 border border-gray-300 hover:bg-white transition-colors disabled:opacity-40"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          onClick={() =>
+            mutate(
+              { workOrderServiceId, notes: notes.trim() },
+              { onSuccess: () => { setOpen(false); setNotes(""); } },
+            )
+          }
+          disabled={!canConfirm}
+          className="inline-flex items-center gap-1 px-3 py-2.5 sm:px-2.5 sm:py-1 rounded-md text-xs sm:text-[11px] font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors disabled:opacity-40"
+        >
+          <CheckCircle2 className="w-3 h-3" />
+          {isPending ? "Finalizando..." : "Confirmar"}
+        </button>
+      </div>
     </div>
   );
 }

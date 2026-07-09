@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { AlertTriangle, User } from "lucide-react";
 
 import {
@@ -10,7 +11,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { InspectionReport } from "@/types/api.types";
-import { AdHocServiceForm } from "./AdHocServiceForm";
+import { parseServiceRow } from "@/lib/paste-parse";
+import { AdHocServiceForm, AdHocServiceFormInitial } from "./AdHocServiceForm";
+import { PasteFromSheetZone } from "./PasteFromSheetZone";
 
 interface Props {
   workOrderId: string;
@@ -43,14 +46,35 @@ export function AddServiceFromFindingDialog({
     ? `${finding.findings}\n\n— ${attribution}`
     : `Novedad en ${attribution}`;
 
+  // Fila pegada desde el Excel del jefe → prellenar el form (remount por key).
+  // Si el Excel trae descripción propia, pisa la del finding (es la redacción oficial);
+  // si no trae, se conserva el reporte del mecánico.
+  const [prefill, setPrefill] = useState<AdHocServiceFormInitial>({
+    description: prefilledDescription,
+  });
+  const [formKey, setFormKey] = useState(0);
+
+  function handlePaste(text: string): string | null {
+    const firstRow = text.split(/\r?\n/).find((r) => r.trim().length > 0) ?? "";
+    const result = parseServiceRow(firstRow);
+    if (result.error || !result.data) return result.error ?? "No se pudo leer la fila.";
+    setPrefill({
+      name:        result.data.name,
+      description: result.data.description || prefilledDescription,
+      price:       result.data.price,
+      quantity:    1,
+    });
+    setFormKey((k) => k + 1);
+    return null;
+  }
+
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Crear servicio desde la novedad</DialogTitle>
           <DialogDescription>
-            Se crea un servicio puntual (ad-hoc) en esta orden. La descripción ya está
-            prellenada con el reporte del mecánico — solo ponele nombre y precio.
+            Se crea un servicio puntual (ad-hoc) en esta orden. .
           </DialogDescription>
         </DialogHeader>
 
@@ -75,9 +99,16 @@ export function AddServiceFromFindingDialog({
           )}
         </div>
 
+        {/* Pegado desde la planilla del jefe — la oficina no tipea */}
+        <PasteFromSheetZone
+          columnsHint="nombre · descripción · precio"
+          onPaste={handlePaste}
+        />
+
         <AdHocServiceForm
+          key={formKey}
           workOrderId={workOrderId}
-          initial={{ description: prefilledDescription }}
+          initial={prefill}
           onSuccess={onClose}
           onCancel={onClose}
           submitLabel="Crear servicio"

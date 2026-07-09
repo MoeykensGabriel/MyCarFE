@@ -8,6 +8,7 @@ import { BackButton } from "@/components/shared/BackButton";
 import { StatusTimeline } from "@/components/work-orders/StatusTimeline";
 import { TechnicianNoteCard } from "@/components/work-orders/TechnicianNoteCard";
 import { PhotosCard } from "@/components/work-orders/PhotosCard";
+import { BeforePhotosUploader } from "@/components/work-orders/BeforePhotosUploader";
 import { AfterPhotosUploader } from "@/components/work-orders/AfterPhotosUploader";
 import { ChangeStatusModal } from "@/components/work-orders/ChangeStatusModal";
 import { InspectionPanel } from "@/components/work-orders/InspectionPanel";
@@ -16,6 +17,7 @@ import { InspectionProposalsCard } from "@/components/work-orders/InspectionProp
 import { WorkOrderDetailHeader } from "@/components/work-orders/WorkOrderDetailHeader";
 import { StatusBanner } from "@/components/work-orders/work-order-status-ui";
 import { QuoteCard } from "@/components/work-orders/QuoteCard";
+import { SaleConditionCard } from "@/components/work-orders/SaleConditionCard";
 import { WorkOrderSummaryPanel } from "@/components/work-orders/WorkOrderSummaryPanel";
 import { StockLookupModal } from "@/components/stock/StockLookupModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -89,17 +91,15 @@ export default function WorkOrderDetailPage() {
             />
           )}
 
-          {/* Motivo de visita (lo carga recepción al abrir la orden) */}
-          {order.serviceReason && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Motivo de visita</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-800 whitespace-pre-wrap">{order.serviceReason}</p>
-              </CardContent>
-            </Card>
-          )}
+          {/* Condición de venta — en mobile va justo debajo del presupuesto para no
+              obligar al admin a scrollear hasta abajo de la columna derecha. En desktop
+              se oculta acá y se mantiene en la sidebar (más abajo) con `hidden lg:block`. */}
+          <div className="lg:hidden">
+            <SaleConditionCard order={order} status={status} />
+          </div>
+
+          {/* Motivo de visita ahora vive en el header (WorkOrderDetailHeader),
+              siempre visible debajo del ID/estado del vehículo. */}
 
           {/* Nota del cliente */}
           {order.customerNote && (
@@ -114,6 +114,19 @@ export default function WorkOrderDetailPage() {
           )}
 
           <TechnicianNoteCard workOrderId={order.id} initialNote={order.technicianNote} />
+
+          {/* Fotos de ingreso — recuperables desde la ficha si se saltó el paso en el alta.
+              Disponible mientras la orden esté activa; cerrada (Entregada/Cancelada) ya no se
+              edita el registro cosmético, queda solo lectura en PhotosCard. */}
+          {!isFinalState && (
+            <BeforePhotosUploader
+              workOrderId={order.id}
+              allPhotos={order.photos ?? []}
+              onUploaded={() => {
+                queryClient.invalidateQueries({ queryKey: workOrderKeys.detail(order.id) });
+              }}
+            />
+          )}
 
           {/* Fotos finales — solo en Completed; el BE bloquea Delivered si no hay al menos una. */}
           {status === WorkOrderStatus.Completed && (
@@ -132,6 +145,12 @@ export default function WorkOrderDetailPage() {
         {/* Columna derecha — 1/3 */}
         <div className="space-y-6">
           <WorkOrderSummaryPanel order={order} />
+
+          {/* Condición de venta de los repuestos — viaja al depósito al aprobar.
+              En mobile se muestra debajo del presupuesto (ver arriba), acá solo desktop. */}
+          <div className="hidden lg:block">
+            <SaleConditionCard order={order} status={status} />
+          </div>
 
           {/* Historial */}
           <Card>

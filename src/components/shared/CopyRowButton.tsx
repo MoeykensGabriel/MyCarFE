@@ -20,11 +20,11 @@ export function CopyRowButton({ text, label = "ítem" }: { text: string; label?:
     <button
       type="button"
       onClick={handleCopy}
-      className="text-muted-foreground hover:text-[#041627] transition-colors"
+      className="tap-target text-muted-foreground hover:text-[#041627] transition-colors"
       title={`Copiar ${label} para la planilla`}
       aria-label={`Copiar ${label}`}
     >
-      <Copy className="w-3.5 h-3.5" />
+      <Copy className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
     </button>
   );
 }

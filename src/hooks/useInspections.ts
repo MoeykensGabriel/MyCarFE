@@ -5,6 +5,7 @@ import { mechanicService } from "@/services/mechanic.service";
 import {
   CreateInspectionReportRequest,
   MarkAreaNoFindingsRequest,
+  MarkAreaSkippedRequest,
   UpdateInspectionReportRequest,
 } from "@/types/api.types";
 
@@ -13,6 +14,8 @@ export const inspectionKeys = {
   byWorkOrder: (workOrderId: string) =>
     [...inspectionKeys.all, "by-work-order", workOrderId] as const,
   myPending: () => [...inspectionKeys.all, "my-pending"] as const,
+  skippedByVehicle: (vehicleId: string) =>
+    [...inspectionKeys.all, "skipped-by-vehicle", vehicleId] as const,
 };
 
 // ─── Admin: ver reportes de una orden ───────────────────────────────────────
@@ -75,6 +78,29 @@ export function useMarkAreaNoFindings(workOrderId: string) {
       toast.success("Área marcada sin novedades");
     },
     onError: () => toast.error("No se pudo marcar el área"),
+  });
+}
+
+export function useMarkAreaSkipped(workOrderId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: MarkAreaSkippedRequest) =>
+      inspectionsService.markAreaSkipped(workOrderId, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: inspectionKeys.byWorkOrder(workOrderId) });
+      toast.success("Área omitida — queda registrada para revisar en la próxima visita");
+    },
+    onError: () => toast.error("No se pudo omitir el área"),
+  });
+}
+
+// ─── Oficina: áreas omitidas en la última visita de un vehículo ──────────────
+
+export function useVehicleSkippedInspections(vehicleId: string | undefined) {
+  return useQuery({
+    queryKey: inspectionKeys.skippedByVehicle(vehicleId ?? ""),
+    queryFn: () => inspectionsService.getSkippedByVehicle(vehicleId!),
+    enabled: !!vehicleId,
   });
 }
 

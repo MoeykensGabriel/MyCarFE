@@ -3,6 +3,8 @@ import {
   CreateInspectionReportRequest,
   InspectionReport,
   MarkAreaNoFindingsRequest,
+  MarkAreaSkippedRequest,
+  SkippedInspectionArea,
   UpdateInspectionReportRequest,
   WorkOrder,
 } from "@/types/api.types";
@@ -47,6 +49,33 @@ export const inspectionsService = {
     const response = await apiClient.post<InspectionReport>(
       `/api/work-orders/${workOrderId}/inspection-reports/no-findings`,
       data
+    );
+    return response.data;
+  },
+
+  /**
+   * La oficina omite la inspección de un área con motivo obligatorio.
+   * A diferencia de "sin hallazgos", queda constancia de que nadie la revisó
+   * y el área aparece "para revisar" en la próxima visita del vehículo.
+   */
+  markAreaSkipped: async (
+    workOrderId: string,
+    data: MarkAreaSkippedRequest
+  ): Promise<InspectionReport> => {
+    const response = await apiClient.post<InspectionReport>(
+      `/api/work-orders/${workOrderId}/inspection-reports/skip`,
+      data
+    );
+    return response.data;
+  },
+
+  /**
+   * Áreas omitidas en la última visita (orden no cancelada más reciente) de un vehículo.
+   * Vacío si la última visita cubrió todas las áreas.
+   */
+  getSkippedByVehicle: async (vehicleId: string): Promise<SkippedInspectionArea[]> => {
+    const response = await apiClient.get<SkippedInspectionArea[]>(
+      `/api/vehicles/${vehicleId}/skipped-inspections`
     );
     return response.data;
   },

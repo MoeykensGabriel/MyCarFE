@@ -8,7 +8,6 @@ import {
   HandCoins,
   Package,
   Sparkles,
-  User,
   Wrench,
 } from "lucide-react";
 
@@ -143,7 +142,7 @@ function AvailableServiceCard({
       <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5 text-[11px] text-[#44474c]/70">
         <Meta icon={<Car className="w-3 h-3" />} label={`${service.vehicleBrand} ${service.vehicleModel}`} />
         <Meta icon={<Package className="w-3 h-3" />} label={service.vehicleLicensePlate} mono />
-        {service.ownerName && <Meta icon={<User className="w-3 h-3" />} label={service.ownerName} />}
+        {/* Sin propietario/cliente/flota: el mecánico no ve para quién es el trabajo. */}
         {service.estimatedDurationMinutes > 0 && (
           <Meta icon={<Clock className="w-3 h-3" />} label={`${service.estimatedDurationMinutes} min`} />
         )}
@@ -205,9 +204,6 @@ function ClaimConfirmDialog({
             {service.vehicleBrand} {service.vehicleModel}{" "}
             <span className="font-mono">({service.vehicleLicensePlate})</span>
           </p>
-          {service.ownerName && (
-            <p className="text-xs text-[#44474c]/80">{service.ownerName}</p>
-          )}
         </div>
 
         <DialogFooter className="gap-2">

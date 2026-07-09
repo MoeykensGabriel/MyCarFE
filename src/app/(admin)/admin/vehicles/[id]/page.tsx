@@ -8,6 +8,7 @@ import { toast } from "sonner";
 
 import { BackButton } from "@/components/shared/BackButton";
 import { OpenOrderModal } from "@/components/shared/OpenOrderModal";
+import { SkippedInspectionsAlert } from "@/components/inspections/SkippedInspectionsAlert";
 import { VehicleTiresCard } from "@/components/vehicle-tires/VehicleTiresCard";
 import { MaintenanceAlertsCard } from "@/components/vehicle-maintenance/MaintenanceAlertsCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -102,6 +103,7 @@ export default function VehicleDetailPage() {
       {showModal && (
         <OpenOrderModal
           vehicleLabel={`${vehicle.brand} ${vehicle.model} · ${vehicle.licensePlate}`}
+          vehicleId={vehicle.id}
           initialMileage={vehicle.currentMileage}
           initialContactName={contactNameDefault}
           initialContactPhone={contactPhoneDefault}
@@ -140,6 +142,9 @@ export default function VehicleDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Áreas omitidas en la última visita — pendiente de revisar */}
+      <SkippedInspectionsAlert vehicleId={vehicle.id} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Columna izquierda — 2/3 */}

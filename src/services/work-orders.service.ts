@@ -8,6 +8,7 @@ import {
   ApproveQuotePreview,
   CreateWorkOrderRequest,
   PagedResult,
+  SetSaleConditionRequest,
   UpdateWorkOrderNotesRequest,
   UpdateWorkOrderPartRequest,
   UpdateWorkOrderStatusRequest,
@@ -28,6 +29,8 @@ export interface WorkOrdersParams {
   statuses?: number[]; // atajo multi-estado (ej. "Aprobadas en adelante"); se envía como CSV
   ownerType?: 1 | 2;   // 1 = Clientes, 2 = Flotas
   search?: string;     // patente, nombre, razón social
+  from?: string;       // ISO date — filtro de CreatedAt desde (inclusivo)
+  to?: string;         // ISO date — filtro de CreatedAt hasta (inclusivo)
   page?: number;
   pageSize?: number;
 }
@@ -106,6 +109,15 @@ export const workOrdersService = {
       ...data,
     });
     return response.data;
+  },
+
+  /**
+   * Define la condición de venta de los repuestos (CC / OC + número / Contado + seña).
+   * Editable hasta la aprobación; viaja al depósito (GestionPGB) con el pedido.
+   */
+  setSaleCondition: async (id: string, data: SetSaleConditionRequest): Promise<WorkOrder> => {
+    const response = await apiClient.put<WorkOrder>(`/api/work-orders/${id}/sale-condition`, data);
+    return normalizeWorkOrder(response.data);
   },
 
   addService: async (id: string, data: AddWorkOrderServiceRequest): Promise<void> => {

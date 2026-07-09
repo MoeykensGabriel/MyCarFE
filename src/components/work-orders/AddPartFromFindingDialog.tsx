@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { AlertTriangle, User } from "lucide-react";
 
 import {
@@ -11,7 +12,9 @@ import {
 } from "@/components/ui/dialog";
 import { InspectionReport } from "@/types/api.types";
 import { useAddWorkOrderPart } from "@/hooks/useWorkOrders";
-import { PartForm } from "./PartForm";
+import { parsePartRow } from "@/lib/paste-parse";
+import { PartForm, PartFormValues } from "./PartForm";
+import { PasteFromSheetZone } from "./PasteFromSheetZone";
 
 interface Props {
   workOrderId: string;
@@ -32,6 +35,24 @@ export function AddPartFromFindingDialog({
   onClose,
 }: Props) {
   const { mutate: addPart, isPending } = useAddWorkOrderPart(workOrderId);
+
+  // Fila pegada desde el Excel del jefe → prellenar el form (remount por key).
+  const [prefill, setPrefill] = useState<Partial<PartFormValues> | undefined>();
+  const [formKey, setFormKey] = useState(0);
+
+  function handlePaste(text: string): string | null {
+    const firstRow = text.split(/\r?\n/).find((r) => r.trim().length > 0) ?? "";
+    const result = parsePartRow(firstRow);
+    if (result.error || !result.data) return result.error ?? "No se pudo leer la fila.";
+    setPrefill({
+      productCode: result.data.productCode ?? "",
+      name:        result.data.name,
+      unitPrice:   result.data.unitPrice,
+      quantity:    1,
+    });
+    setFormKey((k) => k + 1);
+    return null;
+  }
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && !isPending && onClose()}>
@@ -65,7 +86,15 @@ export function AddPartFromFindingDialog({
           )}
         </div>
 
+        {/* Pegado desde la planilla del jefe — la oficina no tipea */}
+        <PasteFromSheetZone
+          columnsHint="código · descripción · precio"
+          onPaste={handlePaste}
+        />
+
         <PartForm
+          key={formKey}
+          initial={prefill}
           submitLabel="Crear repuesto"
           submitting={isPending}
           onCancel={onClose}

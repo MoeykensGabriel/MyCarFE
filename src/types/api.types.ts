@@ -6,6 +6,7 @@ import {
   OilServiceStatus,
   PhotoType,
   QuoteItemApprovalStatus,
+  SaleCondition,
   TirePosition,
   TireStatus,
   VehicleBodyType,
@@ -326,6 +327,10 @@ export interface InspectionReport {
   hasIssue: boolean;
   /** true = el admin marcó el área como "sin hallazgos" (no hay reporte de mecánico) */
   isNoFindings: boolean;
+  /** true = la oficina omitió la inspección del área — nadie la revisó; queda para la próxima visita */
+  isSkipped: boolean;
+  /** Motivo de la omisión (obligatorio cuando isSkipped=true) */
+  skipReason?: string | null;
   createdAt: string;
   updatedAt: string;
   photos: InspectionReportPhoto[];
@@ -410,6 +415,21 @@ export interface MarkAreaNoFindingsRequest {
   areaId: string;
 }
 
+export interface MarkAreaSkippedRequest {
+  areaId: string;
+  reason: string;
+}
+
+/** Área omitida en la última visita de un vehículo (aviso "quedó sin inspeccionar"). */
+export interface SkippedInspectionArea {
+  workOrderId: string;
+  workOrderCreatedAt: string;
+  areaId: string;
+  areaName: string;
+  skipReason: string;
+  skippedAt: string;
+}
+
 // ─── PendingInspection (vista del mecánico) ───────────────────────────────────
 
 export interface PendingInspectionArea {
@@ -433,7 +453,6 @@ export interface PendingInspection {
   vehicleBrand: string;
   vehicleModel: string;
   vehicleLicensePlate: string;
-  ownerName?: string | null;
   pendingAreas: PendingInspectionArea[];
 }
 
@@ -553,8 +572,6 @@ export interface AvailableService {
   vehicleBrand: string;
   vehicleModel: string;
   vehicleLicensePlate: string;
-
-  ownerName?: string | null;
 }
 
 export interface WorkOrderPhoto {
@@ -612,8 +629,24 @@ export interface WorkOrder {
   scheduledEnd?: string | null;
   /** Duración total estimada de los servicios (mecánico ?? catálogo) × cantidad, en minutos. */
   totalEstimatedMinutes?: number;
+  /** Vencimiento del presupuesto (14 días desde el envío). Null si aún no se envió. */
+  quoteExpiresAt?: string | null;
+  /**
+   * Condición de venta para los repuestos (CC / OC / Contado). La carga la oficina
+   * antes de aprobar; viaja al depósito con el pedido. OC → purchaseOrderNumber;
+   * Contado → depositAmount (seña, puede ser 0 = "sin seña").
+   */
+  saleCondition?: SaleCondition | null;
+  purchaseOrderNumber?: string | null;
+  depositAmount?: number | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface SetSaleConditionRequest {
+  condition: SaleCondition | null;
+  purchaseOrderNumber?: string | null;
+  depositAmount?: number | null;
 }
 
 export interface WorkOrderInspectionReportLite {

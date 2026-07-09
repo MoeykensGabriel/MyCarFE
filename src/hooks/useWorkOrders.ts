@@ -14,6 +14,7 @@ import {
   ApproveQuotePayload,
   CreateWorkOrderRequest,
   ProblemDetails,
+  SetSaleConditionRequest,
   UpdateWorkOrderPartRequest,
   UpdateWorkOrderStatusRequest,
 } from "@/types/api.types";
@@ -170,6 +171,21 @@ export function useUpdateWorkOrderServicePrice(workOrderId: string) {
 // directamente con setQueryData para evitar un refetch innecesario. Si falla, igual
 // invalidamos para resync.
 
+export function useSetSaleCondition(workOrderId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: SetSaleConditionRequest) =>
+      workOrdersService.setSaleCondition(workOrderId, data),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(workOrderKeys.detail(workOrderId), updated);
+      toast.success("Condición de venta guardada");
+    },
+    onError: (err) => {
+      toast.error(extractError(err, "No se pudo guardar la condición de venta"));
+    },
+  });
+}
+
 export function useAddWorkOrderPart(workOrderId: string) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -287,10 +303,32 @@ export function useUnassignMechanic(workOrderId: string) {
       workOrderServicesService.unassignMechanic(workOrderServiceId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: workOrderKeys.detail(workOrderId) });
-      toast.success("Mecánico desasignado");
+      toast.success("Mecánico desasignado — el trabajo vuelve al pool");
     },
     onError: (err) => {
       toast.error(extractError(err, "No se pudo desasignar el mecánico"));
+    },
+  });
+}
+
+/** Admin/oficina finaliza un trabajo en curso en nombre del taller (mecánico ausente). */
+export function useCompleteServiceAsWorkshop(workOrderId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      workOrderServiceId,
+      notes,
+    }: {
+      workOrderServiceId: string;
+      notes: string;
+    }) => workOrderServicesService.completeAsWorkshop(workOrderServiceId, notes),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: workOrderKeys.detail(workOrderId) });
+      toast.success("Trabajo finalizado por el taller");
+    },
+    onError: (err) => {
+      toast.error(extractError(err, "No se pudo finalizar el trabajo"));
     },
   });
 }

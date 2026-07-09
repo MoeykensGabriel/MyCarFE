@@ -1,3 +1,20 @@
+/**
+ * Condición de venta para los repuestos de la orden. La carga la oficina antes
+ * de aprobar y viaja al depósito (GestionPGB) con el pedido.
+ * OC → número de OC obligatorio; Contado → importe de la seña (0 = sin seña).
+ */
+export enum SaleCondition {
+  CuentaCorriente = 0,
+  OrdenDeCompra = 1,
+  Contado = 2,
+}
+
+export const SaleConditionLabel: Record<SaleCondition, string> = {
+  [SaleCondition.CuentaCorriente]: "Cuenta corriente",
+  [SaleCondition.OrdenDeCompra]: "Orden de compra",
+  [SaleCondition.Contado]: "Contado",
+};
+
 export enum WorkOrderStatus {
   Received = 0,
   Diagnosing = 1,

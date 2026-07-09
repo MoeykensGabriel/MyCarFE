@@ -159,6 +159,9 @@ export default function MyOrderDetailPage() {
   const approveMutation = useApproveAsCustomer(id);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
+  // Snapshot del "ahora" al montar (regla de pureza de render); la validez es por días,
+  // así que no hace falta un reloj vivo.
+  const [now] = useState(() => Date.now());
 
   // Descarga el PDF del presupuesto y lo abre como descarga del navegador.
   async function handleDownloadQuote() {
@@ -198,6 +201,11 @@ export default function MyOrderDetailPage() {
   const status              = Number(order.currentStatus) as WorkOrderStatus;
   const isAwaitingApproval  = status === WorkOrderStatus.AwaitingApproval;
   const isDelivered         = status === WorkOrderStatus.Delivered;
+
+  // Vencimiento del presupuesto (14 días desde el envío): pasada la fecha no se puede
+  // aprobar — el BE también lo bloquea, esto es para explicar en vez de fallar.
+  const quoteExpiresAt = order.quoteExpiresAt ? new Date(order.quoteExpiresAt) : null;
+  const isQuoteExpired = quoteExpiresAt !== null && quoteExpiresAt.getTime() < now;
   const config              = getWorkOrderStatusConfig(status);
   const hint                = config?.customerHint;
   const vehicleLabel        = [order.vehicleBrand, order.vehicleModel].filter(Boolean).join(" ") || "—";
@@ -340,8 +348,26 @@ export default function MyOrderDetailPage() {
         </div>
       )}
 
+      {/* ── Presupuesto vencido: aviso en lugar del CTA ─────────────────────── */}
+      {isAwaitingApproval && isQuoteExpired && (
+        <div className="flex items-start gap-3 bg-amber-50 border border-amber-300 rounded-2xl p-4 shadow-sm">
+          <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+            <AlertTriangle className="w-4 h-4 text-amber-600" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-extrabold uppercase tracking-widest text-amber-800">
+              Presupuesto vencido
+            </p>
+            <p className="text-[11px] font-semibold text-amber-900 leading-relaxed mt-0.5">
+              Este presupuesto venció el {quoteExpiresAt ? formatDate(order.quoteExpiresAt!) : "—"} (validez: 14 días).
+              Contactá al taller para que lo actualice y te lo vuelva a enviar.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* ── CTA APROBAR PRESUPUESTO PREMIUM ─────────────────────────────────── */}
-      {isAwaitingApproval && (order.services?.length ?? 0) > 0 && (
+      {isAwaitingApproval && !isQuoteExpired && (order.services?.length ?? 0) > 0 && (
         <div className="bg-[#fea520] bg-gradient-to-br from-[#fea520] to-[#fec15d] rounded-2xl p-5 space-y-4 shadow-lg shadow-[#fea520]/15 border border-[#fea520] relative overflow-hidden text-[#041627]">
           {/* Adornos estéticos */}
           <div className="absolute right-0 top-0 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none" />
@@ -354,6 +380,11 @@ export default function MyOrderDetailPage() {
             <p className="text-xs font-semibold leading-relaxed mt-1.5">
               Revisá los servicios detallados a continuación. El total presupuestado es de: <span className="font-black bg-[#041627]/10 px-2 py-0.5 rounded">{formatCurrency(order.totalAmount)}</span>.
             </p>
+            {quoteExpiresAt && (
+              <p className="text-[10px] font-bold text-[#041627]/70 mt-1.5">
+                Válido hasta el {formatDate(order.quoteExpiresAt!)} — pasada esa fecha habrá que pedir uno actualizado.
+              </p>
+            )}
           </div>
 
           <div className="border-t border-[#041627]/10 pt-3 relative z-10">

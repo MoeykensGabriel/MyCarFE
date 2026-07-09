@@ -85,7 +85,7 @@ export function MechanicAssignSelect({
         onClick={() => setOpen((v) => !v)}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
         disabled={isPending}
-        className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md border text-[11px] transition-colors disabled:opacity-50 ${
+        className={`inline-flex items-center gap-1.5 px-3 py-2.5 sm:px-2 sm:py-1 rounded-md border text-xs sm:text-[11px] transition-colors disabled:opacity-50 ${
           assignedMechanicId
             ? "bg-white border-gray-300 text-gray-700 hover:border-gray-400"
             : "bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100"
@@ -109,9 +109,9 @@ export function MechanicAssignSelect({
           onClick={handleUnassign}
           onMouseDown={(e) => e.preventDefault()}
           title="Quitar asignación"
-          className="ml-1 inline-flex items-center justify-center w-5 h-5 rounded text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors align-middle"
+          className="tap-target ml-1 inline-flex items-center justify-center w-8 h-8 sm:w-5 sm:h-5 rounded text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors align-middle"
         >
-          <X className="w-3 h-3" />
+          <X className="w-4 h-4 sm:w-3 sm:h-3" />
         </button>
       )}
 
@@ -134,7 +134,7 @@ export function MechanicAssignSelect({
                   key={m.id}
                   type="button"
                   onMouseDown={() => handleSelect(m.id)}
-                  className={`w-full flex items-center justify-between px-3 py-2 text-xs text-left border-b last:border-0 transition-colors ${
+                  className={`w-full flex items-center justify-between px-3 py-3 sm:py-2 text-xs text-left border-b last:border-0 transition-colors ${
                     isSelected
                       ? "bg-amber-50 text-amber-900 font-medium"
                       : "hover:bg-gray-50 text-gray-700"

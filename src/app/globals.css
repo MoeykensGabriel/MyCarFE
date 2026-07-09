@@ -140,3 +140,30 @@
     @apply font-sans;
   }
 }
+
+/* ── Targets táctiles ─────────────────────────────────────────────────────────
+   En dispositivos táctiles (pointer: coarse) los botones chicos (sm/xs/icon)
+   quedan por debajo del mínimo táctil recomendado (~44px). Estas reglas los
+   agrandan SOLO en táctil — el desktop conserva el diseño compacto.
+   Los botones "crudos" (fuera de la librería ui) que necesitan área extra usan
+   la clase utilitaria .tap-target, que expande la zona clickeable sin cambiar
+   el layout (padding + margen negativo equivalente). */
+@media (pointer: coarse) {
+  [data-slot="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  select {
+    min-height: 44px;
+  }
+
+  .tap-target {
+    position: relative;
+  }
+  .tap-target::after {
+    content: "";
+    position: absolute;
+    inset: -12px;
+  }
+}

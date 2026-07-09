@@ -16,6 +16,7 @@ import { formatCurrency, formatDate } from "@/lib/format";
 import { useWorkOrders } from "@/hooks/useWorkOrders";
 import { WorkOrdersParams } from "@/services/work-orders.service";
 import { WorkOrder } from "@/types/api.types";
+import { cn } from "@/lib/utils";
 
 const ALL_STATUSES = Object.values(WorkOrderStatus).filter(
   (v) => typeof v === "number"
@@ -110,9 +111,9 @@ export default function WorkOrdersPage() {
             defaultValue=""
             onChange={(e) => {
               const v = e.target.value;
-              if (v === "") applyFilter({ status: undefined, statuses: undefined });
-              else if (v === APPROVED_ONWARD_VALUE) applyFilter({ status: undefined, statuses: APPROVED_ONWARD });
-              else applyFilter({ status: Number(v), statuses: undefined });
+              if (v === "") applyFilter({ status: undefined, statuses: undefined, from: undefined, to: undefined });
+              else if (v === APPROVED_ONWARD_VALUE) applyFilter({ status: undefined, statuses: APPROVED_ONWARD, from: undefined, to: undefined });
+              else applyFilter({ status: Number(v), statuses: undefined, from: undefined, to: undefined });
             }}
             className="appearance-none pl-3 pr-8 py-2 text-sm rounded-lg border border-[#c4c6cd] bg-white text-[#041627] focus:outline-none focus:ring-2 focus:ring-[#041627]/20 focus:border-[#041627] transition-all cursor-pointer"
           >
@@ -126,6 +127,39 @@ export default function WorkOrdersPage() {
           </select>
           <ChevronRight className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#44474c]/50 rotate-90 pointer-events-none" />
         </div>
+
+        {/* Fecha Desde — solo aparece cuando estado === Completed */}
+        {filters.status === WorkOrderStatus.Completed && (
+          <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-200">
+            <div className="flex items-center gap-1.5">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-[#44474c]/70 whitespace-nowrap">Desde</label>
+              <input
+                type="date"
+                value={filters.from ?? ""}
+                onChange={(e) => applyFilter({ from: e.target.value || undefined })}
+                className="px-2 py-2 text-sm rounded-lg border border-[#c4c6cd] bg-white text-[#041627] focus:outline-none focus:ring-2 focus:ring-[#041627]/20 focus:border-[#041627] transition-all cursor-pointer"
+              />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-[#44474c]/70 whitespace-nowrap">Hasta</label>
+              <input
+                type="date"
+                value={filters.to ?? ""}
+                onChange={(e) => applyFilter({ to: e.target.value || undefined })}
+                className="px-2 py-2 text-sm rounded-lg border border-[#c4c6cd] bg-white text-[#041627] focus:outline-none focus:ring-2 focus:ring-[#041627]/20 focus:border-[#041627] transition-all cursor-pointer"
+              />
+            </div>
+            {(filters.from || filters.to) && (
+              <button
+                type="button"
+                onClick={() => applyFilter({ from: undefined, to: undefined })}
+                className="text-xs text-[#44474c]/70 hover:text-red-500 font-medium underline underline-offset-2"
+              >
+                Limpiar fecha
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Búsqueda — full width en mobile, fija en desktop */}
         <SearchInput

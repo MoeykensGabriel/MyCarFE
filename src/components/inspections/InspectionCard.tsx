@@ -1,6 +1,6 @@
 "use client";
 
-import { ClipboardCheck, User, Calendar } from "lucide-react";
+import { ClipboardCheck, Calendar } from "lucide-react";
 
 import { formatDateTime } from "@/lib/format";
 import { PendingInspection, PendingInspectionArea } from "@/types/api.types";
@@ -32,14 +32,8 @@ export function InspectionCard({ inspection, onPickArea }: Props) {
               {inspection.vehicleLicensePlate}
             </span>
           </div>
+          {/* Sin propietario/cliente/flota: el mecánico no ve para quién es el trabajo. */}
           <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1">
-            {inspection.ownerName && (
-              <p className="flex items-center gap-1 text-[11px] text-[#44474c]/80 font-bold">
-                <User className="w-3.5 h-3.5 text-[#44474c]/40 shrink-0" />
-                {inspection.ownerName}
-              </p>
-            )}
-            <span className="text-[#44474c]/30 text-xs hidden xs:inline">•</span>
             <p className="flex items-center gap-1 text-[10px] text-[#44474c]/65 font-semibold">
               <Calendar className="w-3 h-3 text-[#44474c]/40 shrink-0" />
               Ingreso {formatDateTime(inspection.workOrderCreatedAt)}
