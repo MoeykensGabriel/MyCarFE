@@ -41,16 +41,14 @@ export function AdditionalItemsCard({ order }: Props) {
   return (
     <Card className={pendingCount > 0 ? "border-amber-300 bg-amber-50/40" : undefined}>
       <CardHeader>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
           <PlusCircle className="w-4 h-4 text-amber-600 shrink-0" />
-          <CardTitle className="text-base">
-            Trabajo adicional
-            {pendingCount > 0 && (
-              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full bg-amber-100 border border-amber-300 text-amber-800 text-[11px] font-bold align-middle">
-                {pendingCount} pendiente{pendingCount > 1 ? "s" : ""} de aprobación
-              </span>
-            )}
-          </CardTitle>
+          <CardTitle className="text-base">Trabajo adicional</CardTitle>
+          {pendingCount > 0 && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-100 border border-amber-300 text-amber-800 text-[11px] font-bold whitespace-nowrap">
+              {pendingCount} pendiente{pendingCount > 1 ? "s" : ""} de aprobación
+            </span>
+          )}
         </div>
         <p className="text-xs text-muted-foreground mt-1">
           Lo que surge durante la reparación se carga acá: no suma al total ni se trabaja
@@ -64,10 +62,10 @@ export function AdditionalItemsCard({ order }: Props) {
             {pendingServices.map((s) => (
               <li
                 key={s.id}
-                className="flex items-center justify-between gap-3 rounded-lg border border-amber-200 bg-white px-3 py-2"
+                className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 rounded-lg border border-amber-200 bg-white px-3 py-2"
               >
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-slate-900 truncate">
+                  <p className="text-sm font-semibold text-slate-900 break-words">
                     {s.nameSnapshot}
                     {s.quantity > 1 ? ` ×${s.quantity}` : ""}
                   </p>
@@ -75,7 +73,7 @@ export function AdditionalItemsCard({ order }: Props) {
                     {formatCurrency(s.priceSnapshot * s.quantity)} · servicio
                   </p>
                 </div>
-                <div className="flex items-center gap-1.5 shrink-0">
+                <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
                   <Button
                     size="sm"
                     variant="outline"
@@ -101,10 +99,10 @@ export function AdditionalItemsCard({ order }: Props) {
             {pendingParts.map((p) => (
               <li
                 key={p.id}
-                className="flex items-center justify-between gap-3 rounded-lg border border-amber-200 bg-white px-3 py-2"
+                className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 rounded-lg border border-amber-200 bg-white px-3 py-2"
               >
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-slate-900 truncate">
+                  <p className="text-sm font-semibold text-slate-900 break-words">
                     {p.name}
                     {p.quantity > 1 ? ` ×${p.quantity}` : ""}
                   </p>
@@ -113,7 +111,7 @@ export function AdditionalItemsCard({ order }: Props) {
                     {p.productCode ? ` · ${p.productCode}` : ""}
                   </p>
                 </div>
-                <div className="flex items-center gap-1.5 shrink-0">
+                <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
                   <Button
                     size="sm"
                     variant="outline"

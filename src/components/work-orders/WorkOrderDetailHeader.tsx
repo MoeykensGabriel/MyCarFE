@@ -91,7 +91,7 @@ export function WorkOrderDetailHeader({ order, status, isFinalState, onChangeSta
               </div>
             </div>
 
-            <div className="flex items-center gap-2 shrink-0 self-end md:self-auto">
+            <div className="flex flex-wrap items-center justify-end gap-2 shrink-0 self-end md:self-auto max-w-full">
               {status === WorkOrderStatus.AwaitingApproval && (
                 <>
                   {/* "Modificar presupuesto": el cliente pidió cambios antes de aprobar.
