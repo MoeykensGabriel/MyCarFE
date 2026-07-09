@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { WorkOrder } from "@/types/api.types";
 import { WorkOrderStatus } from "@/lib/enums";
 import { workOrdersService } from "@/services/work-orders.service";
+import { useReviseQuote } from "@/hooks/useWorkOrders";
 import { StatusBadge } from "./StatusBadge";
 import { SendQuoteButton } from "./SendQuoteButton";
 import { STATUS_BANNERS } from "./work-order-status-ui";
@@ -26,6 +27,16 @@ interface Props {
  */
 export function WorkOrderDetailHeader({ order, status, isFinalState, onChangeStatus }: Props) {
   const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const { mutate: reviseQuote, isPending: revising } = useReviseQuote(order.id);
+
+  const handleReviseQuote = () => {
+    const ok = window.confirm(
+      "¿Volver el presupuesto a edición?\n\n" +
+        "El link de aprobación que tiene el cliente deja de funcionar. " +
+        "Después de modificar los items vas a tener que reenviarlo.",
+    );
+    if (ok) reviseQuote(undefined);
+  };
 
   const vehicleLabel =
     [order.vehicleBrand, order.vehicleModel].filter(Boolean).join(" ") || "—";
@@ -82,15 +93,29 @@ export function WorkOrderDetailHeader({ order, status, isFinalState, onChangeSta
 
             <div className="flex items-center gap-2 shrink-0 self-end md:self-auto">
               {status === WorkOrderStatus.AwaitingApproval && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleDownloadQuote}
-                  disabled={downloadingPdf}
-                  className="font-semibold text-slate-700"
-                >
-                  {downloadingPdf ? "Descargando..." : "Descargar presupuesto"}
-                </Button>
+                <>
+                  {/* "Modificar presupuesto": el cliente pidió cambios antes de aprobar.
+                      Vuelve a Diagnosing vía endpoint dedicado (descongela items e
+                      invalida el link) — no pasa por el modal genérico de estado. */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleReviseQuote}
+                    disabled={revising}
+                    className="font-semibold text-slate-700"
+                  >
+                    {revising ? "Volviendo a edición..." : "Modificar presupuesto"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDownloadQuote}
+                    disabled={downloadingPdf}
+                    className="font-semibold text-slate-700"
+                  >
+                    {downloadingPdf ? "Descargando..." : "Descargar presupuesto"}
+                  </Button>
+                </>
               )}
               {/* CTA principal en Diagnosing: enviar presupuesto al cliente.
                   El modal genérico de "Cambiar estado" ya no ofrece AwaitingApproval. */}

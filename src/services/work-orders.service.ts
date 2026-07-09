@@ -195,6 +195,43 @@ export const workOrdersService = {
     return normalizeWorkOrder(response.data);
   },
 
+  /**
+   * "Modificar presupuesto": vuelve la orden de AwaitingApproval a Diagnosing para editar
+   * y reenviar. Descongela items, resetea su decisión e invalida el link de aprobación viejo.
+   */
+  reviseQuote: async (id: string, note?: string): Promise<WorkOrder> => {
+    const response = await apiClient.post<WorkOrder>(`/api/work-orders/${id}/revise-quote`, {
+      note: note ?? null,
+    });
+    return normalizeWorkOrder(response.data);
+  },
+
+  /**
+   * Decide items ADICIONALES (agregados después de aprobar el presupuesto original).
+   * La oficina registra la decisión del cliente; la orden no cambia de estado.
+   * Los Pending no incluidos siguen Pending y se pueden decidir más adelante.
+   */
+  decideAdditionalItems: async (
+    id: string,
+    data: {
+      approvedServiceIds?: string[];
+      rejectedServiceIds?: string[];
+      approvedPartIds?: string[];
+      rejectedPartIds?: string[];
+    },
+  ): Promise<WorkOrder> => {
+    const response = await apiClient.post<WorkOrder>(
+      `/api/work-orders/${id}/additional-items/decide`,
+      {
+        approvedServiceIds: data.approvedServiceIds ?? [],
+        rejectedServiceIds: data.rejectedServiceIds ?? [],
+        approvedPartIds: data.approvedPartIds ?? [],
+        rejectedPartIds: data.rejectedPartIds ?? [],
+      },
+    );
+    return normalizeWorkOrder(response.data);
+  },
+
   addPhoto: async (id: string, formData: FormData): Promise<void> => {
     await apiClient.post(`/api/work-orders/${id}/photos`, formData, {
       headers: { "Content-Type": "multipart/form-data" },

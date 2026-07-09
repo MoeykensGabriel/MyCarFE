@@ -261,6 +261,10 @@ export const PhotoTypeLabel: Record<PhotoType, string> = {
  * Esa transición debe ir vía POST /api/work-orders/{id}/send-quote (botón
  * "Enviar presupuesto") porque tiene side effects propios (congelar items,
  * setear QuoteExpiresAt, generar token, mandar email).
+ *
+ * Ídem la vuelta AwaitingApproval → Diagnosing ("Modificar presupuesto"): va vía
+ * POST /api/work-orders/{id}/revise-quote (descongela items, resetea decisión,
+ * invalida el link de aprobación). Botón dedicado en el header del detalle.
  */
 export const ValidTransitions: Record<WorkOrderStatus, WorkOrderStatus[]> = {
   [WorkOrderStatus.Received]: [

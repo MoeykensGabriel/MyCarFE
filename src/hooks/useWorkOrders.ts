@@ -274,6 +274,49 @@ export function useSendQuote(workOrderId: string) {
   });
 }
 
+/**
+ * "Modificar presupuesto": vuelve la orden a Diagnosing para editar y reenviar.
+ * Descongela items e invalida el link de aprobación que tenía el cliente.
+ */
+export function useReviseQuote(workOrderId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (note?: string) => workOrdersService.reviseQuote(workOrderId, note),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(workOrderKeys.detail(workOrderId), updated);
+      queryClient.invalidateQueries({ queryKey: workOrderKeys.lists() });
+      toast.success("Presupuesto vuelto a edición — modificalo y reenvialo");
+    },
+    onError: (err) => {
+      toast.error(extractError(err, "No se pudo volver el presupuesto a edición"));
+    },
+  });
+}
+
+/**
+ * Registra la decisión del cliente sobre items adicionales (post-aprobación).
+ * La orden no cambia de estado; los repuestos aprobados generan pedido al depósito.
+ */
+export function useDecideAdditionalItems(workOrderId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      approvedServiceIds?: string[];
+      rejectedServiceIds?: string[];
+      approvedPartIds?: string[];
+      rejectedPartIds?: string[];
+    }) => workOrdersService.decideAdditionalItems(workOrderId, data),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(workOrderKeys.detail(workOrderId), updated);
+      queryClient.invalidateQueries({ queryKey: workOrderKeys.lists() });
+      toast.success("Decisión registrada sobre los adicionales");
+    },
+    onError: (err) => {
+      toast.error(extractError(err, "No se pudo registrar la decisión"));
+    },
+  });
+}
+
 export function useAssignMechanic(workOrderId: string) {
   const queryClient = useQueryClient();
 

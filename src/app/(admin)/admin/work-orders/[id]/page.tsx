@@ -17,6 +17,7 @@ import { InspectionProposalsCard } from "@/components/work-orders/InspectionProp
 import { WorkOrderDetailHeader } from "@/components/work-orders/WorkOrderDetailHeader";
 import { StatusBanner } from "@/components/work-orders/work-order-status-ui";
 import { QuoteCard } from "@/components/work-orders/QuoteCard";
+import { AdditionalItemsCard } from "@/components/work-orders/AdditionalItemsCard";
 import { SaleConditionCard } from "@/components/work-orders/SaleConditionCard";
 import { WorkOrderSummaryPanel } from "@/components/work-orders/WorkOrderSummaryPanel";
 import { StockLookupModal } from "@/components/stock/StockLookupModal";
@@ -56,6 +57,9 @@ export default function WorkOrderDetailPage() {
     status === WorkOrderStatus.Delivered || status === WorkOrderStatus.Cancelled;
   const isDiagnosing      = status === WorkOrderStatus.Diagnosing;
   const isUnderInspection = status === WorkOrderStatus.UnderInspection;
+  // Post-aprobación: se pueden cargar ADICIONALES (nacen Pending, requieren OK del cliente)
+  const isPostApproval =
+    status === WorkOrderStatus.Approved || status === WorkOrderStatus.InProgress;
 
   return (
     <div className="space-y-6">
@@ -90,6 +94,9 @@ export default function WorkOrderDetailPage() {
               onConsultStock={() => setStockOpen(true)}
             />
           )}
+
+          {/* Trabajo adicional post-aprobación: alta de items Pending + decisión del cliente */}
+          {isPostApproval && <AdditionalItemsCard order={order} />}
 
           {/* Condición de venta — en mobile va justo debajo del presupuesto para no
               obligar al admin a scrollear hasta abajo de la columna derecha. En desktop
