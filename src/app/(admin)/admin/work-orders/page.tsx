@@ -128,8 +128,9 @@ export default function WorkOrdersPage() {
           <ChevronRight className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#44474c]/50 rotate-90 pointer-events-none" />
         </div>
 
-        {/* Fecha Desde — solo aparece cuando estado === Completed */}
-        {filters.status === WorkOrderStatus.Completed && (
+        {/* Rango de fechas — para Completado y para "Aprobadas (en adelante)"
+            (liquidación de comisiones necesita acotar el período). */}
+        {(filters.status === WorkOrderStatus.Completed || filters.statuses) && (
           <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-200">
             <div className="flex items-center gap-1.5">
               <label className="text-[10px] font-bold uppercase tracking-widest text-[#44474c]/70 whitespace-nowrap">Desde</label>
