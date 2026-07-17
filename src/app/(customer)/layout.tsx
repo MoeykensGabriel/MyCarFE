@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Home, ClipboardList, Car, LogOut, Settings } from "lucide-react";
 
@@ -79,11 +80,11 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-30 bg-[#041627] text-white border-b border-[#fea520]/20 shadow-[0_4px_20px_rgba(4,22,39,0.15)]">
         <div className={`flex items-center justify-between px-4 h-14 ${shellWidth} mx-auto`}>
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#fea520] to-[#fec15d] flex items-center justify-center shrink-0 shadow-md shadow-[#fea520]/20">
-              <Car className="w-4.5 h-4.5 text-[#041627]" strokeWidth={2.5} />
+            <div className="w-8 h-8 rounded-xl overflow-hidden shrink-0 shadow-md shadow-[#fea520]/20">
+              <Image src="/logoGB.png" alt="GB Service" width={32} height={32} className="w-full h-full object-cover" />
             </div>
             <div>
-              <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#fea520] leading-none">MyCarApp</p>
+              <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#fea520] leading-none">GB Service</p>
               <p className="text-xs font-semibold text-white/80 leading-none mt-1">{greeting}</p>
             </div>
           </div>

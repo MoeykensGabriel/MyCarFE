@@ -12,7 +12,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "MyCarApp",
+  title: "GB Service",
   description: "Sistema de gestión de taller mecánico",
 };
 

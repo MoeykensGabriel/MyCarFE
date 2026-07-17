@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { Wrench, Plus, Menu, X } from "lucide-react";
+import { Plus, Menu, X } from "lucide-react";
 
 import { SessionGuard } from "@/components/shared/SessionGuard";
 import { useAuth } from "@/hooks/useAuth";
@@ -20,8 +21,8 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
     <>
       <div className="px-5 pt-6 pb-5">
         <div className="flex items-center gap-2">
-          <Wrench className="w-5 h-5 text-[#fea520] shrink-0" />
-          <span className="text-lg font-bold tracking-tight text-white">MyCarApp</span>
+          <Image src="/logoGB.png" alt="GB Service" width={20} height={20} className="rounded shrink-0" />
+          <span className="text-lg font-bold tracking-tight text-white">GB Service</span>
         </div>
         <p className="text-[11px] text-white/40 mt-0.5 ml-7">Recepción</p>
       </div>
@@ -92,8 +93,8 @@ export default function ReceptionistLayout({ children }: { children: React.React
         <div className="flex-1 flex flex-col min-w-0 lg:overflow-hidden">
           <header className="lg:hidden sticky top-0 z-30 flex items-center justify-between px-4 h-14 bg-[#041627] shrink-0">
             <div className="flex items-center gap-2">
-              <Wrench className="w-4 h-4 text-[#fea520]" />
-              <span className="text-sm font-bold text-white">MyCarApp</span>
+              <Image src="/logoGB.png" alt="GB Service" width={18} height={18} className="rounded" />
+              <span className="text-sm font-bold text-white">GB Service</span>
             </div>
             <button
               onClick={() => setDrawerOpen(true)}

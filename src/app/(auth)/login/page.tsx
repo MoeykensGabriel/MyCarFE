@@ -4,7 +4,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Wrench, Eye, EyeOff, Mail, Lock, AlertCircle } from "lucide-react";
+import Image from "next/image";
+import { Eye, EyeOff, Mail, Lock, AlertCircle } from "lucide-react";
 import { AxiosError } from "axios";
 
 import { UserRole } from "@/lib/enums";
@@ -125,10 +126,17 @@ export default function LoginPage() {
 
           {/* Brand */}
           <div className="flex flex-col items-center mb-6">
-            <div className="w-14 h-14 rounded-2xl bg-[#041627] flex items-center justify-center mb-4 shadow-lg ring-4 ring-[#041627]/10">
-              <Wrench className="w-7 h-7 text-[#fea520]" />
+            <div className="w-16 h-16 rounded-2xl overflow-hidden mb-4 shadow-lg ring-4 ring-[#041627]/10">
+              <Image
+                src="/logoGB.png"
+                alt="GB Service"
+                width={64}
+                height={64}
+                className="w-full h-full object-cover"
+                priority
+              />
             </div>
-            <h1 className="text-2xl font-black text-[#041627] tracking-tight">MyCarApp</h1>
+            <h1 className="text-2xl font-black text-[#041627] tracking-tight">GB Service</h1>
             <div className="flex items-center gap-2 mt-1.5">
               <span className="h-1 w-1 rounded-full bg-[#fea520]" />
               <p className="text-[11px] font-bold uppercase tracking-widest text-[#44474c]/60">
@@ -257,7 +265,7 @@ export default function LoginPage() {
         {/* Footer de la card */}
         <div className="px-6 sm:px-8 py-4 bg-[#eefcfd]/60 border-t border-[#c4c6cd]/40 text-center">
           <p className="text-xs text-[#44474c]/60">
-            © {new Date().getFullYear()} MyCarApp · Gestión de taller
+            © {new Date().getFullYear()} GB Service · Gestión de taller
           </p>
         </div>
       </div>

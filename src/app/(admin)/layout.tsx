@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import {
@@ -118,8 +119,8 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
       {/* Brand */}
       <div className="px-5 pt-6 pb-5">
         <div className="flex items-center gap-2">
-          <Wrench className="w-5 h-5 text-[#fea520] shrink-0" />
-          <span className="text-lg font-bold tracking-tight text-white">MyCarApp</span>
+          <Image src="/logoGB.png" alt="GB Service" width={20} height={20} className="rounded shrink-0" />
+          <span className="text-lg font-bold tracking-tight text-white">GB Service</span>
         </div>
         <p className="text-[11px] text-white/40 mt-0.5 ml-7">{isAdmin ? "Panel Admin" : "Oficina"}</p>
       </div>
@@ -277,8 +278,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {/* Header móvil */}
           <header className="lg:hidden sticky top-0 z-30 flex items-center justify-between px-4 h-14 bg-[#041627] shrink-0">
             <div className="flex items-center gap-2">
-              <Wrench className="w-4 h-4 text-[#fea520]" />
-              <span className="text-sm font-bold text-white">MyCarApp</span>
+              <Image src="/logoGB.png" alt="GB Service" width={18} height={18} className="rounded" />
+              <span className="text-sm font-bold text-white">GB Service</span>
             </div>
             <button
               onClick={() => setDrawerOpen(true)}
