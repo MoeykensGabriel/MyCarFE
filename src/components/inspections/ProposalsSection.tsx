@@ -92,13 +92,16 @@ export function ProposalsSection({ form }: Props) {
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
                 <label className={fieldLabelCls}>Mano de obra aprox ($)</label>
+                {/* type="text": iOS Safari no deja tipear punto/coma con type="number".
+                    setValueAs normaliza coma→punto para el payload. */}
                 <input
-                  type="number"
-                  step="0.01"
+                  type="text"
                   inputMode="decimal"
                   placeholder="0"
                   className="w-full px-2.5 py-2 text-xs rounded-lg border border-[#041627]/10 bg-white"
-                  {...register(`proposedServices.${i}.estimatedLaborCost`)}
+                  {...register(`proposedServices.${i}.estimatedLaborCost`, {
+                    setValueAs: (v) => (typeof v === "string" ? v.replace(",", ".") : v),
+                  })}
                 />
               </div>
               <div className="space-y-1">

@@ -9,6 +9,7 @@ import {
   useReplaceTire,
 } from "@/hooks/useVehicleTires";
 import { TirePosition, TirePositionLabel } from "@/lib/enums";
+import { sanitizeDecimalInput } from "@/lib/decimal-input";
 import type { VehicleTire } from "@/types/api.types";
 
 type Props = {
@@ -191,8 +192,14 @@ export function TireFormModal(props: Props) {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className={labelCls}>Profundidad inicial (mm)</label>
-                  <input className={inputCls} type="number" step="0.1" min="1.6" max="25"
-                    value={initialDepth} onChange={(e) => setInitialDepth(e.target.value)} disabled={pending} />
+                  {/* type="text": iOS Safari no deja tipear punto/coma con type="number" */}
+                  <input className={inputCls} type="text" inputMode="decimal"
+                    value={initialDepth}
+                    onChange={(e) => {
+                      const v = sanitizeDecimalInput(e.target.value);
+                      if (v !== null) setInitialDepth(v);
+                    }}
+                    disabled={pending} />
                 </div>
                 <div>
                   <label className={labelCls}>Vida útil (km)</label>
@@ -232,13 +239,29 @@ export function TireFormModal(props: Props) {
               </div>
               <div>
                 <label className={labelCls}>Profundidad por punto (mm) *</label>
+                {/* type="text": iOS Safari no deja tipear punto/coma con type="number" */}
                 <div className="grid grid-cols-3 gap-2">
-                  <input className={inputCls} type="number" step="0.1" min="0" max="25" placeholder="Interior"
-                    value={inner} onChange={(e) => setInner(e.target.value)} disabled={pending} />
-                  <input className={inputCls} type="number" step="0.1" min="0" max="25" placeholder="Centro"
-                    value={center} onChange={(e) => setCenter(e.target.value)} disabled={pending} />
-                  <input className={inputCls} type="number" step="0.1" min="0" max="25" placeholder="Exterior"
-                    value={outer} onChange={(e) => setOuter(e.target.value)} disabled={pending} />
+                  <input className={inputCls} type="text" inputMode="decimal" placeholder="Interior"
+                    value={inner}
+                    onChange={(e) => {
+                      const v = sanitizeDecimalInput(e.target.value);
+                      if (v !== null) setInner(v);
+                    }}
+                    disabled={pending} />
+                  <input className={inputCls} type="text" inputMode="decimal" placeholder="Centro"
+                    value={center}
+                    onChange={(e) => {
+                      const v = sanitizeDecimalInput(e.target.value);
+                      if (v !== null) setCenter(v);
+                    }}
+                    disabled={pending} />
+                  <input className={inputCls} type="text" inputMode="decimal" placeholder="Exterior"
+                    value={outer}
+                    onChange={(e) => {
+                      const v = sanitizeDecimalInput(e.target.value);
+                      if (v !== null) setOuter(v);
+                    }}
+                    disabled={pending} />
                 </div>
                 <p className="text-[10px] text-[#44474c]/60 mt-1">
                   Medí en 3 puntos para detectar desgaste irregular.

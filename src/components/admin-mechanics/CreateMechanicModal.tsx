@@ -58,11 +58,14 @@ export function CreateMechanicModal({ onClose }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
+    // Bottom sheet en mobile (se abre desde abajo, con scroll interno) / centrado en desktop.
+    // Mismo patrón que ReportFormModal — sin esto, en iPhone el form es más alto que el
+    // viewport y los campos de abajo quedan inalcanzables.
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm p-0 sm:p-4">
+      <div className="w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92dvh] sm:max-h-[88dvh]">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#c4c6cd]/60">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#c4c6cd]/60 shrink-0">
           <div className="flex items-center gap-2">
             <Wrench className="w-4 h-4 text-[#fea520]" />
             <h2 className="text-base font-bold text-[#041627]">Nuevo mecánico</h2>
@@ -75,8 +78,8 @@ export function CreateMechanicModal({ onClose }: Props) {
           </button>
         </div>
 
-        {/* Body */}
-        <div className="px-6 py-5">
+        {/* Body — scrolleable dentro del sheet */}
+        <div className="px-6 py-5 overflow-y-auto flex-1 min-h-0">
           {tempPassword ? (
             /* ── Éxito: mostrar contraseña temporal ── */
             <div className="space-y-4">

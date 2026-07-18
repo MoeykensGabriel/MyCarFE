@@ -3,6 +3,7 @@
 import { BatteryCharging } from "lucide-react";
 
 import { BatteryStatusLabel, BatteryTerminalSideLabel } from "@/lib/enums";
+import { sanitizeDecimalInput } from "@/lib/decimal-input";
 import { BatteryFormState, fieldInputCls, fieldLabelCls } from "./report-form";
 
 interface Props {
@@ -63,14 +64,17 @@ export function BatterySection({ enabled, onEnabledChange, battery, onUpdate }: 
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className={fieldLabelCls}>Voltaje (V)</label>
+              {/* type="text": iOS Safari no deja tipear punto/coma con type="number" */}
               <input
-                type="number"
-                step="0.1"
+                type="text"
                 inputMode="decimal"
                 placeholder="12.6"
                 className={fieldInputCls}
                 value={battery.voltage}
-                onChange={(e) => onUpdate("voltage", e.target.value)}
+                onChange={(e) => {
+                  const v = sanitizeDecimalInput(e.target.value);
+                  if (v !== null) onUpdate("voltage", v);
+                }}
               />
             </div>
             <div>
@@ -143,22 +147,31 @@ export function BatterySection({ enabled, onEnabledChange, battery, onUpdate }: 
               <label className={fieldLabelCls}>Caja: ancho × largo × alto (cm)</label>
               <div className="grid grid-cols-3 gap-2">
                 <input
-                  type="number" min={0} step="0.1" inputMode="decimal" placeholder="ancho"
+                  type="text" inputMode="decimal" placeholder="ancho"
                   className={fieldInputCls}
                   value={battery.boxWidthCm}
-                  onChange={(e) => onUpdate("boxWidthCm", e.target.value)}
+                  onChange={(e) => {
+                    const v = sanitizeDecimalInput(e.target.value);
+                    if (v !== null) onUpdate("boxWidthCm", v);
+                  }}
                 />
                 <input
-                  type="number" min={0} step="0.1" inputMode="decimal" placeholder="largo"
+                  type="text" inputMode="decimal" placeholder="largo"
                   className={fieldInputCls}
                   value={battery.boxLengthCm}
-                  onChange={(e) => onUpdate("boxLengthCm", e.target.value)}
+                  onChange={(e) => {
+                    const v = sanitizeDecimalInput(e.target.value);
+                    if (v !== null) onUpdate("boxLengthCm", v);
+                  }}
                 />
                 <input
-                  type="number" min={0} step="0.1" inputMode="decimal" placeholder="alto"
+                  type="text" inputMode="decimal" placeholder="alto"
                   className={fieldInputCls}
                   value={battery.boxHeightCm}
-                  onChange={(e) => onUpdate("boxHeightCm", e.target.value)}
+                  onChange={(e) => {
+                    const v = sanitizeDecimalInput(e.target.value);
+                    if (v !== null) onUpdate("boxHeightCm", v);
+                  }}
                 />
               </div>
             </div>

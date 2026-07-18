@@ -3,6 +3,7 @@
 import { Gauge } from "lucide-react";
 
 import { TirePositionLabel } from "@/lib/enums";
+import { sanitizeDecimalInput } from "@/lib/decimal-input";
 import { TireRow } from "./report-form";
 
 interface Props {
@@ -35,32 +36,40 @@ export function TiresSection({ rows, onUpdate }: Props) {
             {TirePositionLabel[row.position]}
           </p>
           <div className="grid grid-cols-3 gap-2">
+            {/* type="text" + inputMode="decimal": iOS Safari no deja tipear punto/coma
+                con type="number" (ver lib/decimal-input.ts) */}
             <input
-              type="number"
-              step="0.1"
+              type="text"
               inputMode="decimal"
               placeholder="Interior (mm)"
               className="px-2 py-1.5 text-xs rounded border border-[#041627]/10 bg-white"
               value={row.inner}
-              onChange={(e) => onUpdate(i, "inner", e.target.value)}
+              onChange={(e) => {
+                const v = sanitizeDecimalInput(e.target.value);
+                if (v !== null) onUpdate(i, "inner", v);
+              }}
             />
             <input
-              type="number"
-              step="0.1"
+              type="text"
               inputMode="decimal"
               placeholder="Centro (mm)"
               className="px-2 py-1.5 text-xs rounded border border-[#041627]/10 bg-white"
               value={row.center}
-              onChange={(e) => onUpdate(i, "center", e.target.value)}
+              onChange={(e) => {
+                const v = sanitizeDecimalInput(e.target.value);
+                if (v !== null) onUpdate(i, "center", v);
+              }}
             />
             <input
-              type="number"
-              step="0.1"
+              type="text"
               inputMode="decimal"
               placeholder="Exterior (mm)"
               className="px-2 py-1.5 text-xs rounded border border-[#041627]/10 bg-white"
               value={row.outer}
-              onChange={(e) => onUpdate(i, "outer", e.target.value)}
+              onChange={(e) => {
+                const v = sanitizeDecimalInput(e.target.value);
+                if (v !== null) onUpdate(i, "outer", v);
+              }}
             />
           </div>
           <div className="grid grid-cols-3 gap-2">
