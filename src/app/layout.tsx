@@ -14,6 +14,13 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "GB Service",
   description: "Sistema de gestión de taller mecánico",
+  // iOS: al "Agregar a inicio" abre standalone (sin barra de Safari).
+  // El ícono lo aporta la convención src/app/apple-icon.png.
+  appleWebApp: {
+    capable: true,
+    title: "GB Service",
+    statusBarStyle: "black-translucent",
+  },
 };
 
 export default function RootLayout({

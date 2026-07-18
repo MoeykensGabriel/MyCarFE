@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import { SessionGuard } from "@/components/shared/SessionGuard";
+import { InstallAppButton } from "@/components/shared/InstallAppButton";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthStore } from "@/store/auth.store";
 import { UserRole } from "@/lib/enums";
@@ -64,13 +65,16 @@ function MechanicLayoutInner({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
-          <button
-            onClick={logout}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 text-white/90 text-xs font-bold hover:bg-white/10 active:scale-[0.97] transition-all shadow-sm"
-          >
-            <LogOut className="w-3.5 h-3.5 text-[#fea520]" />
-            Salir
-          </button>
+          <div className="flex items-center gap-2">
+            <InstallAppButton variant="header" />
+            <button
+              onClick={logout}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 text-white/90 text-xs font-bold hover:bg-white/10 active:scale-[0.97] transition-all shadow-sm"
+            >
+              <LogOut className="w-3.5 h-3.5 text-[#fea520]" />
+              Salir
+            </button>
+          </div>
         </div>
       </header>
 

@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Home, ClipboardList, Car, LogOut, Settings } from "lucide-react";
 
 import { SessionGuard } from "@/components/shared/SessionGuard";
+import { InstallAppButton } from "@/components/shared/InstallAppButton";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthStore } from "@/store/auth.store";
 import { useSessionSync } from "@/hooks/useSessionSync";
@@ -90,6 +91,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="flex items-center gap-2">
+            <InstallAppButton variant="header" />
             {/* Configuración / perfil — reemplaza los tabs de cuenta del bottom nav */}
             <Link
               href="/my-account"

@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { Plus, Menu, X } from "lucide-react";
 
 import { SessionGuard } from "@/components/shared/SessionGuard";
+import { InstallAppButton } from "@/components/shared/InstallAppButton";
 import { useAuth } from "@/hooks/useAuth";
 
 const INTAKE_HREF = "/reception/intake";
@@ -42,12 +43,13 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
         </Link>
       </nav>
 
-      <div className="px-4 pb-5 pt-4 border-t border-white/8">
+      <div className="px-4 pb-5 pt-4 border-t border-white/8 space-y-1">
         {fullName && (
           <p className="px-3 pb-2 text-xs text-white/40 truncate" title={fullName}>
             {fullName}
           </p>
         )}
+        <InstallAppButton variant="sidebar" />
         <button
           onClick={logout}
           className="w-full text-left px-3 py-2 rounded-md text-sm text-white/50 hover:bg-white/7 hover:text-white/80 transition-colors"
