@@ -18,6 +18,21 @@ function extractApiError(err: unknown): string | undefined {
     (err instanceof Error ? err.message : undefined)
   );
 }
+
+/**
+ * El intake usa X-Skip-Auth-Redirect para manejar fallos PARCIALES sin perder el
+ * form — pero eso también silenciaba la sesión vencida (401), que terminaba como
+ * error crudo en el resumen. Un 401 acá no es recuperable: avisamos y vamos al
+ * login (misma limpieza que el interceptor global de axios).
+ */
+function redirectIfSessionExpired(err: unknown): boolean {
+  if ((err as AxiosError).response?.status !== 401) return false;
+  toast.error("Tu sesión expiró. Volvé a ingresar para continuar.");
+  localStorage.removeItem("token");
+  localStorage.removeItem("auth-storage");
+  window.location.href = "/login";
+  return true;
+}
 import { customersService } from "@/services/customers.service";
 import { vehiclesService } from "@/services/vehicles.service";
 import { fleetsService } from "@/services/fleets.service";
@@ -98,6 +113,7 @@ export function StepConfirm({
         const vehicle    = await vehiclesService.create({ ...vehicleDraft, ...vehicleOwner }, skipAuthHeader);
         createdVehicleId = vehicle.id;
       } catch (err) {
+        if (redirectIfSessionExpired(err)) return;
         console.error("Falló la creación del vehículo:", err);
         setPartialError({
           message:
@@ -122,6 +138,7 @@ export function StepConfirm({
           serviceReason:      vehicleDraft.serviceReason?.trim() || undefined,
         }, skipAuthHeader);
       } catch (err) {
+        if (redirectIfSessionExpired(err)) return;
         console.error("Falló la creación de la orden de trabajo:", err);
         setPartialError({
           message:
@@ -149,6 +166,7 @@ export function StepConfirm({
 
       router.push(successHref ? successHref(order.id) : `/admin/work-orders/${order.id}`);
     } catch (err) {
+      if (redirectIfSessionExpired(err)) return;
       // Falla en el paso 1 (cliente / flota) o algo inesperado: nada que recuperar.
       console.error("Falló el ingreso:", err);
       const message =
