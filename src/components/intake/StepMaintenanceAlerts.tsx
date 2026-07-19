@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { BellRing } from "lucide-react";
+import { BellRing, ClipboardPaste, Trash2 } from "lucide-react";
 
 import { MaintenanceAlertItemInput, MaintenanceAlertType, MaintenanceAlertTypeLabel } from "@/types/api.types";
 import { isFactoryMilestone } from "@/lib/maintenance-baseline";
+import { ParsedAlertRow } from "@/lib/alerts-paste";
 import { FactoryMilestoneField } from "@/components/vehicle-maintenance/FactoryMilestoneField";
 import { MAINTENANCE_ALERT_PRESETS } from "./maintenance-presets";
+import { PasteAlertsDialog } from "./PasteAlertsDialog";
 import { Section, StepNav } from "./ui";
 
 interface Props {
@@ -20,6 +22,9 @@ interface Props {
 }
 
 type RowState = { enabled: boolean; km: string; months: string; lastService: string };
+
+/** Alerta "Otro" con nombre libre — típicamente importada de la planilla del dueño. */
+type CustomRow = { title: string; km: string; months: string };
 
 function toPosIntOrNull(s: string): number | null {
   const t = s.trim();
@@ -64,10 +69,56 @@ export function StepMaintenanceAlerts({ ownerLabel, currentMileage, defaultItems
     return map;
   });
 
+  // Alertas "Otro" (nombre libre): rehidratadas de una revisita del paso, o
+  // importadas de la planilla vía el diálogo de pegado.
+  const [customs, setCustoms] = useState<CustomRow[]>(() =>
+    (defaultItems ?? [])
+      .filter((i) => i.itemType === MaintenanceAlertType.Other)
+      .map((i) => ({
+        title:  i.title ?? "",
+        km:     i.intervalKm     != null ? String(i.intervalKm)     : "",
+        months: i.intervalMonths != null ? String(i.intervalMonths) : "",
+      })),
+  );
+
+  const [pasteOpen, setPasteOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   function update(type: MaintenanceAlertType, patch: Partial<RowState>) {
     setRows((prev) => ({ ...prev, [type]: { ...prev[type], ...patch } }));
+    if (error) setError(null);
+  }
+
+  function updateCustom(index: number, patch: Partial<CustomRow>) {
+    setCustoms((prev) => prev.map((c, i) => (i === index ? { ...c, ...patch } : c)));
+    if (error) setError(null);
+  }
+
+  /** Vuelca las filas pegadas: tipos conocidos activan su preset; el resto suma a "Otras". */
+  function applyPasted(pasted: ParsedAlertRow[]) {
+    for (const row of pasted) {
+      if (row.type !== MaintenanceAlertType.Other) {
+        // La planilla manda: si una columna vino vacía, queda vacía (no el default).
+        update(row.type, {
+          enabled: true,
+          km:      row.intervalKm     != null ? String(row.intervalKm)     : "",
+          months:  row.intervalMonths != null ? String(row.intervalMonths) : "",
+        });
+      } else {
+        const title = row.title ?? "";
+        const next: CustomRow = {
+          title,
+          km:     row.intervalKm     != null ? String(row.intervalKm)     : "",
+          months: row.intervalMonths != null ? String(row.intervalMonths) : "",
+        };
+        setCustoms((prev) => {
+          // Mismo título ya cargado → actualiza en vez de duplicar (re-pegado de la planilla)
+          const idx = prev.findIndex((c) => c.title.trim().toLowerCase() === title.trim().toLowerCase());
+          if (idx >= 0) return prev.map((c, i) => (i === idx ? next : c));
+          return [...prev, next];
+        });
+      }
+    }
     if (error) setError(null);
   }
 
@@ -101,6 +152,19 @@ export function StepMaintenanceAlerts({ ownerLabel, currentMileage, defaultItems
       return;
     }
 
+    // Alertas personalizadas: título obligatorio + al menos un intervalo.
+    const badCustoms = customs.filter(
+      (c) =>
+        c.title.trim() === "" ||
+        (toPosIntOrNull(c.km) === null && toPosIntOrNull(c.months) === null),
+    );
+    if (badCustoms.length > 0) {
+      setError(
+        "Las alertas personalizadas necesitan nombre y al menos un intervalo (km o meses).",
+      );
+      return;
+    }
+
     const items: MaintenanceAlertItemInput[] = MAINTENANCE_ALERT_PRESETS
       .filter((p) => rows[p.type].enabled)
       .map((p) => ({
@@ -112,6 +176,16 @@ export function StepMaintenanceAlerts({ ownerLabel, currentMileage, defaultItems
           ? toPosIntOrNull(rows[p.type].lastService)
           : null,
       }));
+
+    for (const c of customs) {
+      items.push({
+        itemType:           MaintenanceAlertType.Other,
+        title:              c.title.trim(),
+        intervalKm:         toPosIntOrNull(c.km),
+        intervalMonths:     toPosIntOrNull(c.months),
+        lastServiceMileage: null,
+      });
+    }
 
     onNext(items);
   }
@@ -127,11 +201,21 @@ export function StepMaintenanceAlerts({ ownerLabel, currentMileage, defaultItems
       )}
 
       <Section title="Alertas de mantenimiento">
-        <p className="text-xs text-[#44474c]/80 -mt-1">
-          Elegí de qué avisar al cliente y cada cuánto: por <strong>kilómetros</strong>,
-          por <strong>tiempo</strong>, o ambos (lo que llegue primero dispara la alerta).
-          Podés ajustar los valores sugeridos.
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-2 -mt-1">
+          <p className="text-xs text-[#44474c]/80 flex-1 min-w-[200px]">
+            Elegí de qué avisar al cliente y cada cuánto: por <strong>kilómetros</strong>,
+            por <strong>tiempo</strong>, o ambos (lo que llegue primero dispara la alerta).
+            Podés ajustar los valores sugeridos.
+          </p>
+          <button
+            type="button"
+            onClick={() => setPasteOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#c4c6cd] bg-white text-xs font-bold text-[#041627] hover:border-[#fea520] transition-colors shrink-0"
+          >
+            <ClipboardPaste className="w-3.5 h-3.5 text-[#fea520]" />
+            Pegar desde planilla
+          </button>
+        </div>
 
         <div className="space-y-2">
           {MAINTENANCE_ALERT_PRESETS.map((p) => {
@@ -199,6 +283,63 @@ export function StepMaintenanceAlerts({ ownerLabel, currentMileage, defaultItems
           })}
         </div>
 
+        {/* ── Alertas personalizadas (nombre libre / importadas de la planilla) ── */}
+        {customs.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[#44474c]/70 pt-1">
+              Alertas personalizadas
+            </p>
+            {customs.map((c, i) => (
+              <div
+                key={i}
+                className="rounded-lg border border-[#fea520]/50 bg-[#fea520]/[0.04] px-3 py-3 space-y-2"
+              >
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    placeholder="Nombre de la alerta"
+                    className={inputCls}
+                    value={c.title}
+                    onChange={(e) => updateCustom(i, { title: e.target.value })}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setCustoms((prev) => prev.filter((_, idx) => idx !== i))}
+                    title="Quitar alerta"
+                    className="p-2 text-[#44474c]/50 hover:text-red-500 transition-colors shrink-0"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-[#44474c]/70">
+                      Cada (km)
+                    </label>
+                    <input
+                      type="number" min={0} inputMode="numeric" placeholder="Ej: 20000"
+                      className={inputCls}
+                      value={c.km}
+                      onChange={(e) => updateCustom(i, { km: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-[#44474c]/70">
+                      Cada (meses)
+                    </label>
+                    <input
+                      type="number" min={0} inputMode="numeric" placeholder="Ej: 12"
+                      className={inputCls}
+                      value={c.months}
+                      onChange={(e) => updateCustom(i, { months: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         {error && (
           <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3">
             <p className="text-sm text-red-700">{error}</p>
@@ -207,6 +348,12 @@ export function StepMaintenanceAlerts({ ownerLabel, currentMileage, defaultItems
       </Section>
 
       <StepNav onBack={onBack} onNext={handleNext} nextLabel="Siguiente" />
+
+      <PasteAlertsDialog
+        open={pasteOpen}
+        onClose={() => setPasteOpen(false)}
+        onApply={applyPasted}
+      />
     </div>
   );
 }
