@@ -5,11 +5,11 @@ import { useVehicleSkippedInspections } from "@/hooks/useInspections";
 import { formatDate } from "@/lib/format";
 
 /**
- * Aviso "quedó sin inspeccionar": áreas cuya inspección se omitió en la última
+ * Aviso "quedó sin inspeccionar": áreas cuya inspección se postergó en la última
  * visita del vehículo. No renderiza nada si la última visita cubrió todo.
  *
  * Se muestra en la ficha del vehículo y al abrir una nueva orden, para que la
- * omisión no se pierda: la próxima visita arranca sabiendo qué quedó pendiente.
+ * postergación no se pierda: la próxima visita arranca sabiendo qué quedó pendiente.
  */
 export function SkippedInspectionsAlert({ vehicleId }: { vehicleId: string | undefined }) {
   const { data: skipped } = useVehicleSkippedInspections(vehicleId);
@@ -28,7 +28,7 @@ export function SkippedInspectionsAlert({ vehicleId }: { vehicleId: string | und
             <span className="font-semibold">{s.areaName}</span>
             <span className="text-amber-800/80"> — {s.skipReason}</span>
             <span className="block text-xs text-amber-700/70">
-              Omitida el {formatDate(s.skippedAt)}
+              Postergada el {formatDate(s.skippedAt)}
             </span>
           </li>
         ))}

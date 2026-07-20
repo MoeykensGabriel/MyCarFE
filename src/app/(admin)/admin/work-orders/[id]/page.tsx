@@ -79,7 +79,7 @@ export default function WorkOrderDetailPage() {
         <div className="lg:col-span-2 space-y-6">
 
           {/* Panel de inspección colectiva (solo cuando aplica) */}
-          {isUnderInspection && <InspectionPanel workOrderId={order.id} />}
+          {isUnderInspection && <InspectionPanel order={order} />}
 
           {/* Hallazgos + propuestas de los mecánicos — contexto para armar el presupuesto */}
           {isDiagnosing && <InspectionFindingsCard workOrderId={order.id} />}

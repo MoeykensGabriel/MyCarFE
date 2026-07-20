@@ -8,11 +8,13 @@ import {
   CircleDashed,
   Sparkles,
   Lock,
+  Clock,
   X,
 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { ReportFormModal } from "@/components/inspections/ReportFormModal";
 import {
   useInspectionReportsByWorkOrder,
   useMarkAreaNoFindings,
@@ -21,22 +23,24 @@ import {
 } from "@/hooks/useInspections";
 import { useAreas } from "@/hooks/useAreas";
 import { formatDateTime } from "@/lib/format";
-import { Area, InspectionReport } from "@/types/api.types";
+import { Area, InspectionReport, PendingInspection, WorkOrder } from "@/types/api.types";
 
 /**
  * Panel admin para gestionar la fase de inspección colectiva de una WorkOrder.
  *
  * Lista las áreas activas y su estado para esta orden:
- *   - Reportado con hallazgos (mecánico)
- *   - Reportado sin hallazgos (mecánico)
- *   - Sin hallazgos (admin manual)
- *   - Omitida (oficina, con motivo — nadie revisó el área; queda para la próxima visita)
+ *   - Reportado con hallazgos (mecánico u oficina)
+ *   - Reportado sin hallazgos (mecánico u oficina)
+ *   - Sin hallazgos (oficina, manual)
+ *   - Postergada (oficina, con motivo — nadie revisó el área; queda para la próxima visita)
  *   - Pendiente
  *
- * Permite al admin marcar áreas pendientes como "sin hallazgos" u omitirlas con motivo
- * y, cuando todas están cubiertas, cerrar la inspección — la orden pasa a Diagnosing.
+ * Sobre un área pendiente la oficina puede: inspeccionarla ella misma (mismo formulario
+ * que usa el mecánico), marcarla "sin hallazgos" o postergarla con motivo. Cuando todas
+ * están cubiertas puede cerrar la inspección — la orden pasa a Diagnosing.
  */
-export function InspectionPanel({ workOrderId }: { workOrderId: string }) {
+export function InspectionPanel({ order }: { order: WorkOrder }) {
+  const workOrderId = order.id;
   const { data: areas,   isLoading: areasLoading }   = useAreas(false);
   const { data: reports, isLoading: reportsLoading } = useInspectionReportsByWorkOrder(workOrderId);
 
@@ -44,6 +48,8 @@ export function InspectionPanel({ workOrderId }: { workOrderId: string }) {
   const markSkipped = useMarkAreaSkipped(workOrderId);
   const closeInspection = useCloseInspection(workOrderId);
   const [confirmCloseOpen, setConfirmCloseOpen] = useState(false);
+  // Área que la oficina decidió inspeccionar ella misma (abre el formulario del mecánico).
+  const [reportingArea, setReportingArea] = useState<Area | null>(null);
 
   if (areasLoading || reportsLoading) {
     return (
@@ -70,8 +76,8 @@ export function InspectionPanel({ workOrderId }: { workOrderId: string }) {
   const coveredCount = activeAreas.filter((a) => reportsByAreaId.has(a.id)).length;
   const allCovered  = coveredCount === activeAreas.length && activeAreas.length > 0;
 
-  // Resumen para el modal de cierre: con novedades / sin novedades / omitidas.
-  // Las omitidas van aparte — nadie las revisó, no cuentan como "sin novedades".
+  // Resumen para el modal de cierre: con novedades / sin novedades / postergadas.
+  // Las postergadas van aparte — nadie las revisó, no cuentan como "sin novedades".
   const withFindings = activeAreas.filter((a) => {
     const r = reportsByAreaId.get(a.id);
     return !!r && r.hasIssue && !r.isNoFindings && !r.isSkipped;
@@ -101,6 +107,7 @@ export function InspectionPanel({ workOrderId }: { workOrderId: string }) {
 
           <Button
             size="sm"
+            className="h-9 shrink-0 sm:h-7"
             disabled={!allCovered || closeInspection.isPending}
             onClick={() => setConfirmCloseOpen(true)}
           >
@@ -126,6 +133,7 @@ export function InspectionPanel({ workOrderId }: { workOrderId: string }) {
                 onMarkSkipped={(reason) =>
                   markSkipped.mutate({ areaId: area.id, reason })
                 }
+                onReport={() => setReportingArea(area)}
                 marking={markNoFindings.isPending || markSkipped.isPending}
               />
             ))}
@@ -133,6 +141,22 @@ export function InspectionPanel({ workOrderId }: { workOrderId: string }) {
         )}
 
       </CardContent>
+
+      {/* El admin inspecciona un área él mismo: reusamos el formulario del mecánico.
+          El reporte se guarda sin MechanicId — queda firmado por la oficina. */}
+      {reportingArea && (
+        <ReportFormModal
+          inspection={buildInspectionContext(order)}
+          area={{
+            areaId:        reportingArea.id,
+            areaName:      reportingArea.name,
+            isTireArea:    reportingArea.isTireArea,
+            isBatteryArea: reportingArea.isBatteryArea,
+            isOilArea:     reportingArea.isOilArea,
+          }}
+          onClose={() => setReportingArea(null)}
+        />
+      )}
 
       {confirmCloseOpen && (
         <CloseInspectionModal
@@ -151,6 +175,26 @@ export function InspectionPanel({ workOrderId }: { workOrderId: string }) {
       )}
     </Card>
   );
+}
+
+/**
+ * Adapta la orden del panel al contrato que espera ReportFormModal (pensado para la
+ * pantalla del mecánico, que recibe la orden ya resumida desde /mechanics/me/pending-inspections).
+ * El modal solo usa los datos del vehículo, los km de ingreso y el id de la orden;
+ * `pendingAreas` no lo mira, porque el área ya viene elegida por prop.
+ */
+function buildInspectionContext(order: WorkOrder): PendingInspection {
+  return {
+    workOrderId:         order.id,
+    workOrderCreatedAt:  order.createdAt,
+    serviceReason:       order.serviceReason,
+    mileageAtEntry:      order.mileageAtEntry ?? 0,
+    vehicleId:           order.vehicleId,
+    vehicleBrand:        order.vehicleBrand ?? "",
+    vehicleModel:        order.vehicleModel ?? "",
+    vehicleLicensePlate: order.vehicleLicensePlate ?? "",
+    pendingAreas:        [],
+  };
 }
 
 // ─── Modal de confirmación de cierre ──────────────────────────────────────────
@@ -236,12 +280,12 @@ function CloseInspectionModal({
             )}
           </div>
 
-          {/* Omitidas — nadie las revisó; quedan para la próxima visita */}
+          {/* Postergadas — nadie las revisó; quedan para la próxima visita */}
           {skipped.length > 0 && (
             <div className="space-y-1.5">
               <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-amber-700">
-                <CircleDashed className="w-3.5 h-3.5" />
-                Omitidas — sin inspeccionar ({skipped.length})
+                <Clock className="w-3.5 h-3.5" />
+                Postergadas — sin inspeccionar ({skipped.length})
               </p>
               <ul className="space-y-1">
                 {skipped.map((a) => (
@@ -309,12 +353,14 @@ function AreaRow({
   report,
   onMarkNoFindings,
   onMarkSkipped,
+  onReport,
   marking,
 }: {
   area: Area;
   report?: InspectionReport;
   onMarkNoFindings: () => void;
   onMarkSkipped: (reason: string) => void;
+  onReport: () => void;
   marking: boolean;
 }) {
   const [skipping, setSkipping] = useState(false);
@@ -333,29 +379,43 @@ function AreaRow({
               <p className="text-xs text-gray-500 mt-0.5">Sin reporte aún</p>
             </div>
           </div>
-          {/* Acciones: en mobile debajo del nombre, en desktop a la derecha */}
-          <div className="flex flex-wrap gap-2 sm:justify-end pl-6 sm:pl-0">
+          {/* Acciones. Mobile: grilla de 2 con la principal a lo ancho, botones altos
+              para que el dedo tenga dónde caer. Desktop: fila alineada a la derecha. */}
+          <div className="grid grid-cols-2 gap-2 pl-6 sm:flex sm:shrink-0 sm:justify-end sm:pl-0">
+            {/* La oficina inspecciona el área ella misma cuando no hay mecánico disponible */}
+            <Button
+              size="sm"
+              className="col-span-2 h-9 sm:col-span-1 sm:h-7"
+              onClick={onReport}
+              disabled={marking || skipping}
+            >
+              <ClipboardCheck />
+              Inspeccionar yo
+            </Button>
             <Button
               variant="outline"
               size="sm"
+              className="h-9 sm:h-7"
               onClick={onMarkNoFindings}
               disabled={marking || skipping}
             >
-              {marking ? "..." : "Marcar sin novedades"}
+              <CheckCircle2 className="text-green-600" />
+              {marking ? "..." : "Sin novedades"}
             </Button>
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
-              className="text-amber-700 hover:text-amber-800 hover:bg-amber-50"
+              className="h-9 border-amber-300 text-amber-700 hover:bg-amber-50 hover:text-amber-800 sm:h-7"
               onClick={() => setSkipping((v) => !v)}
               disabled={marking}
             >
-              Omitir
+              <Clock />
+              Postergar
             </Button>
           </div>
         </div>
 
-        {/* Panel inline: motivo obligatorio para omitir */}
+        {/* Panel inline: motivo obligatorio para postergar */}
         {skipping && (
           <div className="mt-2 ml-6 sm:ml-7 rounded-lg border border-amber-200 bg-amber-50/70 p-3 space-y-2">
             <p className="text-xs text-amber-900">
@@ -370,10 +430,12 @@ function AreaRow({
               maxLength={500}
               className="w-full rounded-md border border-amber-300 bg-white px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
             />
-            <div className="flex gap-2 justify-end">
+            {/* Mobile: confirmar arriba y a lo ancho (flex-col-reverse). Desktop: fila a la derecha. */}
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <Button
                 variant="ghost"
                 size="sm"
+                className="h-9 sm:h-7"
                 onClick={() => { setSkipping(false); setSkipReason(""); }}
                 disabled={marking}
               >
@@ -381,7 +443,7 @@ function AreaRow({
               </Button>
               <Button
                 size="sm"
-                className="bg-amber-600 hover:bg-amber-700"
+                className="h-9 bg-amber-600 text-white hover:bg-amber-700 sm:h-7"
                 disabled={marking || skipReason.trim().length < 5}
                 onClick={() => {
                   onMarkSkipped(skipReason.trim());
@@ -389,7 +451,7 @@ function AreaRow({
                   setSkipReason("");
                 }}
               >
-                {marking ? "..." : "Confirmar omisión"}
+                {marking ? "..." : "Confirmar postergación"}
               </Button>
             </div>
           </div>
@@ -398,18 +460,18 @@ function AreaRow({
     );
   }
 
-  // ── Omitida (oficina) — nadie la revisó ────────────────────────────────────
+  // ── Postergada (oficina) — nadie la revisó ─────────────────────────────────
   if (report.isSkipped) {
     return (
       <li className="py-3">
         <div className="flex items-start gap-2.5">
-          <CircleDashed className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+          <Clock className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
             {/* Nombre del área sin truncate para que siempre se lea completo en mobile */}
             <p className="text-sm font-semibold text-gray-900">{area.name}</p>
             {/* Badge en su propia línea para no comprimir el nombre */}
             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 mt-1 rounded text-[10px] font-bold uppercase bg-amber-50 border border-amber-200 text-amber-700">
-              Omitida
+              Postergada
             </span>
             <p className="text-xs text-gray-500 mt-1">
               Sin inspeccionar · {formatDateTime(report.createdAt)}
@@ -447,7 +509,7 @@ function AreaRow({
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-gray-900">{area.name}</p>
             <p className="text-xs text-gray-500 mt-0.5">
-              {report.mechanicFullName ?? "—"} · sin novedades · {formatDateTime(report.createdAt)}
+              {report.mechanicFullName ?? "Oficina"} · sin novedades · {formatDateTime(report.createdAt)}
             </p>
             {report.findings && (
               <p className="text-xs text-gray-700 mt-1 italic whitespace-pre-wrap leading-relaxed">
@@ -475,7 +537,7 @@ function AreaRow({
             </span>
           </div>
           <p className="text-xs text-gray-500 mt-1">
-            {report.mechanicFullName ?? "—"} · {formatDateTime(report.createdAt)}
+            {report.mechanicFullName ?? "Oficina"} · {formatDateTime(report.createdAt)}
           </p>
           {report.findings && (
             <p className="text-sm text-gray-800 mt-1.5 whitespace-pre-wrap bg-red-50/60 border border-red-100 rounded px-3 py-2 leading-relaxed">

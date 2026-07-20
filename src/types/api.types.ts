@@ -260,6 +260,12 @@ export interface Area {
   id: string;
   name: string;
   isActive: boolean;
+  /** true = área de cubiertas: el reporte puede incluir datos/mediciones de cubiertas. */
+  isTireArea: boolean;
+  /** true = área de batería: el reporte puede incluir el estado de la batería. */
+  isBatteryArea: boolean;
+  /** true = área de aceite: el reporte puede registrar el cambio de aceite/filtros. */
+  isOilArea: boolean;
   createdAt: string;
 }
 

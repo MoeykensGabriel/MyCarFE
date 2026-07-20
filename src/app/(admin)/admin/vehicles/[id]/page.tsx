@@ -143,7 +143,7 @@ export default function VehicleDetailPage() {
         </div>
       </div>
 
-      {/* Áreas omitidas en la última visita — pendiente de revisar */}
+      {/* Áreas postergadas en la última visita — pendiente de revisar */}
       <SkippedInspectionsAlert vehicleId={vehicle.id} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

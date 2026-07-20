@@ -7,7 +7,7 @@ import { SkippedInspectionsAlert } from "@/components/inspections/SkippedInspect
 interface OpenOrderModalProps {
   /** Ej: "Toyota Hilux · ABC123" */
   vehicleLabel: string;
-  /** Si se pasa, muestra el aviso de áreas omitidas en la última visita del vehículo. */
+  /** Si se pasa, muestra el aviso de áreas postergadas en la última visita del vehículo. */
   vehicleId?: string;
   initialMileage?: number;
   initialContactName?: string;
@@ -83,7 +83,7 @@ export function OpenOrderModal({
 
         <form onSubmit={handleSubmit} className="px-5 py-5 space-y-4">
 
-          {/* Áreas omitidas en la última visita — para que la omisión no se pierda */}
+          {/* Áreas postergadas en la última visita — para que la postergación no se pierda */}
           <SkippedInspectionsAlert vehicleId={vehicleId} />
 
           {/* Kilometraje */}

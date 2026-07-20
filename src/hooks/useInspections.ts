@@ -88,9 +88,9 @@ export function useMarkAreaSkipped(workOrderId: string) {
       inspectionsService.markAreaSkipped(workOrderId, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: inspectionKeys.byWorkOrder(workOrderId) });
-      toast.success("Área omitida — queda registrada para revisar en la próxima visita");
+      toast.success("Área postergada — queda registrada para revisar en la próxima visita");
     },
-    onError: () => toast.error("No se pudo omitir el área"),
+    onError: () => toast.error("No se pudo postergar el área"),
   });
 }
 
