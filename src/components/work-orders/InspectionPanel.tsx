@@ -390,7 +390,7 @@ function AreaRow({
               disabled={marking || skipping}
             >
               <ClipboardCheck />
-              Inspeccionar yo
+              Inspeccionar
             </Button>
             <Button
               variant="outline"
