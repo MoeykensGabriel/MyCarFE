@@ -16,6 +16,7 @@ import {
 
 import { PageHeader } from "@/components/shared/PageHeader";
 import { DetailSheet } from "@/components/shared/DetailSheet";
+import { ResetPasswordButton } from "@/components/shared/ResetPasswordButton";
 
 import { Pagination } from "@/components/shared/Pagination";
 import { SearchInput } from "@/components/shared/SearchInput";
@@ -243,6 +244,23 @@ function DetailPanel({
             Perfil completo
             <ExternalLink className="w-4 h-4" />
           </Link>
+
+          {/* Acceso — aparte de los links de navegación: es la única acción del
+              panel que muta datos y muestra una credencial. Acá para que el
+              mostrador pueda destrabar a un cliente sin entrar a su ficha. */}
+          <div className="pt-2 mt-1 border-t border-[#c4c6cd]/60 space-y-2">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[#44474c]/70">
+              Acceso
+            </p>
+            <ResetPasswordButton
+              applicationUserId={customer.applicationUserId}
+              userDisplayName={`${customer.firstName} ${customer.lastName}`}
+              variant="compact"
+              userEmail={customer.email}
+              phone={customer.phone}
+              firstName={customer.firstName}
+            />
+          </div>
         </div>
       )}
     </DetailSheet>

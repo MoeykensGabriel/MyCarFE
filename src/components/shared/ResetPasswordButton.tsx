@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { KeyRound, Check, AlertCircle, Copy, X } from "lucide-react";
 
 import { useAdminResetPassword } from "@/hooks/useAdminResetPassword";
@@ -43,6 +43,16 @@ export function ResetPasswordButton({
   const [step, setStep] = useState<"idle" | "confirm" | "done">("idle");
   const [tempPassword, setTempPassword] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+
+  // El resultado crece hacia abajo. Dentro del bottom-sheet del listado (que
+  // tiene su propio scroll) la contraseña puede nacer fuera de la vista, así que
+  // la traemos a pantalla en cuanto se genera.
+  const resultRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (step !== "done") return;
+    resultRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [step]);
 
   const reset = useAdminResetPassword();
 
@@ -123,7 +133,7 @@ export function ResetPasswordButton({
 
   // ── Paso 3: pass generada ────────────────────────────────────────────────
   return (
-    <div className="rounded-lg bg-green-50 border border-green-200 p-3 space-y-2.5">
+    <div ref={resultRef} className="rounded-lg bg-green-50 border border-green-200 p-3 space-y-2.5">
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-start gap-2 min-w-0">
           <Check className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />

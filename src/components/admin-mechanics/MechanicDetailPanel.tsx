@@ -217,6 +217,9 @@ export function MechanicDetailPanel({ mechanic, onClose }: Props) {
           applicationUserId={mechanic.applicationUserId}
           userDisplayName={`${mechanic.firstName} ${mechanic.lastName}`}
           variant="compact"
+          userEmail={mechanic.email}
+          phone={mechanic.phone}
+          firstName={mechanic.firstName}
         />
       </div>
     </DetailSheet>
