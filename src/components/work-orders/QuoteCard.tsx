@@ -1,6 +1,7 @@
 "use client";
 
-import { ClipboardList, Copy, PackageSearch } from "lucide-react";
+import { useState } from "react";
+import { ClipboardList, Copy, PackageSearch, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -11,9 +12,10 @@ import { formatCurrency } from "@/lib/format";
 import { copyText } from "@/lib/clipboard";
 import { quoteItemsToRows } from "@/lib/quote-copy";
 import { ServicesList } from "./ServicesList";
-import { AddServicePanel } from "./AddServicePanel";
 import { PartsList } from "./PartsList";
-import { AddPartPanel } from "./AddPartPanel";
+import { AddServiceDialog } from "./AddServiceDialog";
+import { AddPartDialog } from "./AddPartDialog";
+import { SaleConditionFields } from "./SaleConditionFields";
 
 interface Props {
   order: WorkOrder;
@@ -23,10 +25,17 @@ interface Props {
 }
 
 /**
- * Card unificada "Presupuesto": servicios + repuestos + total, con precios editables
- * (servicio y repuesto) mientras la orden está en Diagnosing.
+ * Card unificada "Presupuesto": servicios + repuestos + total + condición de venta.
+ *
+ * Mientras la orden está en Diagnosing cada sección tiene su botón "Agregar", que
+ * abre un modal con las opciones de alta. Los formularios viven en el modal a
+ * propósito: la card muestra lo cargado, y el total y la condición de venta quedan
+ * siempre a la vista sin scrollear.
  */
 export function QuoteCard({ order, status, isDiagnosing, onConsultStock }: Props) {
+  const [addServiceOpen, setAddServiceOpen] = useState(false);
+  const [addPartOpen, setAddPartOpen] = useState(false);
+
   async function handleCopyAll() {
     const rows = quoteItemsToRows(order.services ?? [], order.parts ?? []);
     if (!rows) {
@@ -39,87 +48,129 @@ export function QuoteCard({ order, status, isDiagnosing, onConsultStock }: Props
   }
 
   return (
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between gap-2">
-                  <CardTitle className="text-base">Presupuesto</CardTitle>
-                  {isDiagnosing && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={onConsultStock}
-                      className="font-semibold"
-                    >
-                      <PackageSearch className="w-4 h-4 mr-1.5" />
-                      Consultar stock
-                    </Button>
-                  )}
-                  {!isDiagnosing && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleCopyAll}
-                      className="font-semibold"
-                    >
-                      <Copy className="w-4 h-4 mr-1.5" />
-                      Copiar todos
-                    </Button>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-5">
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-base">Presupuesto</CardTitle>
+          {isDiagnosing ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onConsultStock}
+              className="font-semibold"
+            >
+              <PackageSearch className="w-4 h-4 mr-1.5" />
+              Consultar stock
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCopyAll}
+              className="font-semibold"
+            >
+              <Copy className="w-4 h-4 mr-1.5" />
+              Copiar todos
+            </Button>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-5">
 
-                {/* Servicios */}
-                <div className="space-y-2">
-                  <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-                    Servicios{(order.services?.length ?? 0) > 0 ? ` (${order.services!.length})` : ""}
-                  </p>
-                  <ServicesList
-                    workOrderId={order.id}
-                    services={order.services ?? []}
-                    editable={isDiagnosing}
-                    copyable={!isDiagnosing}
-                    workOrderStatus={status}
-                  />
-                </div>
+        {/* Servicios */}
+        <div className="space-y-2">
+          <SectionHeader
+            label="Servicios"
+            count={order.services?.length ?? 0}
+            onAdd={isDiagnosing ? () => setAddServiceOpen(true) : undefined}
+          />
+          <ServicesList
+            workOrderId={order.id}
+            services={order.services ?? []}
+            editable={isDiagnosing}
+            copyable={!isDiagnosing}
+            workOrderStatus={status}
+          />
+        </div>
 
-                {/* Repuestos */}
-                <div className="space-y-2 border-t pt-4">
-                  <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-                    Repuestos{(order.parts?.length ?? 0) > 0 ? ` (${order.parts!.length})` : ""}
-                  </p>
-                  <PartsList
-                    workOrderId={order.id}
-                    parts={order.parts ?? []}
-                    editable={isDiagnosing}
-                    copyable={!isDiagnosing}
-                  />
-                </div>
+        {/* Repuestos */}
+        <div className="space-y-2 border-t pt-4">
+          <SectionHeader
+            label="Repuestos"
+            count={order.parts?.length ?? 0}
+            onAdd={isDiagnosing ? () => setAddPartOpen(true) : undefined}
+          />
+          <PartsList
+            workOrderId={order.id}
+            parts={order.parts ?? []}
+            editable={isDiagnosing}
+            copyable={!isDiagnosing}
+          />
+        </div>
 
-                {/* Agregar items (solo Diagnosing) */}
-                {isDiagnosing && (
-                  <div className="border-t pt-1">
-                    <AddServicePanel workOrderId={order.id} />
-                    <AddPartPanel workOrderId={order.id} />
-                  </div>
-                )}
+        {/* Total */}
+        <div className="border-t pt-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-lg bg-[#041627]/5 flex items-center justify-center shrink-0">
+              <ClipboardList className="w-4 h-4 text-[#fea520]" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-[#041627]">Total presupuestado</h3>
+              <p className="text-[11px] text-muted-foreground">Suma de servicios y repuestos</p>
+            </div>
+          </div>
+          <span className="text-2xl font-black text-[#041627] tabular-nums tracking-tight">
+            {formatCurrency(order.totalAmount)}
+          </span>
+        </div>
 
-                {/* Total */}
-                <div className="border-t pt-4 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-lg bg-[#041627]/5 flex items-center justify-center shrink-0">
-                      <ClipboardList className="w-4 h-4 text-[#fea520]" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-bold text-[#041627]">Total presupuestado</h3>
-                      <p className="text-[11px] text-muted-foreground">Suma de servicios y repuestos</p>
-                    </div>
-                  </div>
-                  <span className="text-2xl font-black text-[#041627] tabular-nums tracking-tight">
-                    {formatCurrency(order.totalAmount)}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
+        {/* Condición de venta — se define junto con el presupuesto */}
+        {isDiagnosing && (
+          <div className="border-t pt-4">
+            <SaleConditionFields order={order} />
+          </div>
+        )}
+      </CardContent>
+
+      {isDiagnosing && (
+        <>
+          <AddServiceDialog
+            workOrderId={order.id}
+            open={addServiceOpen}
+            onClose={() => setAddServiceOpen(false)}
+          />
+          <AddPartDialog
+            workOrderId={order.id}
+            open={addPartOpen}
+            onClose={() => setAddPartOpen(false)}
+          />
+        </>
+      )}
+    </Card>
+  );
+}
+
+/** Título de sección con su contador y, si se puede editar, el botón de alta. */
+function SectionHeader({
+  label,
+  count,
+  onAdd,
+}: {
+  label: string;
+  count: number;
+  onAdd?: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+        {label}{count > 0 ? ` (${count})` : ""}
+      </p>
+      {onAdd && (
+        <Button size="sm" onClick={onAdd} className="font-bold">
+          <Plus className="w-4 h-4 mr-1" />
+          Agregar
+        </Button>
+      )}
+    </div>
   );
 }

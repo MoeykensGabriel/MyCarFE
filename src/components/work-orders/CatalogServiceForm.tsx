@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-import { ListChecks, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,57 +9,15 @@ import { formatCurrency } from "@/lib/format";
 import { useCatalogServices } from "@/hooks/useCatalog";
 import { useAddWorkOrderService } from "@/hooks/useWorkOrders";
 import { CatalogService } from "@/types/api.types";
-import { AdHocServiceForm } from "./AdHocServiceForm";
 
-interface AddServicePanelProps {
+interface Props {
   workOrderId: string;
+  /** Se llama después de un alta exitosa (el modal la usa para cerrarse). */
+  onSuccess?: () => void;
 }
 
-type Tab = "catalog" | "adhoc";
-
-export function AddServicePanel({ workOrderId }: AddServicePanelProps) {
-  const [tab, setTab] = useState<Tab>("catalog");
-
-  return (
-    <div className="pt-4 mt-2 border-t space-y-3">
-      {/* Tabs */}
-      <div className="flex gap-1 p-1 bg-gray-100 rounded-lg w-fit">
-        <button
-          type="button"
-          onClick={() => setTab("catalog")}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${
-            tab === "catalog"
-              ? "bg-white text-gray-900 shadow-sm"
-              : "text-gray-500 hover:text-gray-700"
-          }`}
-        >
-          <ListChecks className="w-3.5 h-3.5" />
-          Del catálogo
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab("adhoc")}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${
-            tab === "adhoc"
-              ? "bg-white text-gray-900 shadow-sm"
-              : "text-gray-500 hover:text-gray-700"
-          }`}
-        >
-          <Sparkles className="w-3.5 h-3.5" />
-          Puntual
-        </button>
-      </div>
-
-      {tab === "catalog"
-        ? <CatalogForm workOrderId={workOrderId} />
-        : <AdHocServiceForm workOrderId={workOrderId} />}
-    </div>
-  );
-}
-
-// ─── Form: servicio del catálogo ─────────────────────────────────────────────
-
-function CatalogForm({ workOrderId }: { workOrderId: string }) {
+/** Alta de un servicio del catálogo: buscador + cantidad. */
+export function CatalogServiceForm({ workOrderId, onSuccess }: Props) {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<CatalogService | null>(null);
   const [quantity, setQuantity] = useState("1");
@@ -110,6 +67,7 @@ function CatalogForm({ workOrderId }: { workOrderId: string }) {
           setSelected(null);
           setQuantity("1");
           setSearch("");
+          onSuccess?.();
         },
       },
     );
@@ -197,4 +155,3 @@ function CatalogForm({ workOrderId }: { workOrderId: string }) {
     </div>
   );
 }
-

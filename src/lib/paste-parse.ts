@@ -113,3 +113,12 @@ export function parsePartRows(text: string): RowResult<ParsedPartRow>[] {
     .filter((r) => r.length > 0)
     .map(parsePartRow);
 }
+
+/** Varias filas pegadas de una (para el alta en lote de servicios puntuales). */
+export function parseServiceRows(text: string): RowResult<ParsedServiceRow>[] {
+  return text
+    .split(/\r?\n/)
+    .map((r) => r.trim())
+    .filter((r) => r.length > 0)
+    .map(parseServiceRow);
+}

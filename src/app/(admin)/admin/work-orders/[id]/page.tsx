@@ -18,7 +18,6 @@ import { WorkOrderDetailHeader } from "@/components/work-orders/WorkOrderDetailH
 import { StatusBanner } from "@/components/work-orders/work-order-status-ui";
 import { QuoteCard } from "@/components/work-orders/QuoteCard";
 import { AdditionalItemsCard } from "@/components/work-orders/AdditionalItemsCard";
-import { SaleConditionCard } from "@/components/work-orders/SaleConditionCard";
 import { WorkOrderSummaryPanel } from "@/components/work-orders/WorkOrderSummaryPanel";
 import { StockLookupModal } from "@/components/stock/StockLookupModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -98,12 +97,9 @@ export default function WorkOrderDetailPage() {
           {/* Trabajo adicional post-aprobación: alta de items Pending + decisión del cliente */}
           {isPostApproval && <AdditionalItemsCard order={order} />}
 
-          {/* Condición de venta — en mobile va justo debajo del presupuesto para no
-              obligar al admin a scrollear hasta abajo de la columna derecha. En desktop
-              se oculta acá y se mantiene en la sidebar (más abajo) con `hidden lg:block`. */}
-          <div className="lg:hidden">
-            <SaleConditionCard order={order} status={status} />
-          </div>
+          {/* La condición de venta dejó de ser card propia: se edita al pie del presupuesto
+              (Diagnosing) y dentro de Trabajo adicional (post-aprobación). En el resto de los
+              estados se lee en el panel de resumen de la derecha. */}
 
           {/* Motivo de visita ahora vive en el header (WorkOrderDetailHeader),
               siempre visible debajo del ID/estado del vehículo. */}
@@ -152,12 +148,6 @@ export default function WorkOrderDetailPage() {
         {/* Columna derecha — 1/3 */}
         <div className="space-y-6">
           <WorkOrderSummaryPanel order={order} />
-
-          {/* Condición de venta de los repuestos — viaja al depósito al aprobar.
-              En mobile se muestra debajo del presupuesto (ver arriba), acá solo desktop. */}
-          <div className="hidden lg:block">
-            <SaleConditionCard order={order} status={status} />
-          </div>
 
           {/* Historial */}
           <Card>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Building2, Car, ChevronRight, ClipboardList, Clock, User, ExternalLink } from "lucide-react";
 
 import { WorkOrder } from "@/types/api.types";
+import { SaleCondition, SaleConditionLabel } from "@/lib/enums";
 import { formatDateTime, formatCurrency } from "@/lib/format";
 
 interface Props {
@@ -180,6 +181,30 @@ export function WorkOrderSummaryPanel({ order }: Props) {
                 </div>
               </div>
               
+              {/* ── Condición de venta (lectura) ───────────────────────────────
+                  Se carga al armar el presupuesto; acá queda como referencia de lo
+                  pactado cuando la orden avanza y el editor ya no está a la vista. */}
+              {order.saleCondition != null && (
+                <div className="px-5 py-3 flex items-center justify-between gap-3 border-t border-[#c4c6cd]/40">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-[#041627]">
+                    Condición de venta
+                  </p>
+                  <span className="text-xs font-semibold text-[#44474c] text-right">
+                    {SaleConditionLabel[order.saleCondition]}
+                    {order.saleCondition === SaleCondition.OrdenDeCompra && order.purchaseOrderNumber && (
+                      <span className="block font-mono text-[11px] text-[#44474c]/80">
+                        OC {order.purchaseOrderNumber}
+                      </span>
+                    )}
+                    {order.saleCondition === SaleCondition.Contado && (
+                      <span className="block text-[11px] text-[#44474c]/80">
+                        Seña: {order.depositAmount ? formatCurrency(order.depositAmount) : "sin seña"}
+                      </span>
+                    )}
+                  </span>
+                </div>
+              )}
+
               {/* ── Monto Total en Resumen ─────────────────────────────────── */}
               <div className="px-5 py-4 bg-gradient-to-r from-slate-50 to-slate-100/30 flex items-center justify-between border-t border-[#c4c6cd]/40">
                 <div className="flex items-center gap-1.5">

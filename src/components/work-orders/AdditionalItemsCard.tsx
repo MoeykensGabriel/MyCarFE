@@ -1,6 +1,7 @@
 "use client";
 
-import { Check, PlusCircle, X } from "lucide-react";
+import { useState } from "react";
+import { Check, Plus, PlusCircle, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,8 +9,9 @@ import { WorkOrder } from "@/types/api.types";
 import { QuoteItemApprovalStatus } from "@/lib/enums";
 import { formatCurrency } from "@/lib/format";
 import { useDecideAdditionalItems } from "@/hooks/useWorkOrders";
-import { AddServicePanel } from "./AddServicePanel";
-import { AddPartPanel } from "./AddPartPanel";
+import { AddServiceDialog } from "./AddServiceDialog";
+import { AddPartDialog } from "./AddPartDialog";
+import { SaleConditionFields } from "./SaleConditionFields";
 
 interface Props {
   order: WorkOrder;
@@ -23,6 +25,8 @@ interface Props {
  */
 export function AdditionalItemsCard({ order }: Props) {
   const { mutate: decide, isPending: deciding } = useDecideAdditionalItems(order.id);
+  const [addServiceOpen, setAddServiceOpen] = useState(false);
+  const [addPartOpen, setAddPartOpen] = useState(false);
 
   const pendingServices = (order.services ?? []).filter(
     (s) => Number(s.approvalStatus) === QuoteItemApprovalStatus.Pending,
@@ -138,11 +142,42 @@ export function AdditionalItemsCard({ order }: Props) {
         )}
 
         {/* Alta de nuevos adicionales (nacen Pending) */}
-        <div className={pendingCount > 0 ? "border-t pt-1" : "pt-0"}>
-          <AddServicePanel workOrderId={order.id} />
-          <AddPartPanel workOrderId={order.id} />
+        <div className={`flex flex-col sm:flex-row gap-2 ${pendingCount > 0 ? "border-t pt-4" : ""}`}>
+          <Button
+            size="sm"
+            onClick={() => setAddServiceOpen(true)}
+            className="flex-1 font-bold"
+          >
+            <Plus className="w-4 h-4 mr-1" />
+            Agregar servicio
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => setAddPartOpen(true)}
+            className="flex-1 font-bold"
+          >
+            <Plus className="w-4 h-4 mr-1" />
+            Agregar repuesto
+          </Button>
+        </div>
+
+        {/* Condición de venta: los adicionales de depósito no se pueden aprobar sin ella,
+            y puede no haberse cargado al armar el presupuesto original. */}
+        <div className="border-t pt-4">
+          <SaleConditionFields order={order} />
         </div>
       </CardContent>
+
+      <AddServiceDialog
+        workOrderId={order.id}
+        open={addServiceOpen}
+        onClose={() => setAddServiceOpen(false)}
+      />
+      <AddPartDialog
+        workOrderId={order.id}
+        open={addPartOpen}
+        onClose={() => setAddPartOpen(false)}
+      />
     </Card>
   );
 }
