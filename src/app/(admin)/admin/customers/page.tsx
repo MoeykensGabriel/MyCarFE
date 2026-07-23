@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 
 import { PageHeader } from "@/components/shared/PageHeader";
+import { DetailSheet } from "@/components/shared/DetailSheet";
 
 import { Pagination } from "@/components/shared/Pagination";
 import { SearchInput } from "@/components/shared/SearchInput";
@@ -97,7 +98,7 @@ function DetailPanel({
   const vehicles = vehiclesData?.items ?? [];
 
   return (
-    <aside className="w-full lg:w-80 shrink-0 bg-white rounded-xl border border-[#c4c6cd] shadow-md overflow-hidden flex flex-col self-start lg:sticky lg:top-4 transition-all duration-300">
+    <DetailSheet onClose={onClose}>
       {/* Header del panel */}
       <div className="border-b border-[#c4c6cd]/60 px-5 py-5 bg-gradient-to-b from-[#eefcfd]/20 to-transparent">
         <div className="flex items-start justify-between mb-4">
@@ -244,7 +245,7 @@ function DetailPanel({
           </Link>
         </div>
       )}
-    </aside>
+    </DetailSheet>
   );
 }
 

@@ -19,6 +19,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AxiosError } from "axios";
 
+import { DetailSheet } from "@/components/shared/DetailSheet";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Pagination } from "@/components/shared/Pagination";
 import { ResetPasswordButton } from "@/components/shared/ResetPasswordButton";
@@ -93,7 +94,7 @@ function DetailPanel({
   }
 
   return (
-    <aside className="w-full lg:w-80 shrink-0 bg-white rounded-xl border border-[#c4c6cd] shadow-sm overflow-hidden flex flex-col self-start lg:sticky lg:top-0">
+    <DetailSheet onClose={onClose}>
       <div className="border-b border-[#c4c6cd]/60 px-5 py-4">
         <div className="flex items-start justify-between mb-4">
           <ReceptionistAvatar r={receptionist} size="lg" />
@@ -183,7 +184,7 @@ function DetailPanel({
           variant="compact"
         />
       </div>
-    </aside>
+    </DetailSheet>
   );
 }
 

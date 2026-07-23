@@ -16,6 +16,7 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { Pagination } from "@/components/shared/Pagination";
 import { SearchInput } from "@/components/shared/SearchInput";
 import { OpenOrderModal } from "@/components/shared/OpenOrderModal";
+import { DetailSheet } from "@/components/shared/DetailSheet";
 import { PlateBadge } from "@/components/shared/PlateBadge";
 import { FuelTypeLabel, VehicleBodyTypeLabel } from "@/lib/enums";
 import { useVehicle, useVehicles } from "@/hooks/useVehicles";
@@ -55,7 +56,7 @@ function DetailPanel({
   const { data: vehicle, isLoading } = useVehicle(vehicleId);
 
   return (
-    <aside className="fixed inset-x-0 bottom-0 z-50 w-full max-h-[85vh] overflow-y-auto rounded-t-2xl shadow-2xl flex flex-col bg-white border border-[#c4c6cd] lg:static lg:z-auto lg:max-h-none lg:overflow-hidden lg:rounded-xl lg:rounded-t-xl lg:w-80 lg:shrink-0 lg:self-start lg:sticky lg:top-0 lg:shadow-sm">
+    <DetailSheet onClose={onClose}>
 
       {/* Header */}
       <div className="border-b border-[#c4c6cd]/60 px-5 py-4">
@@ -152,7 +153,7 @@ function DetailPanel({
           </Link>
         </div>
       )}
-    </aside>
+    </DetailSheet>
   );
 }
 
@@ -383,20 +384,13 @@ export default function VehiclesPage() {
           )}
         </div>
 
-        {/* Panel de detalle */}
+        {/* Panel de detalle — DetailSheet ya trae el fondo oscurecido de mobile */}
         {selectedId && (
-          <>
-            {/* Backdrop (solo mobile): el panel es un bottom-sheet emergente */}
-            <div
-              className="lg:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
-              onClick={() => setSelectedId(null)}
-            />
-            <DetailPanel
-              vehicleId={selectedId}
-              onClose={() => setSelectedId(null)}
-              onOpenOrder={(p) => { setPendingOrder(p); setSelectedId(null); }}
-            />
-          </>
+          <DetailPanel
+            vehicleId={selectedId}
+            onClose={() => setSelectedId(null)}
+            onOpenOrder={(p) => { setPendingOrder(p); setSelectedId(null); }}
+          />
         )}
       </div>
     </div>

@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 
 import { formatCurrency } from "@/lib/format";
+import { DetailSheet } from "@/components/shared/DetailSheet";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { SearchInput } from "@/components/shared/SearchInput";
 import {
@@ -87,7 +88,7 @@ function ServiceForm({
   }
 
   return (
-    <aside className="w-full lg:w-80 shrink-0 bg-white rounded-xl border border-[#c4c6cd] shadow-sm overflow-hidden flex flex-col self-start lg:sticky lg:top-0">
+    <DetailSheet onClose={onClose}>
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-[#c4c6cd]/60">
         <h3 className="text-sm font-bold text-[#041627]">
@@ -192,7 +193,7 @@ function ServiceForm({
           </button>
         </div>
       </form>
-    </aside>
+    </DetailSheet>
   );
 }
 

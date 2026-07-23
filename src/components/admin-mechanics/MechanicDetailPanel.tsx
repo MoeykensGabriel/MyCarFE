@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X, Wrench, Mail, Phone, Eye, EyeOff, Layers, Pencil } from "lucide-react";
 
+import { DetailSheet } from "@/components/shared/DetailSheet";
 import { ResetPasswordButton } from "@/components/shared/ResetPasswordButton";
 import { formatDate } from "@/lib/format";
 import { useUpdateMechanic } from "@/hooks/useAdminMechanics";
@@ -48,7 +49,7 @@ export function MechanicDetailPanel({ mechanic, onClose }: Props) {
         onClose={() => setShowAreasEdit(false)}
       />
     )}
-    <aside className="w-full lg:w-80 shrink-0 bg-white rounded-xl border border-[#c4c6cd] shadow-sm overflow-hidden flex flex-col self-start lg:sticky lg:top-0">
+    <DetailSheet onClose={onClose}>
       {/* Header */}
       <div className="border-b border-[#c4c6cd]/60 px-5 py-4">
         <div className="flex items-start justify-between mb-4">
@@ -218,7 +219,7 @@ export function MechanicDetailPanel({ mechanic, onClose }: Props) {
           variant="compact"
         />
       </div>
-    </aside>
+    </DetailSheet>
     </>
   );
 }

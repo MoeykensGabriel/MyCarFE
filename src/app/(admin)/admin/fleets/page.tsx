@@ -14,6 +14,7 @@ import { Pagination } from "@/components/shared/Pagination";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { SearchInput } from "@/components/shared/SearchInput";
 import { OpenOrderModal } from "@/components/shared/OpenOrderModal";
+import { DetailSheet } from "@/components/shared/DetailSheet";
 import { useFleet, useFleets } from "@/hooks/useFleets";
 import { workOrdersService } from "@/services/work-orders.service";
 import { Fleet } from "@/types/api.types";
@@ -37,7 +38,7 @@ function DetailPanel({
   const { data: fleet, isLoading } = useFleet(fleetId);
 
   return (
-    <aside className="w-full lg:w-80 shrink-0 bg-white rounded-xl border border-[#c4c6cd] shadow-sm overflow-hidden flex flex-col self-start lg:sticky lg:top-0">
+    <DetailSheet onClose={onClose}>
 
       {/* Header */}
       <div className="border-b border-[#c4c6cd]/60 px-5 py-4">
@@ -117,7 +118,7 @@ function DetailPanel({
           </Link>
         </div>
       )}
-    </aside>
+    </DetailSheet>
   );
 }
 
