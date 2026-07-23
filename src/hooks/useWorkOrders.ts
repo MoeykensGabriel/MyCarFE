@@ -55,6 +55,19 @@ export function useWorkOrder(id: string) {
   });
 }
 
+/**
+ * Link de aprobación vigente, para reenviar el presupuesto por WhatsApp.
+ * `enabled` lo controla el llamador: solo tiene sentido pedirlo cuando la orden
+ * está esperando aprobación.
+ */
+export function useQuoteApprovalLink(id: string, enabled: boolean) {
+  return useQuery({
+    queryKey: [...workOrderKeys.detail(id), "approval-link"] as const,
+    queryFn: () => workOrdersService.getApprovalLink(id),
+    enabled: !!id && enabled,
+  });
+}
+
 // ─── Mutations ────────────────────────────────────────────────────────────────
 
 export function useCreateWorkOrder() {

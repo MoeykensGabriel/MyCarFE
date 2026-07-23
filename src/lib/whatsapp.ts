@@ -116,3 +116,58 @@ export function buildCredentialsMessage({
     "Cualquier consulta quedamos a disposición. Saludos.",
   ].join("\n");
 }
+
+interface QuoteMessageOptions {
+  /** Nombre de pila de quien recibe. Si falta, el saludo va sin nombre. */
+  firstName?: string;
+  /** Ej: "Fiat Cronos". */
+  vehicleLabel: string;
+  licensePlate?: string | null;
+  /** Link de aprobación (`/approve?token=...`). */
+  approvalLink: string;
+  /** true = el presupuesto ya se había mandado y esto es una insistencia. */
+  isResend?: boolean;
+  /** true = orden de flota: el mensaje va a la empresa, no al dueño del auto. */
+  isFleet?: boolean;
+}
+
+/**
+ * Aviso de que el presupuesto está listo, con el link para verlo y aprobarlo.
+ *
+ * A propósito NO lleva el total ni el detalle de ítems: el monto va en la página
+ * de aprobación, al lado de los trabajos que lo justifican. Un número suelto en un
+ * chat invita a discutir el precio sin ver qué incluye, y diez repuestos listados
+ * hacen un mensaje ilegible.
+ */
+export function buildQuoteMessage({
+  firstName,
+  vehicleLabel,
+  licensePlate,
+  approvalLink,
+  isResend,
+  isFleet,
+}: QuoteMessageOptions): string {
+  const name  = firstName?.trim();
+  const greet = name ? `Hola ${name}, ¿cómo estás?` : "Hola, ¿cómo estás?";
+
+  // En flotas el mensaje va al contacto de la empresa, no al dueño del auto.
+  const vehicle = [isFleet ? "el" : "tu", vehicleLabel].join(" ")
+    + (licensePlate ? ` (${licensePlate})` : "");
+
+  const intro = isResend
+    ? `Te paso de nuevo el presupuesto para ${vehicle}, por si no te llegó.`
+    : `Ya está listo el presupuesto para ${vehicle}.`;
+
+  return [
+    greet,
+    "",
+    intro,
+    "",
+    "Podés verlo en detalle y aprobarlo desde este link:",
+    approvalLink,
+    "",
+    "En esa página vas a ver cada servicio y repuesto con su precio, y podés elegir cuáles autorizás.",
+    "",
+    "Cualquier consulta quedamos a disposición. Saludos.",
+  ].join("\n");
+}

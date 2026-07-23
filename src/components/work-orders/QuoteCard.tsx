@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ClipboardList, Copy, PackageSearch, Plus } from "lucide-react";
+import { ClipboardList, Clock, Copy, PackageSearch, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import { PartsList } from "./PartsList";
 import { AddServiceDialog } from "./AddServiceDialog";
 import { AddPartDialog } from "./AddPartDialog";
 import { SaleConditionFields } from "./SaleConditionFields";
+import { SendQuoteWhatsappButton } from "./SendQuoteWhatsappButton";
 
 interface Props {
   order: WorkOrder;
@@ -128,6 +129,26 @@ export function QuoteCard({ order, status, isDiagnosing, onConsultStock }: Props
         {isDiagnosing && (
           <div className="border-t pt-4">
             <SaleConditionFields order={order} />
+          </div>
+        )}
+
+        {/* Esperando al cliente: acá se le vuelve a pasar el link de aprobación.
+            Es el mismo link que ya tiene — reenviar no genera uno nuevo ni toca la orden. */}
+        {status === WorkOrderStatus.AwaitingApproval && (
+          <div className="border-t pt-4">
+            <div className="rounded-lg border border-[#c4c6cd]/70 bg-gray-50/60 px-4 py-3.5 space-y-3">
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-[#fea520]" />
+                <h3 className="text-sm font-bold text-[#041627]">
+                  Esperando la aprobación del cliente
+                </h3>
+              </div>
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                Si no lo recibió, pasale de nuevo el link por WhatsApp. Es el mismo de
+                siempre: el que ya tenga sigue funcionando.
+              </p>
+              <SendQuoteWhatsappButton order={order} mode="resend" />
+            </div>
           </div>
         )}
       </CardContent>

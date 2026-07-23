@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Send, Mail, Lock, HandCoins } from "lucide-react";
+import { Send, Mail, Lock, HandCoins, CheckCircle2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +18,7 @@ import { formatCurrency } from "@/lib/format";
 import { SaleCondition, WorkOrderStatus } from "@/lib/enums";
 import { useSendQuote, useSetSaleCondition } from "@/hooks/useWorkOrders";
 import { WorkOrder } from "@/types/api.types";
+import { SendQuoteWhatsappButton } from "./SendQuoteWhatsappButton";
 
 interface Props {
   order: WorkOrder;
@@ -35,6 +36,12 @@ interface Props {
  */
 export function SendQuoteButton({ order }: Props) {
   const [open, setOpen] = useState(false);
+  /**
+   * El presupuesto ya salió y el modal muestra el paso final con el envío por
+   * WhatsApp. Hace falta como estado propio porque al enviar la orden pasa a
+   * AwaitingApproval, y sin esto el componente se desmontaría en el medio.
+   */
+  const [sent, setSent] = useState(false);
   const { mutate: sendQuote, isPending } = useSendQuote(order.id);
   const { mutateAsync: saveCondition, isPending: savingCondition } =
     useSetSaleCondition(order.id);
@@ -45,7 +52,7 @@ export function SendQuoteButton({ order }: Props) {
   const [deposit, setDeposit] = useState<string>("");
 
   const status = Number(order.currentStatus) as WorkOrderStatus;
-  if (status !== WorkOrderStatus.Diagnosing) return null;
+  if (status !== WorkOrderStatus.Diagnosing && !sent) return null;
 
   const servicesCount = (order.services ?? []).filter((s) => !!s).length;
   const partsCount    = (order.parts    ?? []).filter((p) => !!p).length;
@@ -80,8 +87,54 @@ export function SendQuoteButton({ order }: Props) {
         return; // el hook ya mostró el toast de error
       }
     }
-    sendQuote(undefined, { onSuccess: () => setOpen(false) });
+    // No cerramos el modal: el circuito recién se cierra cuando el cliente recibe
+    // el link, y el mail viene fallando. El paso siguiente ofrece mandarlo por WhatsApp.
+    sendQuote(undefined, { onSuccess: () => setSent(true) });
   };
+
+  function handleClose() {
+    setOpen(false);
+    setSent(false);
+  }
+
+  // ── Paso final: presupuesto enviado ──────────────────────────────────────────
+  // El mail sale igual, pero viene fallando en producción: acá se cierra el
+  // circuito mandándole el link al cliente por WhatsApp.
+  if (sent) {
+    return (
+      <Dialog open onOpenChange={(o) => !o && handleClose()}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              Presupuesto enviado
+            </DialogTitle>
+            <DialogDescription>
+              La orden quedó esperando la aprobación del cliente.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-2">
+            <div className="flex items-start gap-2 rounded-md bg-amber-50 border border-amber-200 px-3 py-2.5">
+              <Mail className="w-3.5 h-3.5 text-amber-700 shrink-0 mt-0.5" />
+              <p className="text-xs text-amber-800 leading-relaxed">
+                El email salió, pero el envío por mail viene fallando. Pasale el link por
+                WhatsApp para asegurarte de que lo reciba.
+              </p>
+            </div>
+
+            <SendQuoteWhatsappButton order={order} mode="send" />
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={handleClose}>
+              Listo
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <>
@@ -95,7 +148,7 @@ export function SendQuoteButton({ order }: Props) {
         Enviar presupuesto
       </Button>
 
-      <Dialog open={open} onOpenChange={(o) => !o && !busy && setOpen(false)}>
+      <Dialog open={open} onOpenChange={(o) => !o && !busy && handleClose()}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Enviar presupuesto al cliente</DialogTitle>
@@ -201,17 +254,19 @@ export function SendQuoteButton({ order }: Props) {
               </p>
             </div>
 
-            {/* Warning: email */}
+            {/* Cómo le llega al cliente. El mail sale siempre, pero no siempre llega:
+                al confirmar se ofrece mandarle el mismo link por WhatsApp. */}
             <div className="flex items-start gap-2 rounded-md bg-blue-50 border border-blue-200 px-3 py-2.5">
               <Mail className="w-3.5 h-3.5 text-blue-700 shrink-0 mt-0.5" />
               <p className="text-xs text-blue-800 leading-relaxed">
-                Se enviará un email al cliente con el link de aprobación.
+                Se enviará un email con el link de aprobación. En el paso siguiente vas a
+                poder mandarle el mismo link por WhatsApp.
               </p>
             </div>
           </div>
 
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setOpen(false)} disabled={busy}>
+            <Button variant="outline" onClick={handleClose} disabled={busy}>
               Cancelar
             </Button>
             <Button

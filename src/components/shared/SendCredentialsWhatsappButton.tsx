@@ -1,8 +1,7 @@
 "use client";
 
-import { MessageCircle } from "lucide-react";
-
 import { buildCredentialsMessage, toWhatsappNumber, whatsappUrlTo } from "@/lib/whatsapp";
+import { WhatsappActionButton } from "@/components/shared/WhatsappActionButton";
 
 interface SendCredentialsWhatsappButtonProps {
   /** Teléfono del cliente tal como está guardado. Si no se puede interpretar, no se ofrece el botón. */
@@ -59,17 +58,10 @@ export function SendCredentialsWhatsappButton({
   }
 
   return (
-    <button
-      type="button"
+    <WhatsappActionButton
+      label="Enviar por WhatsApp"
       onClick={handleSend}
-      className={
-        variant === "compact"
-          ? "w-full flex items-center justify-center gap-1.5 py-2 rounded-md text-xs font-bold bg-[#25d366] text-white hover:bg-[#1da851] transition-colors"
-          : "w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold bg-[#25d366] text-white hover:bg-[#1da851] transition-colors"
-      }
-    >
-      <MessageCircle className={variant === "compact" ? "w-3.5 h-3.5" : "w-4 h-4"} />
-      Enviar por WhatsApp
-    </button>
+      variant={variant}
+    />
   );
 }

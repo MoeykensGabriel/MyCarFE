@@ -21,6 +21,12 @@ const publicClient = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
+/** Link de aprobación vigente. Campos en null = la orden no tiene uno activo. */
+export interface QuoteApprovalLink {
+  approvalLink: string | null;
+  expiresAt: string | null;
+}
+
 export interface WorkOrdersParams {
   customerId?: string;
   vehicleId?: string;
@@ -108,6 +114,16 @@ export const workOrdersService = {
       workOrderId: id,
       ...data,
     });
+    return response.data;
+  },
+
+  /**
+   * Link de aprobación vigente del presupuesto, para reenviárselo al cliente por
+   * WhatsApp. No genera un token nuevo: el link que el cliente ya tenga sigue valiendo.
+   * Devuelve los campos en null si no hay link activo.
+   */
+  getApprovalLink: async (id: string): Promise<QuoteApprovalLink> => {
+    const response = await apiClient.get<QuoteApprovalLink>(`/api/work-orders/${id}/approval-link`);
     return response.data;
   },
 
