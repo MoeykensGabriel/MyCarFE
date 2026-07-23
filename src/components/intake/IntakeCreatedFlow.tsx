@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { CheckCircle2, Printer, Plus, AlertCircle, Camera, Trash2, RefreshCw, Upload, Sparkles } from "lucide-react";
+import { CheckCircle2, Printer, Plus, AlertCircle, Camera, Trash2, RefreshCw, Upload, Sparkles, KeyRound, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import { WorkOrder } from "@/types/api.types";
 import { workOrdersService } from "@/services/work-orders.service";
 import { PhotoType } from "@/lib/enums";
+import { IntakeCredentials, clearIntakeCredentials } from "@/lib/intake-credentials";
+import { SendCredentialsWhatsappButton } from "@/components/shared/SendCredentialsWhatsappButton";
 
 type PhotoSlotId = "front" | "rear" | "left" | "right" | "interiorFront" | "interiorBack";
 
@@ -22,9 +24,15 @@ interface IntakeCreatedFlowProps {
   loading: boolean;
   error: string | null;
   role: "admin" | "receptionist";
+  /**
+   * Credenciales del cliente recién creado, que el intake dejó para esta
+   * pantalla. Null si el ingreso no generó un usuario nuevo (cliente existente,
+   * o flota sin contacto nuevo).
+   */
+  credentials?: IntakeCredentials | null;
 }
 
-export function IntakeCreatedFlow({ order, loading, error, role }: IntakeCreatedFlowProps) {
+export function IntakeCreatedFlow({ order, loading, error, role, credentials }: IntakeCreatedFlowProps) {
   // Photo States
   const [photos, setPhotos] = useState<Record<PhotoSlotId, File | null>>({
     front: null,
@@ -43,6 +51,9 @@ export function IntakeCreatedFlow({ order, loading, error, role }: IntakeCreated
     interiorFront: null,
     interiorBack: null
   });
+
+  /** El mostrador ya le pasó las credenciales al cliente y ocultó la tarjeta. */
+  const [credentialsHidden, setCredentialsHidden] = useState(false);
 
   const [photoStep, setPhotoStep] = useState<"photos" | "completed" | "skipped">("photos");
   const [isSaving, setIsSaving] = useState(false);
@@ -290,6 +301,20 @@ export function IntakeCreatedFlow({ order, loading, error, role }: IntakeCreated
             </div>
           )}
         </div>
+
+        {/* --- CREDENCIALES DEL CLIENTE --- */}
+        {/* Solo aparece si el ingreso creó un usuario nuevo. El mail de bienvenida
+            sale igual desde el backend, pero no siempre llega: esta es la vía
+            confiable para que el cliente se vaya con su acceso. */}
+        {order && credentials && !credentialsHidden && (
+          <CredentialsCard
+            credentials={credentials}
+            onHide={() => {
+              clearIntakeCredentials(order.id);
+              setCredentialsHidden(true);
+            }}
+          />
+        )}
 
         {/* --- STEP 1: UPLOADING PHOTOS --- */}
         {/* Sin orden cargada no se puede subir nada: ocultamos el paso de fotos. */}
@@ -602,6 +627,88 @@ export function IntakeCreatedFlow({ order, loading, error, role }: IntakeCreated
             </Link>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Datos de acceso del cliente recién creado, con el botón para mandárselos por
+ * WhatsApp antes de que se vaya del mostrador.
+ */
+function CredentialsCard({
+  credentials,
+  onHide,
+}: {
+  credentials: IntakeCredentials;
+  onHide: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(
+        `Usuario: ${credentials.email}\nContraseña: ${credentials.password}`,
+      );
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // navigator.clipboard puede fallar en contextos no seguros
+      toast.error("No se pudo copiar. Anotá los datos a mano.");
+    }
+  }
+
+  return (
+    <div className="border-t border-[#c4c6cd]/50 px-6 py-6 bg-[#eefcfd]/30 space-y-4">
+      <div className="flex items-center gap-2">
+        <span className="bg-[#041627]/5 text-[#041627] p-1.5 rounded-lg">
+          <KeyRound className="w-5 h-5" />
+        </span>
+        <div>
+          <h2 className="text-base font-bold text-[#041627]">Acceso del cliente</h2>
+          <p className="text-xs text-[#44474c]/80 mt-0.5">
+            Pasale estos datos antes de que se vaya. También le llegan por mail.
+          </p>
+        </div>
+      </div>
+
+      <div className="rounded-xl bg-white border border-[#c4c6cd]/60 divide-y divide-[#c4c6cd]/40">
+        <div className="px-4 py-2.5 flex flex-col sm:grid sm:grid-cols-[110px_1fr] gap-0.5 sm:gap-3 items-baseline">
+          <span className="text-xs font-bold uppercase tracking-wider text-[#44474c]/70">Usuario</span>
+          <span className="text-sm font-medium text-[#041627] break-all">{credentials.email}</span>
+        </div>
+        <div className="px-4 py-2.5 flex flex-col sm:grid sm:grid-cols-[110px_1fr] gap-0.5 sm:gap-3 items-baseline">
+          <span className="text-xs font-bold uppercase tracking-wider text-[#44474c]/70">Contraseña</span>
+          <span className="text-sm font-mono font-bold tracking-widest text-[#041627]">
+            {credentials.password}
+          </span>
+        </div>
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-2">
+        <div className="sm:w-64">
+          <SendCredentialsWhatsappButton
+            phone={credentials.phone}
+            firstName={credentials.firstName}
+            email={credentials.email}
+            password={credentials.password}
+          />
+        </div>
+        <button
+          type="button"
+          onClick={handleCopy}
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold border border-[#c4c6cd] text-[#041627] bg-white hover:bg-[#eefcfd]/60 transition-colors"
+        >
+          {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+          {copied ? "Copiado" : "Copiar datos"}
+        </button>
+        <button
+          type="button"
+          onClick={onHide}
+          className="sm:ml-auto px-4 py-2.5 rounded-lg text-xs font-bold text-[#44474c]/70 hover:text-[#041627] transition-colors"
+        >
+          Ya se los pasé, ocultar
+        </button>
       </div>
     </div>
   );

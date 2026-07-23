@@ -4,6 +4,7 @@ import { useState } from "react";
 import { KeyRound, Check, AlertCircle, Copy, X } from "lucide-react";
 
 import { useAdminResetPassword } from "@/hooks/useAdminResetPassword";
+import { SendCredentialsWhatsappButton } from "@/components/shared/SendCredentialsWhatsappButton";
 
 interface ResetPasswordButtonProps {
   /** ApplicationUserId del usuario al que se le va a resetear la contraseña. */
@@ -12,6 +13,14 @@ interface ResetPasswordButtonProps {
   userDisplayName: string;
   /** Estilo del botón. "compact" para paneles laterales, "full" para fila completa. */
   variant?: "compact" | "full";
+  /**
+   * Email y teléfono del usuario. Si vienen los dos, se ofrece mandar las
+   * credenciales por WhatsApp; si no, queda solo el copiar al portapapeles.
+   */
+  userEmail?: string;
+  phone?: string | null;
+  /** Nombre de pila, para el saludo del mensaje de WhatsApp. */
+  firstName?: string;
 }
 
 /**
@@ -27,6 +36,9 @@ export function ResetPasswordButton({
   applicationUserId,
   userDisplayName,
   variant = "full",
+  userEmail,
+  phone,
+  firstName,
 }: ResetPasswordButtonProps) {
   const [step, setStep] = useState<"idle" | "confirm" | "done">("idle");
   const [tempPassword, setTempPassword] = useState<string | null>(null);
@@ -145,6 +157,17 @@ export function ResetPasswordButton({
           )}
         </button>
       </div>
+
+      {userEmail && tempPassword && (
+        <SendCredentialsWhatsappButton
+          phone={phone}
+          firstName={firstName}
+          email={userEmail}
+          password={tempPassword}
+          isReset
+          variant={variant}
+        />
+      )}
 
       <p className="text-[10px] text-green-700/80">
         Compartila por canal seguro. El usuario debería cambiarla al ingresar.

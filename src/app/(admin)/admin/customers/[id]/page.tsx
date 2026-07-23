@@ -277,6 +277,9 @@ export default function CustomerDetailPage() {
                 applicationUserId={customer.applicationUserId}
                 userDisplayName={`${customer.firstName} ${customer.lastName}`}
                 variant="full"
+                userEmail={customer.email}
+                phone={customer.phone}
+                firstName={customer.firstName}
               />
             </div>
           </PremiumCard>

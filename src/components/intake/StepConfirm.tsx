@@ -38,8 +38,19 @@ import { vehiclesService } from "@/services/vehicles.service";
 import { fleetsService } from "@/services/fleets.service";
 import { workOrdersService } from "@/services/work-orders.service";
 import { maintenanceAlertsService } from "@/services/maintenance-alerts.service";
+import { IntakeCredentials, stashIntakeCredentials } from "@/lib/intake-credentials";
 import { StepNav, Tag, SummaryItem } from "./ui";
 import { IntakeMode, CustomerDraft, FleetAndContactDraft, VehicleDraft } from "./types";
+
+/** Datos de acceso del cliente recién creado, listos para pasárselos por WhatsApp. */
+function buildCredentials(draft: CustomerDraft, password: string): IntakeCredentials {
+  return {
+    firstName: draft.firstName,
+    email:     draft.email,
+    phone:     draft.phone,
+    password,
+  };
+}
 
 interface Props {
   mode:              IntakeMode;
@@ -81,17 +92,23 @@ export function StepConfirm({
     try {
       let vehicleOwner: { customerId?: string; fleetId?: string };
       let createdCustomerId: string | undefined;
+      // Credenciales del usuario recién creado. Se muestran en la pantalla
+      // siguiente para poder pasárselas al cliente por WhatsApp — el mail de
+      // bienvenida sale igual, pero no siempre llega.
+      let credentials: IntakeCredentials | undefined;
 
       // ── Paso 1: crear cliente / flota ──────────────────────────────────────
       // Si esto falla no hay nada que recuperar: lo maneja el catch general abajo.
       if (mode === "particular" && existingCustomer) {
-        // Cliente ya existe: usar su ID directamente
+        // Cliente ya existe: usar su ID directamente. No hay usuario nuevo,
+        // así que tampoco hay credenciales para pasarle.
         createdCustomerId = existingCustomer.id;
         vehicleOwner      = { customerId: existingCustomer.id };
       } else if (mode === "particular") {
-        const { customer } = await customersService.create(customerDraft!, skipAuthHeader);
+        const { customer, tempPassword } = await customersService.create(customerDraft!, skipAuthHeader);
         createdCustomerId  = customer.id;
         vehicleOwner       = { customerId: customer.id };
+        credentials        = buildCredentials(customerDraft!, tempPassword);
       } else if (fleetAndContact!.existingFleetId && !fleetAndContact!.contact) {
         // Flota existente sin contacto nuevo: el vehículo va directo a la flota
         vehicleOwner = { fleetId: fleetAndContact!.existingFleetId };
@@ -100,9 +117,11 @@ export function StepConfirm({
         const fleetId =
           fleetAndContact!.existingFleetId ??
           (await fleetsService.create(fleetAndContact!.fleet!, skipAuthHeader));
-        const { customer } = await customersService.create({ ...fleetAndContact!.contact!, fleetId }, skipAuthHeader);
+        const contactDraft = fleetAndContact!.contact!;
+        const { customer, tempPassword } = await customersService.create({ ...contactDraft, fleetId }, skipAuthHeader);
         createdCustomerId  = customer.id;
         vehicleOwner       = { fleetId };
+        credentials        = buildCredentials(contactDraft, tempPassword);
       }
 
       // ── Paso 2: crear vehículo ─────────────────────────────────────────────
@@ -150,6 +169,10 @@ export function StepConfirm({
       }
 
       toast.success("Orden de trabajo creada correctamente");
+
+      // Las credenciales viajan por sessionStorage hasta la pantalla de "orden
+      // creada", que es otra ruta. Nunca por la URL.
+      if (credentials) stashIntakeCredentials(order.id, credentials);
 
       // Alertas de mantenimiento configuradas en el ingreso. No bloquean el flujo:
       // si fallan, se pueden cargar/editar después desde la ficha del vehículo.
