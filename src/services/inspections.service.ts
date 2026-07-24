@@ -70,6 +70,16 @@ export const inspectionsService = {
   },
 
   /**
+   * Deshace una marca de oficina sobre un área ("sin novedades" o "postergada"):
+   * el área vuelve a quedar pendiente. Corrige un click por error.
+   */
+  reopenArea: async (workOrderId: string, areaId: string): Promise<void> => {
+    await apiClient.delete(
+      `/api/work-orders/${workOrderId}/inspection-reports/${areaId}`
+    );
+  },
+
+  /**
    * Áreas omitidas en la última visita (orden no cancelada más reciente) de un vehículo.
    * Vacío si la última visita cubrió todas las áreas.
    */

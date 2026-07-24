@@ -88,15 +88,14 @@ export function PasteAlertsDialog({ open, onClose, onApply }: Props) {
                 >
                   <CheckCircle2 className="w-3.5 h-3.5 text-green-600 shrink-0 mt-0.5" />
                   <p className="text-xs text-green-900">
-                    <span className="font-bold">
-                      {r.data!.type === MaintenanceAlertType.Other
-                        ? r.data!.title
-                        : MaintenanceAlertTypeLabel[r.data!.type]}
-                    </span>{" "}
+                    <span className="font-bold">{r.data!.title}</span>{" "}
                     — {describe(r.data!)}
-                    {r.data!.type === MaintenanceAlertType.Other && (
-                      <span className="text-green-700/70"> (personalizada)</span>
-                    )}
+                    <span className="text-green-700/70">
+                      {" · "}
+                      {r.data!.type === MaintenanceAlertType.Other
+                        ? "personalizada"
+                        : MaintenanceAlertTypeLabel[r.data!.type]}
+                    </span>
                   </p>
                 </div>
               ))}

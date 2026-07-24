@@ -94,6 +94,22 @@ export function useMarkAreaSkipped(workOrderId: string) {
   });
 }
 
+/**
+ * Deshace una marca de oficina ("sin novedades" o "postergada") sobre un área:
+ * la deja otra vez pendiente. Es la salida para corregir un click por error.
+ */
+export function useReopenArea(workOrderId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (areaId: string) => inspectionsService.reopenArea(workOrderId, areaId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: inspectionKeys.byWorkOrder(workOrderId) });
+      toast.success("Área reabierta — quedó otra vez pendiente");
+    },
+    onError: () => toast.error("No se pudo deshacer"),
+  });
+}
+
 // ─── Oficina: áreas omitidas en la última visita de un vehículo ──────────────
 
 export function useVehicleSkippedInspections(vehicleId: string | undefined) {

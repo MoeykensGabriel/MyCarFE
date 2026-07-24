@@ -26,7 +26,7 @@ export function SkippedInspectionsAlert({ vehicleId }: { vehicleId: string | und
         {skipped.map((s) => (
           <li key={s.areaId} className="text-sm text-amber-900">
             <span className="font-semibold">{s.areaName}</span>
-            <span className="text-amber-800/80"> — {s.skipReason}</span>
+            {s.skipReason && <span className="text-amber-800/80"> — {s.skipReason}</span>}
             <span className="block text-xs text-amber-700/70">
               Postergada el {formatDate(s.skippedAt)}
             </span>

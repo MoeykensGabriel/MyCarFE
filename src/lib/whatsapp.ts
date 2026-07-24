@@ -111,7 +111,12 @@ export function buildCredentialsMessage({
     `Usuario: ${email}`,
     `Contraseña: ${password}`,
     "",
-    `El usuario es el correo que dejaste como contacto. Podés ingresar desde ${loginUrl} y te recomendamos cambiar la contraseña la primera vez que entres.`,
+    // El link va solo en su propia línea a propósito: WhatsApp en el celular no
+    // detecta como enlace las URLs incrustadas en medio de una oración.
+    "Podés ingresar desde este link:",
+    loginUrl,
+    "",
+    "El usuario es el correo que dejaste como contacto, y te recomendamos cambiar la contraseña la primera vez que entres.",
     "",
     "Cualquier consulta quedamos a disposición. Saludos.",
   ].join("\n");

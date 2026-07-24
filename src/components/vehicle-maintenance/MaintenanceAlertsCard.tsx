@@ -28,6 +28,8 @@ interface Props {
 type EditRow = {
   id?:            string;
   itemType:       MaintenanceAlertType;
+  /** Nombre propio (vacío = usar la etiqueta por defecto del tipo). */
+  title:          string;
   km:             string;
   months:         string;
   /** Solo para alertas nuevas "desde fábrica": km del último cambio (override). */
@@ -54,6 +56,9 @@ function fromConfig(c: MaintenanceAlertConfig): EditRow {
   return {
     id:            c.id,
     itemType:      c.itemType,
+    // Título default (igual a la etiqueta del tipo) → vacío, así el placeholder
+    // acompaña si se cambia el tipo. Un nombre propio se muestra tal cual.
+    title:         c.title && c.title !== MaintenanceAlertTypeLabel[c.itemType] ? c.title : "",
     km:            c.intervalKm     != null ? String(c.intervalKm)     : "",
     months:        c.intervalMonths != null ? String(c.intervalMonths) : "",
     severity:      c.severity,
@@ -96,7 +101,7 @@ export function MaintenanceAlertsCard({ vehicleId, currentMileage }: Props) {
     // Tipo por defecto: el primero que no esté usado, o "Otro".
     const used = new Set(rows.map((r) => r.itemType));
     const next = TYPE_OPTIONS.find((o) => !used.has(o.value))?.value ?? MaintenanceAlertType.Other;
-    setRows((prev) => [...prev, { itemType: next, km: "", months: "", lastService: "" }]);
+    setRows((prev) => [...prev, { itemType: next, title: "", km: "", months: "", lastService: "" }]);
     setDirty(true);
   }
 
@@ -129,6 +134,7 @@ export function MaintenanceAlertsCard({ vehicleId, currentMileage }: Props) {
     const items: MaintenanceAlertItemInput[] = rows.map((r) => ({
       id:             r.id ?? null,
       itemType:       r.itemType,
+      title:          r.title.trim() || null,
       intervalKm:     toPosIntOrNull(r.km),
       intervalMonths: toPosIntOrNull(r.months),
       // Override solo al crear una alerta desde fábrica; en el resto el backend lo ignora.
@@ -215,6 +221,17 @@ export function MaintenanceAlertsCard({ vehicleId, currentMileage }: Props) {
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-[#44474c]/70">Nombre (opcional)</label>
+                  <input
+                    type="text"
+                    placeholder={MaintenanceAlertTypeLabel[row.itemType]}
+                    className={inputCls}
+                    value={row.title}
+                    onChange={(e) => update(idx, { title: e.target.value })}
+                  />
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">

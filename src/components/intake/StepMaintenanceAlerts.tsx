@@ -21,7 +21,7 @@ interface Props {
   onBack: () => void;
 }
 
-type RowState = { enabled: boolean; km: string; months: string; lastService: string };
+type RowState = { enabled: boolean; title: string; km: string; months: string; lastService: string };
 
 /** Alerta "Otro" con nombre libre — típicamente importada de la planilla del dueño. */
 type CustomRow = { title: string; km: string; months: string };
@@ -52,6 +52,9 @@ export function StepMaintenanceAlerts({ ownerLabel, currentMileage, defaultItems
       if (existing) {
         map[p.type] = {
           enabled:     true,
+          // Un título propio se conserva; si quedó igual a la etiqueta del tipo, se
+          // muestra vacío para que el placeholder haga de default.
+          title:       existing.title && existing.title !== MaintenanceAlertTypeLabel[p.type] ? existing.title : "",
           km:          existing.intervalKm         != null ? String(existing.intervalKm)         : "",
           months:      existing.intervalMonths     != null ? String(existing.intervalMonths)     : "",
           lastService: existing.lastServiceMileage != null ? String(existing.lastServiceMileage) : "",
@@ -60,6 +63,7 @@ export function StepMaintenanceAlerts({ ownerLabel, currentMileage, defaultItems
         map[p.type] = {
           // En una revisita respetamos que lo hayan destildado; en la 1ª vez, el preset.
           enabled:     visited ? false : p.defaultEnabled,
+          title:       "",
           km:          p.defaultKm     != null ? String(p.defaultKm)     : "",
           months:      p.defaultMonths != null ? String(p.defaultMonths) : "",
           lastService: "",
@@ -99,13 +103,15 @@ export function StepMaintenanceAlerts({ ownerLabel, currentMileage, defaultItems
     for (const row of pasted) {
       if (row.type !== MaintenanceAlertType.Other) {
         // La planilla manda: si una columna vino vacía, queda vacía (no el default).
+        // El nombre pegado también se conserva (el tipo solo aporta la inteligencia).
         update(row.type, {
           enabled: true,
+          title:   row.title,
           km:      row.intervalKm     != null ? String(row.intervalKm)     : "",
           months:  row.intervalMonths != null ? String(row.intervalMonths) : "",
         });
       } else {
-        const title = row.title ?? "";
+        const title = row.title;
         const next: CustomRow = {
           title,
           km:     row.intervalKm     != null ? String(row.intervalKm)     : "",
@@ -169,6 +175,9 @@ export function StepMaintenanceAlerts({ ownerLabel, currentMileage, defaultItems
       .filter((p) => rows[p.type].enabled)
       .map((p) => ({
         itemType:       p.type,
+        // Nombre propio si el recepcionista lo puso (o vino de la planilla); si no, el
+        // backend usa la etiqueta por defecto del tipo.
+        title:          rows[p.type].title.trim() || null,
         intervalKm:     toPosIntOrNull(rows[p.type].km),
         intervalMonths: toPosIntOrNull(rows[p.type].months),
         // Solo tiene sentido para ítems "desde fábrica"; el resto lo ignora el backend.
@@ -240,28 +249,42 @@ export function StepMaintenanceAlerts({ ownerLabel, currentMileage, defaultItems
                 </label>
 
                 {row.enabled && (
-                  <div className="grid grid-cols-2 gap-2 mt-2.5 pl-6">
+                  <div className="mt-2.5 pl-6 space-y-2">
                     <div className="space-y-1">
                       <label className="text-[10px] font-bold uppercase tracking-wider text-[#44474c]/70">
-                        Cada (km)
+                        Nombre (opcional)
                       </label>
                       <input
-                        type="number" min={0} inputMode="numeric" placeholder="Ej: 10000"
+                        type="text"
+                        placeholder={MaintenanceAlertTypeLabel[p.type]}
                         className={inputCls}
-                        value={row.km}
-                        onChange={(e) => update(p.type, { km: e.target.value })}
+                        value={row.title}
+                        onChange={(e) => update(p.type, { title: e.target.value })}
                       />
                     </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold uppercase tracking-wider text-[#44474c]/70">
-                        Cada (meses)
-                      </label>
-                      <input
-                        type="number" min={0} inputMode="numeric" placeholder="Ej: 6"
-                        className={inputCls}
-                        value={row.months}
-                        onChange={(e) => update(p.type, { months: e.target.value })}
-                      />
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-[#44474c]/70">
+                          Cada (km)
+                        </label>
+                        <input
+                          type="number" min={0} inputMode="numeric" placeholder="Ej: 10000"
+                          className={inputCls}
+                          value={row.km}
+                          onChange={(e) => update(p.type, { km: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-[#44474c]/70">
+                          Cada (meses)
+                        </label>
+                        <input
+                          type="number" min={0} inputMode="numeric" placeholder="Ej: 6"
+                          className={inputCls}
+                          value={row.months}
+                          onChange={(e) => update(p.type, { months: e.target.value })}
+                        />
+                      </div>
                     </div>
                   </div>
                 )}

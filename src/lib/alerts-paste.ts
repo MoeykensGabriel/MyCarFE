@@ -7,9 +7,10 @@ import { MaintenanceAlertType } from "@/types/api.types";
  *   nombre | kilometraje | tiempo de vencer
  *
  * Excel copia celdas separadas por TAB y filas por salto de línea. Reglas:
- *   - Nombre: si matchea un tipo conocido (aceite, cubiertas, batería...) se usa
- *     ese tipo (queda agrupado con los presets del ingreso); si no, va como
- *     "Otro" con el nombre como título libre.
+ *   - Nombre: SIEMPRE se conserva como título (el nombre de la planilla del dueño
+ *     manda). Además, si matchea un tipo conocido (aceite, cubiertas, batería...) se
+ *     detecta ese tipo para que la alerta conserve su inteligencia (card de aceite,
+ *     escalado por salud de batería/cubiertas, hitos de fábrica); si no, va como "Otro".
  *   - Kilometraje: entero es-AR ("10.000" = 10000). Vacío/— = sin umbral por km.
  *   - Tiempo: en meses. Acepta "6", "6 meses", "6m", "2 años", "1 año", "2a".
  *     Vacío/— = sin umbral por tiempo.
@@ -17,9 +18,10 @@ import { MaintenanceAlertType } from "@/types/api.types";
  */
 
 export interface ParsedAlertRow {
+  /** Tipo detectado (para conservar la inteligencia); Other si no matchea ninguno. */
   type: MaintenanceAlertType;
-  /** Título libre — solo para type Other (los tipos conocidos usan su label). */
-  title: string | null;
+  /** Nombre de la planilla — siempre presente, incluso en tipos conocidos. */
+  title: string;
   intervalKm: number | null;
   intervalMonths: number | null;
 }
@@ -116,7 +118,8 @@ export function parseAlertRows(text: string): AlertRowResult[] {
         error: null,
         data: {
           type: type ?? MaintenanceAlertType.Other,
-          title: type === null ? name.trim() : null,
+          // El nombre de la planilla se conserva siempre; el tipo solo aporta la inteligencia.
+          title: name.trim(),
           intervalKm: km,
           intervalMonths: months,
         },

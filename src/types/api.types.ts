@@ -423,7 +423,8 @@ export interface MarkAreaNoFindingsRequest {
 
 export interface MarkAreaSkippedRequest {
   areaId: string;
-  reason: string;
+  /** Motivo opcional — la oficina posterga de un solo click; puede dejar constancia si quiere. */
+  reason?: string;
 }
 
 /** Área omitida en la última visita de un vehículo (aviso "quedó sin inspeccionar"). */

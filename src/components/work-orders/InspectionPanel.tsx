@@ -9,6 +9,7 @@ import {
   Sparkles,
   Lock,
   Clock,
+  Undo2,
   X,
 } from "lucide-react";
 
@@ -19,6 +20,7 @@ import {
   useInspectionReportsByWorkOrder,
   useMarkAreaNoFindings,
   useMarkAreaSkipped,
+  useReopenArea,
   useCloseInspection,
 } from "@/hooks/useInspections";
 import { useAreas } from "@/hooks/useAreas";
@@ -46,6 +48,7 @@ export function InspectionPanel({ order }: { order: WorkOrder }) {
 
   const markNoFindings = useMarkAreaNoFindings(workOrderId);
   const markSkipped = useMarkAreaSkipped(workOrderId);
+  const reopenArea = useReopenArea(workOrderId);
   const closeInspection = useCloseInspection(workOrderId);
   const [confirmCloseOpen, setConfirmCloseOpen] = useState(false);
   // Área que la oficina decidió inspeccionar ella misma (abre el formulario del mecánico).
@@ -127,14 +130,11 @@ export function InspectionPanel({ order }: { order: WorkOrder }) {
                 key={area.id}
                 area={area}
                 report={reportsByAreaId.get(area.id)}
-                onMarkNoFindings={() =>
-                  markNoFindings.mutate({ areaId: area.id })
-                }
-                onMarkSkipped={(reason) =>
-                  markSkipped.mutate({ areaId: area.id, reason })
-                }
+                onMarkNoFindings={() => markNoFindings.mutate({ areaId: area.id })}
+                onMarkSkipped={() => markSkipped.mutate({ areaId: area.id })}
                 onReport={() => setReportingArea(area)}
-                marking={markNoFindings.isPending || markSkipped.isPending}
+                onReopen={() => reopenArea.mutate(area.id)}
+                busy={markNoFindings.isPending || markSkipped.isPending || reopenArea.isPending}
               />
             ))}
           </ul>
@@ -348,24 +348,40 @@ function CloseInspectionModal({
 
 // ─── Fila de un área ─────────────────────────────────────────────────────────
 
+/** Deshace una marca de oficina ("sin novedades"/"postergada"): el área vuelve a pendiente. */
+function UndoButton({ onClick, disabled }: { onClick: () => void; disabled: boolean }) {
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      className="h-8 shrink-0 text-gray-500 hover:text-amber-700 hover:bg-amber-50"
+      onClick={onClick}
+      disabled={disabled}
+      title="Volver a dejar el área pendiente"
+    >
+      <Undo2 className="w-3.5 h-3.5" />
+      Deshacer
+    </Button>
+  );
+}
+
 function AreaRow({
   area,
   report,
   onMarkNoFindings,
   onMarkSkipped,
   onReport,
-  marking,
+  onReopen,
+  busy,
 }: {
   area: Area;
   report?: InspectionReport;
   onMarkNoFindings: () => void;
-  onMarkSkipped: (reason: string) => void;
+  onMarkSkipped: () => void;
   onReport: () => void;
-  marking: boolean;
+  onReopen: () => void;
+  busy: boolean;
 }) {
-  const [skipping, setSkipping] = useState(false);
-  const [skipReason, setSkipReason] = useState("");
-
   // ── Pendiente ──────────────────────────────────────────────────────────────
   if (!report) {
     return (
@@ -387,7 +403,7 @@ function AreaRow({
               size="sm"
               className="col-span-2 h-9 sm:col-span-1 sm:h-7"
               onClick={onReport}
-              disabled={marking || skipping}
+              disabled={busy}
             >
               <ClipboardCheck />
               Inspeccionar
@@ -397,65 +413,25 @@ function AreaRow({
               size="sm"
               className="h-9 sm:h-7"
               onClick={onMarkNoFindings}
-              disabled={marking || skipping}
+              disabled={busy}
             >
               <CheckCircle2 className="text-green-600" />
-              {marking ? "..." : "Sin novedades"}
+              {busy ? "..." : "Sin novedades"}
             </Button>
+            {/* Postergar de un solo click, sin justificativo. Si fue un error se deshace
+                desde la fila — el área queda registrada, un click no condena. */}
             <Button
               variant="outline"
               size="sm"
               className="h-9 border-amber-300 text-amber-700 hover:bg-amber-50 hover:text-amber-800 sm:h-7"
-              onClick={() => setSkipping((v) => !v)}
-              disabled={marking}
+              onClick={onMarkSkipped}
+              disabled={busy}
             >
               <Clock />
               Postergar
             </Button>
           </div>
         </div>
-
-        {/* Panel inline: motivo obligatorio para postergar */}
-        {skipping && (
-          <div className="mt-2 ml-6 sm:ml-7 rounded-lg border border-amber-200 bg-amber-50/70 p-3 space-y-2">
-            <p className="text-xs text-amber-900">
-              El área queda <strong>sin inspeccionar</strong> y registrada para revisar en la
-              próxima visita. Indicá el motivo (mínimo 5 caracteres).
-            </p>
-            <input
-              type="text"
-              value={skipReason}
-              onChange={(e) => setSkipReason(e.target.value)}
-              placeholder='Ej: "Mecánico de frenos ocupado, cliente no podía esperar"'
-              maxLength={500}
-              className="w-full rounded-md border border-amber-300 bg-white px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
-            />
-            {/* Mobile: confirmar arriba y a lo ancho (flex-col-reverse). Desktop: fila a la derecha. */}
-            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-9 sm:h-7"
-                onClick={() => { setSkipping(false); setSkipReason(""); }}
-                disabled={marking}
-              >
-                Cancelar
-              </Button>
-              <Button
-                size="sm"
-                className="h-9 bg-amber-600 text-white hover:bg-amber-700 sm:h-7"
-                disabled={marking || skipReason.trim().length < 5}
-                onClick={() => {
-                  onMarkSkipped(skipReason.trim());
-                  setSkipping(false);
-                  setSkipReason("");
-                }}
-              >
-                {marking ? "..." : "Confirmar postergación"}
-              </Button>
-            </div>
-          </div>
-        )}
       </li>
     );
   }
@@ -482,6 +458,7 @@ function AreaRow({
               </p>
             )}
           </div>
+          <UndoButton onClick={onReopen} disabled={busy} />
         </div>
       </li>
     );
@@ -496,6 +473,7 @@ function AreaRow({
           <p className="text-sm font-semibold text-gray-900">{area.name}</p>
           <p className="text-xs text-gray-500 mt-0.5">Marcada sin novedades (admin) · {formatDateTime(report.createdAt)}</p>
         </div>
+        <UndoButton onClick={onReopen} disabled={busy} />
       </li>
     );
   }
