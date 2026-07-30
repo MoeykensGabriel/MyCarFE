@@ -83,7 +83,7 @@ export function PartForm({
       <div className="space-y-1.5">
         <Label className="text-xs">Código de proveedor (opcional)</Label>
         <Input
-          placeholder="Ej: BSH-1234"
+          placeholder="Ej: 01107/1C/BBA"
           value={productCode}
           onChange={(e) => setProductCode(e.target.value)}
           maxLength={100}

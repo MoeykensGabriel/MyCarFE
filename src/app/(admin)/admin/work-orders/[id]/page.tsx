@@ -19,7 +19,6 @@ import { StatusBanner } from "@/components/work-orders/work-order-status-ui";
 import { QuoteCard } from "@/components/work-orders/QuoteCard";
 import { AdditionalItemsCard } from "@/components/work-orders/AdditionalItemsCard";
 import { WorkOrderSummaryPanel } from "@/components/work-orders/WorkOrderSummaryPanel";
-import { StockLookupModal } from "@/components/stock/StockLookupModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { WorkOrderStatus } from "@/lib/enums";
 import { useWorkOrder, workOrderKeys } from "@/hooks/useWorkOrders";
@@ -30,7 +29,6 @@ export default function WorkOrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { data: order, isLoading, isError } = useWorkOrder(id);
   const [statusModalOpen, setStatusModalOpen] = useState(false);
-  const [stockOpen, setStockOpen] = useState(false);
   const queryClient = useQueryClient();
 
   if (isLoading) {
@@ -90,7 +88,6 @@ export default function WorkOrderDetailPage() {
               order={order}
               status={status}
               isDiagnosing={isDiagnosing}
-              onConsultStock={() => setStockOpen(true)}
             />
           )}
 
@@ -166,10 +163,6 @@ export default function WorkOrderDetailPage() {
         open={statusModalOpen}
         onClose={() => setStatusModalOpen(false)}
       />
-
-      {isDiagnosing && (
-        <StockLookupModal open={stockOpen} onClose={() => setStockOpen(false)} />
-      )}
     </div>
   );
 }

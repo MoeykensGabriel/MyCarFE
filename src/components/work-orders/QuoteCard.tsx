@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ClipboardList, Clock, Copy, PackageSearch, Plus } from "lucide-react";
+import { ClipboardList, Clock, Copy, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,6 @@ interface Props {
   order: WorkOrder;
   status: WorkOrderStatus;
   isDiagnosing: boolean;
-  onConsultStock: () => void;
 }
 
 /**
@@ -33,7 +32,7 @@ interface Props {
  * propósito: la card muestra lo cargado, y el total y la condición de venta quedan
  * siempre a la vista sin scrollear.
  */
-export function QuoteCard({ order, status, isDiagnosing, onConsultStock }: Props) {
+export function QuoteCard({ order, status, isDiagnosing }: Props) {
   const [addServiceOpen, setAddServiceOpen] = useState(false);
   const [addPartOpen, setAddPartOpen] = useState(false);
 
@@ -53,17 +52,9 @@ export function QuoteCard({ order, status, isDiagnosing, onConsultStock }: Props
       <CardHeader>
         <div className="flex items-center justify-between gap-2">
           <CardTitle className="text-base">Presupuesto</CardTitle>
-          {isDiagnosing ? (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onConsultStock}
-              className="font-semibold"
-            >
-              <PackageSearch className="w-4 h-4 mr-1.5" />
-              Consultar stock
-            </Button>
-          ) : (
+          {/* En Diagnosing no hay acción de cabecera: los ítems todavía se están
+              editando, por eso tampoco se ofrece copiar (ver copyable={!isDiagnosing}). */}
+          {!isDiagnosing && (
             <Button
               variant="outline"
               size="sm"
