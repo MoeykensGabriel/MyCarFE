@@ -9,6 +9,7 @@ import {
   Sparkles,
   Lock,
   Clock,
+  Pencil,
   Undo2,
   X,
 } from "lucide-react";
@@ -53,6 +54,8 @@ export function InspectionPanel({ order }: { order: WorkOrder }) {
   const [confirmCloseOpen, setConfirmCloseOpen] = useState(false);
   // Área que la oficina decidió inspeccionar ella misma (abre el formulario del mecánico).
   const [reportingArea, setReportingArea] = useState<Area | null>(null);
+  // Reporte existente que el admin está corrigiendo (mismo formulario, en modo edición).
+  const [editing, setEditing] = useState<{ area: Area; report: InspectionReport } | null>(null);
 
   if (areasLoading || reportsLoading) {
     return (
@@ -134,6 +137,7 @@ export function InspectionPanel({ order }: { order: WorkOrder }) {
                 onMarkSkipped={() => markSkipped.mutate({ areaId: area.id })}
                 onReport={() => setReportingArea(area)}
                 onReopen={() => reopenArea.mutate(area.id)}
+                onEdit={(report) => setEditing({ area, report })}
                 busy={markNoFindings.isPending || markSkipped.isPending || reopenArea.isPending}
               />
             ))}
@@ -155,6 +159,23 @@ export function InspectionPanel({ order }: { order: WorkOrder }) {
             isOilArea:     reportingArea.isOilArea,
           }}
           onClose={() => setReportingArea(null)}
+        />
+      )}
+
+      {/* El admin corrige un reporte ya cargado — mismo formulario, en modo edición.
+          Solo mientras la orden siga en inspección: este panel no se renderiza después. */}
+      {editing && (
+        <ReportFormModal
+          inspection={buildInspectionContext(order)}
+          area={{
+            areaId:        editing.area.id,
+            areaName:      editing.area.name,
+            isTireArea:    editing.area.isTireArea,
+            isBatteryArea: editing.area.isBatteryArea,
+            isOilArea:     editing.area.isOilArea,
+          }}
+          existingReport={editing.report}
+          onClose={() => setEditing(null)}
         />
       )}
 
@@ -365,6 +386,23 @@ function UndoButton({ onClick, disabled }: { onClick: () => void; disabled: bool
   );
 }
 
+/** Corrige un reporte ya cargado, sin cambiar quién lo firmó. */
+function EditReportButton({ onClick, disabled }: { onClick: () => void; disabled: boolean }) {
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      className="h-8 shrink-0 text-gray-500 hover:text-[#041627] hover:bg-[#eefcfd]"
+      onClick={onClick}
+      disabled={disabled}
+      title="Corregir novedades y propuestas de este reporte"
+    >
+      <Pencil className="w-3.5 h-3.5" />
+      Editar
+    </Button>
+  );
+}
+
 function AreaRow({
   area,
   report,
@@ -372,6 +410,7 @@ function AreaRow({
   onMarkSkipped,
   onReport,
   onReopen,
+  onEdit,
   busy,
 }: {
   area: Area;
@@ -380,6 +419,7 @@ function AreaRow({
   onMarkSkipped: () => void;
   onReport: () => void;
   onReopen: () => void;
+  onEdit: (report: InspectionReport) => void;
   busy: boolean;
 }) {
   // ── Pendiente ──────────────────────────────────────────────────────────────
@@ -495,6 +535,7 @@ function AreaRow({
               </p>
             )}
           </div>
+          <EditReportButton onClick={() => onEdit(report)} disabled={busy} />
         </div>
       </li>
     );
@@ -523,6 +564,7 @@ function AreaRow({
             </p>
           )}
         </div>
+        <EditReportButton onClick={() => onEdit(report)} disabled={busy} />
       </div>
     </li>
   );
