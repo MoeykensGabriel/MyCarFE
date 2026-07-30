@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 
 import { Providers } from "@/components/shared/Providers";
+import { ServiceWorkerRegister } from "@/components/shared/ServiceWorkerRegister";
 import { Toaster } from "@/components/ui/sonner";
 
 const inter = Inter({
@@ -32,6 +33,7 @@ export default function RootLayout({
     <html lang="es" className={`${inter.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         <Providers>{children}</Providers>
+        <ServiceWorkerRegister />
         <Toaster richColors position="top-right" />
       </body>
     </html>

@@ -2,7 +2,23 @@ import { NextRequest, NextResponse } from "next/server";
 
 // "/trip" es la estación pública de viajes (QR pegado en el auto): el chofer
 // entra sin sesión — el token de la URL es la credencial, lo valida el backend.
-const PUBLIC_ROUTES = ["/login", "/approve", "/trip"];
+//
+// "/instalar" es la guía para dejar la app en la pantalla de inicio. Va sin sesión a
+// propósito: el cliente llega desde el link de WhatsApp antes de entrar por primera vez.
+//
+// "/manifest.webmanifest" y "/sw.js" NO son rutas de pantalla, pero pasan por acá igual:
+// el matcher de abajo solo excluye imágenes y fuentes por extensión. Sin sesión, el guard
+// los redirigía al login — y un manifest que responde 302 hace que Chrome considere la app
+// NO instalable, así que en Android el botón de instalar no aparecía nunca. Tienen que ser
+// públicos para que el navegador pueda leerlos antes del primer login.
+const PUBLIC_ROUTES = [
+  "/login",
+  "/approve",
+  "/trip",
+  "/instalar",
+  "/manifest.webmanifest",
+  "/sw.js",
+];
 
 // Sub-rutas del panel reservadas SOLO para Admin: información sensible (dashboard,
 // ventas/comisiones), configuración de empresa (áreas, mecánicos, servicios), gestión

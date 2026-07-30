@@ -5,7 +5,8 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Bebas_Neue } from "next/font/google";
-import { Wrench, Eye, EyeOff, Mail, Lock, AlertCircle } from "lucide-react";
+import Link from "next/link";
+import { Wrench, Eye, EyeOff, Mail, Lock, AlertCircle, Smartphone } from "lucide-react";
 import { AxiosError } from "axios";
 
 // Tipografía condensada de estilo automotriz — solo para el nombre de marca.
@@ -262,8 +263,17 @@ export default function LoginPage() {
           </form>
         </div>
 
-        {/* Footer de la card */}
-        <div className="px-6 sm:px-8 py-4 bg-[#eefcfd]/60 border-t border-[#c4c6cd]/40 text-center">
+        {/* Footer de la card. El link a /instalar va acá, debajo del formulario y no arriba:
+            el que viene a entrar entra sin que nada le tape el camino, y el que quiere la app
+            en su teléfono lo encuentra igual. La guía detecta sola el dispositivo. */}
+        <div className="px-6 sm:px-8 py-4 bg-[#eefcfd]/60 border-t border-[#c4c6cd]/40 text-center space-y-2">
+          <Link
+            href="/instalar"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#041627] hover:text-[#fea520] transition-colors"
+          >
+            <Smartphone className="w-3.5 h-3.5" />
+            Tener la app en mi pantalla de inicio
+          </Link>
           <p className="text-xs text-[#44474c]/60">
             © {new Date().getFullYear()} GB Service · Taller mecánico
           </p>
