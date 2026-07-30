@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { useDebouncedCallback } from "use-debounce";
-import { UserRoundPlus, Wrench } from "lucide-react";
+import { HardHat, UserRoundPlus, Wrench } from "lucide-react";
 
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Pagination } from "@/components/shared/Pagination";
 import { SearchInput } from "@/components/shared/SearchInput";
 import { useAdminMechanics } from "@/hooks/useAdminMechanics";
+import { useAuthStore } from "@/store/auth.store";
 import { MechanicsTable } from "@/components/admin-mechanics/MechanicsTable";
 import { MechanicDetailPanel } from "@/components/admin-mechanics/MechanicDetailPanel";
 import { CreateMechanicModal } from "@/components/admin-mechanics/CreateMechanicModal";
@@ -31,6 +32,9 @@ export default function MechanicsPage() {
   const [activeFilter, setActiveFilter] = useState<ActiveFilter>("all");
   const [selectedId,   setSelectedId]   = useState<string | null>(null);
   const [showCreate,   setShowCreate]   = useState(false);
+
+  // El claim mechanicId del admin viaja en su sesión (su perfil de ejecutante se crea solo).
+  const myMechanicId = useAuthStore((s) => s.mechanicId);
 
   const isActiveParam =
     activeFilter === "active"   ? true
@@ -82,6 +86,18 @@ export default function MechanicsPage() {
                 </button>
               ))}
             </div>
+
+            {/* El admin también ejecuta. Su perfil se crea solo — acá solo se lo recordamos,
+                y desde la fila puede renombrarlo (arranca con un nombre derivado del email). */}
+            {myMechanicId && (
+              <span
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#fea520]/40 bg-[#fea520]/15 text-[#865300] text-xs font-bold"
+                title="Podés tomar trabajos desde la ficha de cada orden"
+              >
+                <HardHat className="w-3.5 h-3.5" />
+                Trabajás como mecánico
+              </span>
+            )}
 
             <button
               onClick={() => setShowCreate(true)}

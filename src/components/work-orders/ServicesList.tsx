@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, Clock, Lock, PlayCircle, X } from "lucide-react";
+import { CheckCircle2, Clock, HardHat, Lock, PlayCircle, X } from "lucide-react";
 
 import { WorkOrderService } from "@/types/api.types";
 import { formatCurrency, formatDateTime } from "@/lib/format";
@@ -12,14 +12,19 @@ import {
   AssignmentStatusLabel,
   QuoteItemApprovalStatus,
   QuoteItemApprovalStatusLabel,
+  UserRole,
   WorkOrderServiceAssignmentStatus,
   WorkOrderStatus,
 } from "@/lib/enums";
 import {
+  useAcceptServiceAsAdmin,
+  useClaimServiceAsAdmin,
+  useCompleteServiceAsAdmin,
   useCompleteServiceAsWorkshop,
   useRemoveWorkOrderService,
   useUpdateWorkOrderServicePrice,
 } from "@/hooks/useWorkOrders";
+import { useAuthStore } from "@/store/auth.store";
 import { MechanicAssignSelect } from "@/components/work-orders/MechanicAssignSelect";
 import { CopyRowButton } from "@/components/shared/CopyRowButton";
 import { serviceToRow } from "@/lib/quote-copy";
@@ -54,6 +59,13 @@ export function ServicesList({
     workOrderStatus === WorkOrderStatus.Cancelled;
   const canAssignMechanic = workOrderStatus !== undefined && !isWoTerminal;
 
+  // El admin que habilitó su perfil de ejecutante puede hacer los trabajos él mismo,
+  // desde acá mismo. Sin perfil (mechanicId null) no ve ninguno de esos botones.
+  const role         = useAuthStore((s) => s.role);
+  const myMechanicId = useAuthStore((s) => s.mechanicId);
+  const canExecute   = role === UserRole.Admin && !!myMechanicId;
+  const isWoInProgress = workOrderStatus === WorkOrderStatus.InProgress;
+
   if (!services.length) {
     return (
       <p className="text-sm text-muted-foreground">
@@ -74,6 +86,8 @@ export function ServicesList({
           editable={editable}
           copyable={copyable}
           canAssignMechanic={canAssignMechanic}
+          canAct={canExecute && isWoInProgress}
+          myMechanicId={myMechanicId}
           onRemove={() => removeService(s.id)}
           removing={isPending}
         />
@@ -91,6 +105,8 @@ function ServiceRow({
   editable,
   copyable,
   canAssignMechanic,
+  canAct,
+  myMechanicId,
   onRemove,
   removing,
 }: {
@@ -99,10 +115,15 @@ function ServiceRow({
   editable: boolean;
   copyable: boolean;
   canAssignMechanic: boolean;
+  /** El usuario puede ejecutar trabajos y la orden está en progreso. */
+  canAct: boolean;
+  /** Perfil de ejecutante del usuario logueado, si tiene. */
+  myMechanicId: string | null;
   onRemove: () => void;
   removing: boolean;
 }) {
   const status = s.assignmentStatus ?? WorkOrderServiceAssignmentStatus.Unassigned;
+  const isMine = !!myMechanicId && s.assignedMechanicId === myMechanicId;
 
   return (
     <div className="py-3 border-b last:border-0">
@@ -123,6 +144,15 @@ function ServiceRow({
           {/* Asignación + estado + aprobación */}
           <div className="flex flex-wrap items-center gap-2 mt-2">
             <AssignmentBadge status={status} />
+            {isMine && status !== WorkOrderServiceAssignmentStatus.Completed && (
+              <span
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border bg-[#fea520]/15 border-[#fea520]/40 text-[#865300]"
+                title="Este trabajo lo tomaste vos"
+              >
+                <HardHat className="w-3 h-3" />
+                Lo hago yo
+              </span>
+            )}
             {s.approvalStatus !== undefined && (
               <ApprovalBadge status={s.approvalStatus} />
             )}
@@ -145,11 +175,31 @@ function ServiceRow({
             />
           </div>
 
-          {/* Trabajo en curso: la oficina puede finalizarlo en nombre del taller
-              (mecánico que no continúa). Liberar ya lo cubre la X de la asignación. */}
-          {canAssignMechanic && status === WorkOrderServiceAssignmentStatus.Accepted && (
-            <WorkshopCompleteControl workOrderId={workOrderId} workOrderServiceId={s.id} />
+          {/* ── Lo hago yo: el admin ejecuta el trabajo con sus propias manos ──
+              Las condiciones espejan las precondiciones del backend, así que ningún
+              botón visible puede terminar en un rechazo del server. */}
+          {canAct && status === WorkOrderServiceAssignmentStatus.Unassigned &&
+            s.approvalStatus === QuoteItemApprovalStatus.Approved && (
+              <SelfClaimButton workOrderId={workOrderId} workOrderServiceId={s.id} />
+            )}
+
+          {canAct && isMine && status === WorkOrderServiceAssignmentStatus.Pending && (
+            <SelfAcceptButton workOrderId={workOrderId} workOrderServiceId={s.id} />
           )}
+
+          {canAct && isMine && status === WorkOrderServiceAssignmentStatus.Accepted && (
+            <SelfCompleteControl workOrderId={workOrderId} workOrderServiceId={s.id} />
+          )}
+
+          {/* Trabajo de OTRO: la oficina lo finaliza en nombre del taller cuando el
+              mecánico no va a continuar — tanto si lo tenía en curso (Accepted) como
+              si lo tomó y nunca arrancó (Pending), que si no traba la orden entera.
+              Liberar ya lo cubre la X de la asignación. */}
+          {canAssignMechanic && !isMine &&
+            (status === WorkOrderServiceAssignmentStatus.Accepted ||
+             status === WorkOrderServiceAssignmentStatus.Pending) && (
+              <WorkshopCompleteControl workOrderId={workOrderId} workOrderServiceId={s.id} />
+            )}
         </div>
         <div className="flex items-center gap-3 shrink-0">
           {editable && !s.frozenAt ? (
@@ -212,9 +262,161 @@ function ServiceRow({
   );
 }
 
+// ─── El admin ejecuta el trabajo ──────────────────────────────────────────────
+// Mismo ciclo que el mecánico (tomar → iniciar → finalizar), pero desde la ficha de
+// la orden en vez del panel /mechanic. Pegan a los mismos endpoints, así que el
+// trabajo queda a nombre del admin en el historial y en el dashboard.
+
+function SelfClaimButton({
+  workOrderId,
+  workOrderServiceId,
+}: {
+  workOrderId: string;
+  workOrderServiceId: string;
+}) {
+  const { mutate, isPending } = useClaimServiceAsAdmin(workOrderId);
+
+  return (
+    <button
+      type="button"
+      onClick={() => mutate(workOrderServiceId)}
+      disabled={isPending}
+      className="mt-2 inline-flex items-center gap-1.5 px-3 py-2.5 sm:px-2 sm:py-1 rounded-md border border-[#fea520]/50 bg-[#fea520]/15 text-[#865300] text-xs sm:text-[11px] font-semibold hover:bg-[#fea520]/25 transition-colors disabled:opacity-40"
+      title="Tomar este trabajo para hacerlo vos"
+    >
+      <HardHat className="w-4 h-4 sm:w-3 sm:h-3" />
+      {isPending ? "Tomando..." : "Tomar yo"}
+    </button>
+  );
+}
+
+function SelfAcceptButton({
+  workOrderId,
+  workOrderServiceId,
+}: {
+  workOrderId: string;
+  workOrderServiceId: string;
+}) {
+  const { mutate, isPending } = useAcceptServiceAsAdmin(workOrderId);
+
+  return (
+    <button
+      type="button"
+      onClick={() => mutate(workOrderServiceId)}
+      disabled={isPending}
+      className="mt-2 inline-flex items-center gap-1.5 px-3 py-2.5 sm:px-2 sm:py-1 rounded-md border border-blue-300 bg-blue-50 text-blue-800 text-xs sm:text-[11px] font-semibold hover:bg-blue-100 transition-colors disabled:opacity-40"
+      title="Empezar a trabajar en esta tarea"
+    >
+      <PlayCircle className="w-4 h-4 sm:w-3 sm:h-3" />
+      {isPending ? "Iniciando..." : "Iniciar trabajo"}
+    </button>
+  );
+}
+
+/**
+ * Cierre del trabajo propio. Va por /complete (no complete-as-workshop) porque es la
+ * única vía que guarda los hallazgos además de las notas.
+ */
+function SelfCompleteControl({
+  workOrderId,
+  workOrderServiceId,
+}: {
+  workOrderId: string;
+  workOrderServiceId: string;
+}) {
+  const [open, setOpen]         = useState(false);
+  const [notes, setNotes]       = useState("");
+  const [findings, setFindings] = useState("");
+  const { mutate, isPending } = useCompleteServiceAsAdmin(workOrderId);
+
+  const canConfirm = notes.trim().length >= 10 && !isPending;
+
+  function close() {
+    setOpen(false);
+    setNotes("");
+    setFindings("");
+  }
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="mt-2 inline-flex items-center gap-1.5 px-3 py-2.5 sm:px-2 sm:py-1 rounded-md border border-emerald-300 bg-emerald-50 text-emerald-800 text-xs sm:text-[11px] font-semibold hover:bg-emerald-100 transition-colors"
+        title="Marcar tu trabajo como terminado"
+      >
+        <CheckCircle2 className="w-4 h-4 sm:w-3 sm:h-3" />
+        Finalizar trabajo
+      </button>
+    );
+  }
+
+  return (
+    <div className="mt-2 rounded-lg border border-emerald-200 bg-emerald-50/50 p-2.5 space-y-2">
+      <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-800">
+        Finalizar tu trabajo
+      </p>
+
+      <div className="space-y-1">
+        <textarea
+          rows={3}
+          autoFocus
+          placeholder="¿Qué tareas realizaste? (mín. 10 caracteres — lo ve el cliente)"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          maxLength={2000}
+          className="w-full px-2.5 py-1.5 text-xs rounded-md border border-emerald-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-300 resize-none"
+        />
+        <p className="text-[10px] text-emerald-800/70 text-right tabular-nums">
+          {notes.length}/2000
+        </p>
+      </div>
+
+      <textarea
+        rows={2}
+        placeholder="Novedades o recomendaciones (opcional): cosas que viste ajenas a esta tarea..."
+        value={findings}
+        onChange={(e) => setFindings(e.target.value)}
+        maxLength={2000}
+        className="w-full px-2.5 py-1.5 text-xs rounded-md border border-emerald-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-300 resize-none"
+      />
+
+      <div className="flex gap-2 justify-end">
+        <button
+          type="button"
+          onClick={close}
+          disabled={isPending}
+          className="px-3 py-2.5 sm:px-2.5 sm:py-1 rounded-md text-xs sm:text-[11px] font-semibold text-gray-600 border border-gray-300 hover:bg-white transition-colors disabled:opacity-40"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          onClick={() =>
+            mutate(
+              {
+                workOrderServiceId,
+                notes: notes.trim(),
+                findings: findings.trim() || undefined,
+              },
+              { onSuccess: close },
+            )
+          }
+          disabled={!canConfirm}
+          className="inline-flex items-center gap-1 px-3 py-2.5 sm:px-2.5 sm:py-1 rounded-md text-xs sm:text-[11px] font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors disabled:opacity-40"
+        >
+          <CheckCircle2 className="w-3 h-3" />
+          {isPending ? "Finalizando..." : "Confirmar"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Finalizar por taller ─────────────────────────────────────────────────────
-// Para trabajos en curso (Accepted) cuyo mecánico no va a continuar: admin/oficina
-// lo cierra en nombre del taller con una nota obligatoria (queda en el historial).
+// Para trabajos de OTRO mecánico que no va a continuar: admin/oficina los cierra en
+// nombre del taller con una nota obligatoria (queda en el historial). Vale tanto si
+// el trabajo estaba en curso como si quedó tomado sin arrancar.
 
 function WorkshopCompleteControl({
   workOrderId,
@@ -235,7 +437,7 @@ function WorkshopCompleteControl({
         type="button"
         onClick={() => setOpen(true)}
         className="mt-2 inline-flex items-center gap-1.5 px-3 py-2.5 sm:px-2 sm:py-1 rounded-md border border-emerald-300 bg-emerald-50 text-emerald-800 text-xs sm:text-[11px] font-semibold hover:bg-emerald-100 transition-colors"
-        title="Marcar el trabajo como terminado en nombre del taller (mecánico que no continúa)"
+        title="Cerrar el trabajo en nombre del taller cuando su mecánico no va a continuar"
       >
         <CheckCircle2 className="w-4 h-4 sm:w-3 sm:h-3" />
         Finalizar por taller
@@ -251,7 +453,7 @@ function WorkshopCompleteControl({
       <textarea
         rows={2}
         autoFocus
-        placeholder="Qué se hizo / por qué lo cierra la oficina (mín. 10 caracteres)..."
+        placeholder="Qué se hizo, o por qué lo cierra la oficina si el mecánico no llegó a hacerlo (mín. 10 caracteres)..."
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
         maxLength={2000}

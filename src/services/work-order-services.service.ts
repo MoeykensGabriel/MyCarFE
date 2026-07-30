@@ -2,8 +2,10 @@ import apiClient from "@/lib/axios";
 
 /**
  * Endpoints de un WorkOrderService individual.
- * Las acciones del mecánico (accept / complete) viven en mechanic.service.ts.
- * Acá solo expongo lo que admin/oficina necesita para gestionar la asignación.
+ * Las acciones de EJECUCIÓN (claim / accept / complete / release) viven en
+ * mechanic.service.ts, y las usa tanto el mecánico desde su panel como el admin
+ * desde la ficha de la orden cuando hace el trabajo con sus propias manos.
+ * Acá solo expongo lo que admin/oficina necesita para gestionar trabajo AJENO.
  */
 export const workOrderServicesService = {
   /** Admin/oficina asigna un mecánico a un servicio. */
@@ -25,8 +27,10 @@ export const workOrderServicesService = {
   },
 
   /**
-   * Admin/oficina finaliza un trabajo en curso en nombre del taller — destraba servicios
-   * cuyo mecánico no va a continuar. Notes obligatorio (mínimo 10 chars).
+   * Admin/oficina finaliza en nombre del taller un trabajo de OTRO — destraba servicios
+   * cuyo mecánico no va a continuar. Vale tanto para trabajos en curso (Accepted) como
+   * para los que quedaron tomados y nunca arrancaron (Pending).
+   * Notes obligatorio (mínimo 10 chars); no guarda hallazgos.
    */
   completeAsWorkshop: async (
     workOrderServiceId: string,

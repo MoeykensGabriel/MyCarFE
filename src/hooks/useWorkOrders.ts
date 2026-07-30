@@ -7,6 +7,7 @@ import {
   WorkOrdersParams,
 } from "@/services/work-orders.service";
 import { workOrderServicesService } from "@/services/work-order-services.service";
+import { mechanicService } from "@/services/mechanic.service";
 import {
   AddAdHocWorkOrderServiceRequest,
   AddWorkOrderPartRequest,
@@ -367,7 +368,81 @@ export function useUnassignMechanic(workOrderId: string) {
   });
 }
 
-/** Admin/oficina finaliza un trabajo en curso en nombre del taller (mecánico ausente). */
+// ─── El admin ejecuta el trabajo él mismo ─────────────────────────────────────
+// Pegan a los mismos endpoints que el mecánico (mechanicService) pero invalidan la caché
+// del DETALLE de la orden, que es la pantalla desde donde opera el admin. Ojo: no reusar
+// los hooks de useMechanicTasks — esos invalidan mechanicKeys.all y dejarían la fila con
+// el estado viejo hasta recargar.
+
+/** El admin toma un trabajo del pool de esta orden (Unassigned → Pending). */
+export function useClaimServiceAsAdmin(workOrderId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (workOrderServiceId: string) =>
+      mechanicService.claimService(workOrderServiceId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: workOrderKeys.detail(workOrderId) });
+      toast.success("Trabajo tomado — quedó a tu nombre");
+    },
+    onError: (err) => {
+      const status = (err as AxiosError).response?.status;
+
+      // 409: un mecánico lo tomó primero. Refrescamos para que la fila muestre la verdad.
+      if (status === 409) {
+        queryClient.invalidateQueries({ queryKey: workOrderKeys.detail(workOrderId) });
+      }
+      toast.error(extractError(err, "No se pudo tomar el trabajo"));
+    },
+  });
+}
+
+/** El admin inicia un trabajo propio (Pending → Accepted). */
+export function useAcceptServiceAsAdmin(workOrderId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (workOrderServiceId: string) =>
+      mechanicService.acceptService(workOrderServiceId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: workOrderKeys.detail(workOrderId) });
+      toast.success("Trabajo iniciado");
+    },
+    onError: (err) => {
+      toast.error(extractError(err, "No se pudo iniciar el trabajo"));
+    },
+  });
+}
+
+/**
+ * El admin finaliza un trabajo propio (Accepted → Completed).
+ * Va por /complete y no por /complete-as-workshop: es la única vía que persiste los
+ * hallazgos además de las notas.
+ */
+export function useCompleteServiceAsAdmin(workOrderId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      workOrderServiceId,
+      notes,
+      findings,
+    }: {
+      workOrderServiceId: string;
+      notes: string;
+      findings?: string;
+    }) => mechanicService.completeService(workOrderServiceId, { notes, findings }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: workOrderKeys.detail(workOrderId) });
+      toast.success("Trabajo finalizado");
+    },
+    onError: (err) => {
+      toast.error(extractError(err, "No se pudo finalizar el trabajo"));
+    },
+  });
+}
+
+/** Admin/oficina finaliza en nombre del taller un trabajo de OTRO (mecánico ausente). */
 export function useCompleteServiceAsWorkshop(workOrderId: string) {
   const queryClient = useQueryClient();
 

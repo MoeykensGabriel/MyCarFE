@@ -15,6 +15,17 @@ export const authService = {
     return response.data;
   },
 
+  /**
+   * Reemite la sesión con los claims recalculados contra la base, sin pedir contraseña.
+   * Lo usa el admin cuyo token todavía no trae mechanicId: su perfil de ejecutante se crea
+   * en el login, así que una sesión abierta desde antes lo obtiene por acá en vez de
+   * obligarlo a cerrar sesión.
+   */
+  refreshSession: async (): Promise<LoginResponse> => {
+    const response = await apiClient.post<LoginResponse>("/api/auth/session/refresh");
+    return response.data;
+  },
+
   me: async (): Promise<MeResponse> => {
     const response = await apiClient.get<MeResponse>("/api/auth/me");
     return response.data;
