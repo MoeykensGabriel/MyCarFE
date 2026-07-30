@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 
 import { BackButton } from "@/components/shared/BackButton";
-import { ResetPasswordButton } from "@/components/shared/ResetPasswordButton";
+import { AccessActions } from "@/components/shared/AccessActions";
 import { DocumentTypeLabel } from "@/lib/enums";
 import { useParams } from "next/navigation";
 import { useCustomer } from "@/hooks/useCustomers";
@@ -271,15 +271,17 @@ export default function CustomerDetailPage() {
           >
             <div className="space-y-3">
               <p className="text-xs text-[#44474c]/80 leading-relaxed font-semibold">
-                ¿El cliente olvidó su contraseña? Generá una clave temporal para que restablezca su acceso al instante.
+                ¿No le llegó el mensaje o lo borró? Reenviale el acceso sin tocarle nada. Si
+                además olvidó la contraseña, generá una temporal.
               </p>
-              <ResetPasswordButton
+              <AccessActions
                 applicationUserId={customer.applicationUserId}
                 userDisplayName={`${customer.firstName} ${customer.lastName}`}
-                variant="full"
-                userEmail={customer.email}
-                phone={customer.phone}
                 firstName={customer.firstName}
+                email={customer.email}
+                phone={customer.phone}
+                variant="full"
+                title={null}
               />
             </div>
           </PremiumCard>

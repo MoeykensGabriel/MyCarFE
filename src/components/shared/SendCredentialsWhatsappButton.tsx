@@ -1,7 +1,10 @@
 "use client";
 
 import { buildCredentialsMessage, toWhatsappNumber, whatsappUrlTo } from "@/lib/whatsapp";
-import { WhatsappActionButton } from "@/components/shared/WhatsappActionButton";
+import {
+  WhatsappActionButton,
+  WhatsappUnavailableNote,
+} from "@/components/shared/WhatsappActionButton";
 
 interface SendCredentialsWhatsappButtonProps {
   /** Teléfono del cliente tal como está guardado. Si no se puede interpretar, no se ofrece el botón. */
@@ -13,6 +16,8 @@ interface SendCredentialsWhatsappButtonProps {
   password: string;
   /** true = la clave viene de un reseteo, no de un alta nueva. Cambia el texto del mensaje. */
   isReset?: boolean;
+  /** A quién va: "customer" (default) o "staff" (mecánico/oficina). Cambia el texto del mensaje. */
+  audience?: "customer" | "staff";
   /** "compact" para paneles laterales, "full" para fila completa. */
   variant?: "compact" | "full";
 }
@@ -30,17 +35,12 @@ export function SendCredentialsWhatsappButton({
   email,
   password,
   isReset,
+  audience,
   variant = "full",
 }: SendCredentialsWhatsappButtonProps) {
   // Sin un número interpretable no hay botón: es preferible que el mostrador
   // copie la clave a mano antes que abrir un chat con un número equivocado.
-  if (!toWhatsappNumber(phone)) {
-    return (
-      <p className="text-[10px] text-[#44474c]/70 leading-relaxed">
-        El cliente no tiene un teléfono válido para WhatsApp. Copiá los datos y pasáselos por otro medio.
-      </p>
-    );
-  }
+  if (!toWhatsappNumber(phone)) return <WhatsappUnavailableNote />;
 
   function handleSend() {
     // window.location solo existe en el browser: se arma acá, no en el render.
@@ -52,6 +52,7 @@ export function SendCredentialsWhatsappButton({
         password,
         loginUrl: `${window.location.origin}/login`,
         isReset,
+        audience,
       }),
     );
     if (url) window.open(url, "_blank", "noopener,noreferrer");

@@ -21,6 +21,11 @@ interface ResetPasswordButtonProps {
   phone?: string | null;
   /** Nombre de pila, para el saludo del mensaje de WhatsApp. */
   firstName?: string;
+  /**
+   * A quién va el mensaje: "customer" (default) o "staff". Un mecánico no "sigue el estado
+   * de su vehículo": sin esto, el reseteo de un empleado le manda el texto del cliente.
+   */
+  audience?: "customer" | "staff";
 }
 
 /**
@@ -39,6 +44,7 @@ export function ResetPasswordButton({
   userEmail,
   phone,
   firstName,
+  audience,
 }: ResetPasswordButtonProps) {
   const [step, setStep] = useState<"idle" | "confirm" | "done">("idle");
   const [tempPassword, setTempPassword] = useState<string | null>(null);
@@ -89,7 +95,8 @@ export function ResetPasswordButton({
         onClick={() => setStep("confirm")}
         className={
           variant === "compact"
-            ? "w-full flex items-center justify-center gap-1.5 py-2 rounded-md text-xs font-bold bg-[#eefcfd] text-[#041627] border border-[#c4c6cd] hover:bg-[#c4c6cd]/30 transition-colors"
+            // Mismo alto táctil que el botón de WhatsApp de al lado (ver WhatsappActionButton).
+            ? "w-full flex items-center justify-center gap-1.5 py-2.5 sm:py-2 rounded-md text-xs font-bold bg-[#eefcfd] text-[#041627] border border-[#c4c6cd] hover:bg-[#c4c6cd]/30 transition-colors"
             : "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-[#041627] bg-[#eefcfd] border border-[#c4c6cd]/60 hover:bg-[#c4c6cd]/30 transition-colors"
         }
       >
@@ -175,6 +182,7 @@ export function ResetPasswordButton({
           email={userEmail}
           password={tempPassword}
           isReset
+          audience={audience}
           variant={variant}
         />
       )}

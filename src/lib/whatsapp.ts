@@ -68,16 +68,55 @@ export function whatsappUrlTo(phone: string | null | undefined, message: string)
   return `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
 }
 
+/**
+ * Link a la guía de instalación, derivado del login: viven en el mismo dominio, así que no
+ * hay una URL más que configurar. Devuelve null si loginUrl no es una URL absoluta —
+ * preferible omitir el renglón antes que mandar un link roto.
+ */
+function installUrlFrom(loginUrl: string): string | null {
+  try {
+    return new URL("/instalar", loginUrl).toString();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Renglones que invitan a dejar la app en la pantalla de inicio. Compartidos por el mensaje
+ * de credenciales y el de reenvío de acceso: es la misma invitación y tiene que sonar igual.
+ */
+function lineasInstalacion(loginUrl: string): string[] {
+  const url = installUrlFrom(loginUrl);
+  if (!url) return [];
+  return ["Y si querés tenerla como app en tu celular, acá te mostramos cómo:", url, ""];
+}
+
+/** Saludo con el nombre si lo tenemos. Igual en todos los mensajes de acceso. */
+function saludo(firstName?: string): string {
+  const name = firstName?.trim();
+  return name ? `Hola ${name}, ¿cómo estás?` : "Hola, ¿cómo estás?";
+}
+
+/** Nombre del taller para los mensajes. */
+function marca(): string {
+  return workshop.name || FALLBACK_WORKSHOP_NAME;
+}
+
 interface CredentialsMessageOptions {
-  /** Nombre de pila del cliente. Si falta, el saludo va sin nombre. */
+  /** Nombre de pila del destinatario. Si falta, el saludo va sin nombre. */
   firstName?: string;
-  /** Usuario de acceso — es el mail que dejó como contacto. */
+  /** Usuario de acceso — el mail de la cuenta. */
   email: string;
   password: string;
   /** URL absoluta del login, ej: "https://armeniotuc.com/login". */
   loginUrl: string;
   /** true = la clave viene de un reseteo; false/undefined = cuenta recién creada. */
   isReset?: boolean;
+  /**
+   * A quién va el mensaje: "customer" (default) o "staff" (mecánico/oficina).
+   * Cambia el texto: un cliente sigue su vehículo; el staff accede al sistema del taller.
+   */
+  audience?: "customer" | "staff";
 }
 
 /**
@@ -93,14 +132,21 @@ export function buildCredentialsMessage({
   password,
   loginUrl,
   isReset,
+  audience = "customer",
 }: CredentialsMessageOptions): string {
-  const name  = firstName?.trim();
-  const greet = name ? `Hola ${name}, ¿cómo estás?` : "Hola, ¿cómo estás?";
-  const brand = workshop.name || FALLBACK_WORKSHOP_NAME;
+  const greet = saludo(firstName);
+  const brand = marca();
 
   const intro = isReset
     ? `Restablecimos la contraseña de tu cuenta en ${brand}.`
-    : `Ya creamos tu cuenta en ${brand}, desde donde vas a poder seguir el estado de tu vehículo y ver los presupuestos.`;
+    : audience === "staff"
+      ? `Ya creamos tu cuenta en ${brand} para que accedas al sistema del taller.`
+      : `Ya creamos tu cuenta en ${brand}, desde donde vas a poder seguir el estado de tu vehículo y ver los presupuestos.`;
+
+  // El cliente reconoce su cuenta por el correo de contacto; al staff eso no aplica.
+  const closing = audience === "staff"
+    ? "Te recomendamos cambiar la contraseña la primera vez que entres."
+    : "El usuario es el correo que dejaste como contacto, y te recomendamos cambiar la contraseña la primera vez que entres.";
 
   return [
     greet,
@@ -116,7 +162,63 @@ export function buildCredentialsMessage({
     "Podés ingresar desde este link:",
     loginUrl,
     "",
-    "El usuario es el correo que dejaste como contacto, y te recomendamos cambiar la contraseña la primera vez que entres.",
+    // Va DESPUÉS del acceso: primero lo que vino a buscar, después la comodidad. La guía
+    // reconoce sola el teléfono (iPhone o Android) y muestra solo los pasos que le sirven.
+    ...lineasInstalacion(loginUrl),
+    closing,
+    "",
+    "Cualquier consulta quedamos a disposición. Saludos.",
+  ].join("\n");
+}
+
+interface AccessMessageOptions {
+  /** Nombre de pila del destinatario. Si falta, el saludo va sin nombre. */
+  firstName?: string;
+  /** Usuario de acceso — el mail de la cuenta. Es el dato que más se olvida. */
+  email: string;
+  /** URL absoluta del login, ej: "https://armeniotuc.com/login". */
+  loginUrl: string;
+  /** "customer" (default) o "staff" (mecánico/oficina). */
+  audience?: "customer" | "staff";
+}
+
+/**
+ * Reenvío del acceso, SIN contraseña.
+ *
+ * Para cuando el mensaje original nunca llegó o el destinatario lo borró: le devuelve el
+ * usuario, el link para entrar y la guía de instalación, sin tocarle nada de la cuenta.
+ *
+ * No incluye la contraseña porque el sistema no la tiene: se guarda hasheada y no se puede
+ * recuperar. Guardarla en texto plano para poder reenviarla sería convertir cada ficha en
+ * una filtración esperando pasar. Por eso el mensaje cierra ofreciendo generar una nueva —
+ * ese es el otro botón, el de resetear.
+ */
+export function buildAccessMessage({
+  firstName,
+  email,
+  loginUrl,
+  audience = "customer",
+}: AccessMessageOptions): string {
+  const brand = marca();
+
+  const intro =
+    audience === "staff"
+      ? `Te reenviamos el acceso al sistema de ${brand}.`
+      : `Te reenviamos el acceso a tu cuenta de ${brand}, donde podés seguir el estado de tu vehículo y ver los presupuestos.`;
+
+  return [
+    saludo(firstName),
+    "",
+    intro,
+    "",
+    `Tu usuario es: ${email}`,
+    "",
+    // Cada link en su propio renglón: WhatsApp no los detecta en medio de una oración.
+    "Podés ingresar desde este link:",
+    loginUrl,
+    "",
+    ...lineasInstalacion(loginUrl),
+    "Si no te acordás la contraseña, escribinos y te generamos una nueva.",
     "",
     "Cualquier consulta quedamos a disposición. Saludos.",
   ].join("\n");

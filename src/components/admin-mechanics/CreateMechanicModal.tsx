@@ -7,8 +7,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { AxiosError } from "axios";
 
 import { AreaMultiSelectField } from "@/components/shared/AreaMultiSelectField";
+import { SendCredentialsWhatsappButton } from "@/components/shared/SendCredentialsWhatsappButton";
 import { useAssignMechanicAreas, useCreateMechanic } from "@/hooks/useAdminMechanics";
-import { ProblemDetails } from "@/types/api.types";
+import { Mechanic, ProblemDetails } from "@/types/api.types";
 
 import { mechanicSchema, MechanicForm } from "./mechanic-form";
 
@@ -17,14 +18,16 @@ interface Props {
 }
 
 /**
- * Alta de mecánico. Al crearlo muestra la contraseña temporal para compartir.
- * Las áreas seleccionadas se asignan en una segunda llamada tras la creación.
+ * Alta de mecánico. Al crearlo muestra los datos de acceso (usuario + contraseña
+ * temporal) y el botón para mandárselos por WhatsApp — mismo canal que el alta de
+ * cliente. Las áreas seleccionadas se asignan en una segunda llamada tras la creación.
  */
 export function CreateMechanicModal({ onClose }: Props) {
   const createMechanic = useCreateMechanic();
   const assignAreas    = useAssignMechanicAreas();
   const [serverError, setServerError]       = useState<string | null>(null);
   const [tempPassword, setTempPassword]     = useState<string | null>(null);
+  const [createdMechanic, setCreatedMechanic] = useState<Mechanic | null>(null);
   const [selectedAreaIds, setSelectedAreaIds] = useState<string[]>([]);
 
   const {
@@ -46,6 +49,7 @@ export function CreateMechanicModal({ onClose }: Props) {
             // Toast del hook ya cubre el error; el mecánico queda creado sin áreas
           }
         }
+        setCreatedMechanic(res.mechanic);
         setTempPassword(res.tempPassword);
       },
       onError: (err) => {
@@ -80,27 +84,44 @@ export function CreateMechanicModal({ onClose }: Props) {
 
         {/* Body — scrolleable dentro del sheet */}
         <div className="px-6 py-5 overflow-y-auto flex-1 min-h-0">
-          {tempPassword ? (
-            /* ── Éxito: mostrar contraseña temporal ── */
+          {tempPassword && createdMechanic ? (
+            /* ── Éxito: datos de acceso + envío por WhatsApp ── */
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-green-600">
                 <Check className="w-5 h-5" />
                 <p className="text-sm font-semibold">Mecánico creado exitosamente</p>
               </div>
-              <div className="rounded-xl border border-[#c4c6cd] bg-[#eefcfd] px-4 py-3 space-y-1">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-[#44474c]/70">
-                  Contraseña temporal
-                </p>
-                <p className="text-lg font-mono font-bold text-[#041627] tracking-widest">
-                  {tempPassword}
-                </p>
-                <p className="text-xs text-[#44474c]/70">
-                  Compartila con el mecánico. Deberá cambiarla en su primer acceso.
-                </p>
+              <div className="rounded-xl border border-[#c4c6cd] bg-[#eefcfd] divide-y divide-[#c4c6cd]/50">
+                <div className="px-4 py-2.5 flex flex-col gap-0.5">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-[#44474c]/70">
+                    Usuario
+                  </span>
+                  <span className="text-sm font-medium text-[#041627] break-all">
+                    {createdMechanic.email}
+                  </span>
+                </div>
+                <div className="px-4 py-2.5 flex flex-col gap-0.5">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-[#44474c]/70">
+                    Contraseña temporal
+                  </span>
+                  <span className="text-lg font-mono font-bold text-[#041627] tracking-widest">
+                    {tempPassword}
+                  </span>
+                </div>
               </div>
+              <p className="text-xs text-[#44474c]/70">
+                Compartila con el mecánico. Deberá cambiarla en su primer acceso.
+              </p>
+              <SendCredentialsWhatsappButton
+                audience="staff"
+                phone={createdMechanic.phone}
+                firstName={createdMechanic.firstName}
+                email={createdMechanic.email}
+                password={tempPassword}
+              />
               <button
                 onClick={onClose}
-                className="w-full py-2.5 rounded-xl text-sm font-bold bg-[#fea520] text-[#041627] hover:bg-[#e8951d] transition-all"
+                className="w-full py-2.5 rounded-xl text-sm font-bold bg-white border border-[#c4c6cd] text-[#041627] hover:bg-[#eefcfd]/40 transition-all"
               >
                 Cerrar
               </button>

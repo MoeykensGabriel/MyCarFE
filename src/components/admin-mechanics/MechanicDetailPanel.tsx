@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { X, Wrench, Mail, Phone, Eye, EyeOff, Layers, Pencil } from "lucide-react";
+import { X, Wrench, Mail, Phone, Eye, EyeOff, HardHat, Layers, Pencil } from "lucide-react";
 
 import { DetailSheet } from "@/components/shared/DetailSheet";
-import { ResetPasswordButton } from "@/components/shared/ResetPasswordButton";
+import { AccessActions } from "@/components/shared/AccessActions";
 import { formatDate } from "@/lib/format";
 import { useUpdateMechanic } from "@/hooks/useAdminMechanics";
+import { useAuthStore } from "@/store/auth.store";
 import { Mechanic } from "@/types/api.types";
 
 import { buildMechanicUpdate } from "./mechanic-form";
@@ -21,11 +22,19 @@ interface Props {
 /**
  * Panel lateral con el detalle del mecánico seleccionado: contacto, áreas,
  * flag generalista, activar/desactivar y reset de contraseña.
+ *
+ * Cuando la fila es el propio perfil de ejecutante del admin, el panel cambia de tono:
+ * desactivar deja de ser "dar de baja a un empleado" y pasa a ser "dejar de trabajar",
+ * y se esconde el reset de contraseña — apunta al applicationUserId, que en esta fila
+ * es el del propio admin, así que se estaría reseteando su propia clave de acceso.
  */
 export function MechanicDetailPanel({ mechanic, onClose }: Props) {
   const [showToggle, setShowToggle]       = useState(false);
   const [showAreasEdit, setShowAreasEdit] = useState(false);
   const updateMechanic = useUpdateMechanic();
+
+  const myUserId = useAuthStore((s) => s.userId);
+  const isSelf   = !!myUserId && mechanic.applicationUserId === myUserId;
 
   function handleToggleActive() {
     updateMechanic.mutate(
@@ -72,6 +81,12 @@ export function MechanicDetailPanel({ mechanic, onClose }: Props) {
 
         <div className="mt-3 flex flex-wrap items-center gap-1.5">
           <ActiveBadge isActive={mechanic.isActive} />
+          {isSelf && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-[#fea520]/15 border border-[#fea520]/40 text-[#865300]">
+              <HardHat className="w-3 h-3" />
+              Sos vos
+            </span>
+          )}
           {mechanic.isGeneralist && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-[#fea520]/15 border border-[#fea520]/40 text-[#865300]">
               <Layers className="w-3 h-3" />
@@ -164,8 +179,22 @@ export function MechanicDetailPanel({ mechanic, onClose }: Props) {
         {showToggle ? (
           <div className="space-y-2">
             <p className="text-xs text-[#44474c]">
-              ¿Confirmar {mechanic.isActive ? "desactivar" : "activar"} a{" "}
-              <strong>{mechanic.firstName}</strong>?
+              {isSelf ? (
+                mechanic.isActive ? (
+                  <>
+                    ¿Dejar de trabajar como mecánico? Vas a perder los botones para tomar y
+                    hacer trabajos. Tu acceso de admin no cambia, y podés volver a activarlo
+                    cuando quieras.
+                  </>
+                ) : (
+                  <>¿Volver a trabajar como mecánico?</>
+                )
+              ) : (
+                <>
+                  ¿Confirmar {mechanic.isActive ? "desactivar" : "activar"} a{" "}
+                  <strong>{mechanic.firstName}</strong>?
+                </>
+              )}
             </p>
             <div className="flex gap-2">
               <button
@@ -199,29 +228,34 @@ export function MechanicDetailPanel({ mechanic, onClose }: Props) {
             {mechanic.isActive ? (
               <>
                 <EyeOff className="w-3.5 h-3.5" />
-                Desactivar mecánico
+                {isSelf ? "Dejar de trabajar como mecánico" : "Desactivar mecánico"}
               </>
             ) : (
               <>
                 <Eye className="w-3.5 h-3.5" />
-                Reactivar mecánico
+                {isSelf ? "Volver a trabajar como mecánico" : "Reactivar mecánico"}
               </>
             )}
           </button>
         )}
       </div>
 
-      {/* Reset de contraseña */}
-      <div className="border-t border-[#c4c6cd]/60 px-5 py-4">
-        <ResetPasswordButton
-          applicationUserId={mechanic.applicationUserId}
-          userDisplayName={`${mechanic.firstName} ${mechanic.lastName}`}
-          variant="compact"
-          userEmail={mechanic.email}
-          phone={mechanic.phone}
-          firstName={mechanic.firstName}
-        />
-      </div>
+      {/* Reset de contraseña — nunca sobre uno mismo: este botón apunta al
+          applicationUserId, así que en la fila propia le volaría la clave con la
+          que el admin entra al sistema. Para su propia clave está Configuración. */}
+      {!isSelf && (
+        <div className="border-t border-[#c4c6cd]/60 px-5 py-4">
+          <AccessActions
+            applicationUserId={mechanic.applicationUserId}
+            userDisplayName={`${mechanic.firstName} ${mechanic.lastName}`}
+            firstName={mechanic.firstName}
+            email={mechanic.email}
+            phone={mechanic.phone}
+            audience="staff"
+            variant="compact"
+          />
+        </div>
+      )}
     </DetailSheet>
     </>
   );
