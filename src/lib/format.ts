@@ -51,6 +51,23 @@ export function formatEstimatedDuration(minutes: number): string {
   return remMin === 0 ? hoursStr : `${hoursStr} ${remMin} min`;
 }
 
+/**
+ * Etiqueta de la orden tal como la ve el cliente: "#1042".
+ *
+ * Es el ÚNICO lugar donde se decide cómo se muestra una orden — si mañana el formato
+ * cambia (prefijo, año), se cambia acá y no en las seis pantallas que lo usan.
+ *
+ * El `id` es el fallback para respuestas cacheadas de antes de que existiera `number`.
+ * No es el caso normal: un refresh de la página lo resuelve solo.
+ */
+export function formatOrderNumber(
+  order: { number?: number; id?: string } | null | undefined
+): string {
+  if (!order) return "—";
+  if (typeof order.number === "number" && order.number > 0) return `#${order.number}`;
+  return order.id ? `#${order.id.slice(0, 8).toUpperCase()}` : "—";
+}
+
 /** Minutos por jornada laboral. 1 día = 8 hs = 480 min. */
 export const MINUTES_PER_WORKDAY = 480;
 

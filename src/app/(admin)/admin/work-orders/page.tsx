@@ -12,7 +12,7 @@ import { Pagination } from "@/components/shared/Pagination";
 import { SearchInput } from "@/components/shared/SearchInput";
 import { StatusBadge } from "@/components/work-orders/StatusBadge";
 import { WorkOrderStatus, WorkOrderStatusConfig } from "@/lib/enums";
-import { formatCurrency, formatDate } from "@/lib/format";
+import { formatCurrency, formatDate, formatOrderNumber } from "@/lib/format";
 import { useWorkOrders } from "@/hooks/useWorkOrders";
 import { WorkOrdersParams } from "@/services/work-orders.service";
 import { WorkOrder } from "@/types/api.types";
@@ -164,7 +164,7 @@ export default function WorkOrdersPage() {
 
         {/* Búsqueda — full width en mobile, fija en desktop */}
         <SearchInput
-          placeholder="Buscar patente o nombre..."
+          placeholder="Buscar N° de orden, patente o nombre..."
           onChange={handleSearch}
           className="w-full sm:w-56"
         />
@@ -217,9 +217,14 @@ export default function WorkOrdersPage() {
                 >
                   {/* Vehículo */}
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-[#041627] truncate">
-                      {order.vehicleBrand} {order.vehicleModel}
-                    </p>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-xs font-mono font-bold text-[#44474c]/70 shrink-0">
+                        {formatOrderNumber(order)}
+                      </span>
+                      <p className="text-sm font-semibold text-[#041627] truncate">
+                        {order.vehicleBrand} {order.vehicleModel}
+                      </p>
+                    </div>
                     <span className="inline-flex items-center gap-1 text-xs font-mono text-[#44474c]">
                       <Tag className="w-3 h-3" />
                       {order.vehicleLicensePlate}
@@ -315,9 +320,14 @@ function WorkOrderMobileCard({ order }: { order: WorkOrder }) {
       {/* Vehículo + estado */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-[#041627] truncate">
-            {order.vehicleBrand} {order.vehicleModel}
-          </p>
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-xs font-mono font-bold text-[#44474c]/70 shrink-0">
+              {formatOrderNumber(order)}
+            </span>
+            <p className="text-sm font-semibold text-[#041627] truncate">
+              {order.vehicleBrand} {order.vehicleModel}
+            </p>
+          </div>
           <span className="inline-flex items-center gap-1 text-xs font-mono text-[#44474c] mt-0.5">
             <Tag className="w-3 h-3 shrink-0" />
             {order.vehicleLicensePlate}

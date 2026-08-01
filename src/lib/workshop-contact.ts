@@ -57,8 +57,7 @@ export function emailUrl(subject?: string): string | null {
  * Arma un mensaje pre-llenado de WhatsApp para consultar sobre una orden
  * específica. El admin recibe contexto del cliente sin tener que preguntar.
  */
-export function buildOrderInquiryMessage(orderId: string, vehicleLabel?: string): string {
-  const orderShort = orderId.slice(0, 8).toUpperCase();
+export function buildOrderInquiryMessage(orderLabel: string, vehicleLabel?: string): string {
   const vehiclePart = vehicleLabel ? ` (${vehicleLabel})` : "";
-  return `Hola${workshop.name ? ` ${workshop.name}` : ""}, quería consultar sobre mi orden #${orderShort}${vehiclePart}.`;
+  return `Hola${workshop.name ? ` ${workshop.name}` : ""}, quería consultar sobre mi orden ${orderLabel}${vehiclePart}.`;
 }

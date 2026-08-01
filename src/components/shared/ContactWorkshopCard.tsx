@@ -13,10 +13,12 @@ import {
 interface ContactWorkshopCardProps {
   /**
    * Si se pasa, el mensaje pre-llenado de WhatsApp menciona la orden.
-   * Ej: `{ orderId: "abc-123", vehicleLabel: "Toyota Corolla" }`.
+   * `orderLabel` viene ya formateado con formatOrderNumber() — el taller tiene que leer
+   * "#1042" y poder buscarlo, no un pedazo de Guid.
+   * Ej: `{ orderLabel: "#1042", vehicleLabel: "Toyota Corolla" }`.
    */
   orderContext?: {
-    orderId: string;
+    orderLabel: string;
     vehicleLabel?: string;
   };
   /** Título visible. Default: "¿Necesitás ayuda?" */
@@ -40,11 +42,11 @@ export function ContactWorkshopCard({
   if (!workshop.hasAnyChannel) return null;
 
   const message = orderContext
-    ? buildOrderInquiryMessage(orderContext.orderId, orderContext.vehicleLabel)
+    ? buildOrderInquiryMessage(orderContext.orderLabel, orderContext.vehicleLabel)
     : `Hola${workshop.name ? ` ${workshop.name}` : ""}, quería hacer una consulta.`;
 
   const subject = orderContext
-    ? `Consulta sobre orden #${orderContext.orderId.slice(0, 8).toUpperCase()}`
+    ? `Consulta sobre orden ${orderContext.orderLabel}`
     : "Consulta desde la app";
 
   const waLink   = whatsappUrl(message);

@@ -12,7 +12,7 @@ import { CustomerInspectionFindingsCard } from "@/components/work-orders/Custome
 import { OrderStatusStepper } from "@/components/customer-orders/OrderStatusStepper";
 import { StatusBadge } from "@/components/work-orders/StatusBadge";
 import { WorkOrderStatus, WorkOrderStatusConfig, getWorkOrderStatusConfig } from "@/lib/enums";
-import { formatCurrency, formatDate, formatDateTime, formatEstimatedDuration } from "@/lib/format";
+import { formatCurrency, formatDate, formatDateTime, formatEstimatedDuration, formatOrderNumber } from "@/lib/format";
 import { useWorkOrder, useApproveAsCustomer } from "@/hooks/useWorkOrders";
 import { workOrdersService } from "@/services/work-orders.service";
 import { WorkOrderService, WorkOrderTimelineEntry } from "@/types/api.types";
@@ -171,7 +171,7 @@ export default function MyOrderDetailPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `Presupuesto-${id.slice(0, 8).toUpperCase()}.pdf`;
+      a.download = `Presupuesto-${order?.number ?? id.slice(0, 8).toUpperCase()}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
     } catch {
@@ -243,7 +243,7 @@ export default function MyOrderDetailPage() {
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <span className="inline-block bg-[#041627]/5 text-[#041627] text-[10px] font-extrabold uppercase tracking-widest px-2 py-0.5 rounded font-mono">
-                Orden #{order.id.slice(0, 8).toUpperCase()}
+                Orden {formatOrderNumber(order)}
               </span>
               <h1 className="text-base font-black text-[#041627] mt-1.5 leading-tight truncate">{vehicleLabel}</h1>
               {order.vehicleLicensePlate && (
@@ -467,7 +467,7 @@ export default function MyOrderDetailPage() {
 
       {/* ── Contacto con el taller ──────────────────────────────────────────── */}
       <ContactWorkshopCard
-        orderContext={{ orderId: order.id, vehicleLabel }}
+        orderContext={{ orderLabel: formatOrderNumber(order), vehicleLabel }}
         title="¿Alguna duda sobre tu presupuesto?"
         subtitle="Contactanos por WhatsApp o llamada directa. Estamos para asesorarte."
       />

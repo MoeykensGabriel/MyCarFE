@@ -21,7 +21,7 @@ import { TopServicesCard } from "@/components/dashboard/TopServicesCard";
 import { QuickActionsCard } from "@/components/dashboard/QuickActionsCard";
 import { VehiclesToPickupCard } from "@/components/dashboard/VehiclesToPickupCard";
 import { useDashboardStats } from "@/hooks/useDashboard";
-import { formatCurrency, formatDate } from "@/lib/format";
+import { formatCurrency, formatDate, formatOrderNumber } from "@/lib/format";
 import { WorkOrderStatus } from "@/lib/enums";
 import { DashboardOrdersByStatus } from "@/types/api.types";
 
@@ -260,7 +260,7 @@ export default function DashboardPage() {
                         className="flex items-center gap-4 px-5 py-3 hover:bg-[#eefcfd] transition-colors group"
                       >
                         <span className="text-xs font-mono font-semibold text-[#44474c]/70 shrink-0 w-16">
-                          #{order.id.slice(0, 6).toUpperCase()}
+                          {formatOrderNumber(order)}
                         </span>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-[#041627] truncate">{vehicleLabel}</p>

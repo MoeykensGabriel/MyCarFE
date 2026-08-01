@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { BackButton } from "@/components/shared/BackButton";
 import { Button } from "@/components/ui/button";
 import { WorkOrder } from "@/types/api.types";
+import { formatOrderNumber } from "@/lib/format";
 import { WorkOrderStatus } from "@/lib/enums";
 import { workOrdersService } from "@/services/work-orders.service";
 import { useReviseQuote } from "@/hooks/useWorkOrders";
@@ -49,7 +50,7 @@ export function WorkOrderDetailHeader({ order, status, isFinalState, onChangeSta
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `presupuesto-${order.id}.pdf`;
+      a.download = `presupuesto-${order.number ?? order.id}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
     } catch {
@@ -73,7 +74,7 @@ export function WorkOrderDetailHeader({ order, status, isFinalState, onChangeSta
               <div>
                 <div className="flex flex-wrap items-center gap-3">
                   <h1 className="text-xl md:text-2xl font-black text-slate-900 leading-none">
-                    Orden #{order.id.slice(0, 8).toUpperCase()}
+                    Orden {formatOrderNumber(order)}
                   </h1>
                   <StatusBadge status={status} />
                 </div>

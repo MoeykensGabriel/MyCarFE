@@ -606,6 +606,12 @@ export interface WorkOrderTimelineEntry {
 
 export interface WorkOrder {
   id: string;
+  /**
+   * Número visible de la orden ("Orden #1042"). Es lo único que se le muestra al cliente:
+   * el `id` es un Guid y sirve para rutas y relaciones, no para leerlo.
+   * Opcional porque las respuestas cacheadas de antes de la migración no lo traen.
+   */
+  number?: number;
   vehicleId: string;
   // Campos enriquecidos presentes en la lista (pueden faltar en el detalle)
   vehicleBrand?: string;
