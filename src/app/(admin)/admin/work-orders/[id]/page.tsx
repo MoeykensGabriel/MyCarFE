@@ -12,6 +12,7 @@ import { BeforePhotosUploader } from "@/components/work-orders/BeforePhotosUploa
 import { AfterPhotosUploader } from "@/components/work-orders/AfterPhotosUploader";
 import { ChangeStatusModal } from "@/components/work-orders/ChangeStatusModal";
 import { InspectionPanel } from "@/components/work-orders/InspectionPanel";
+import { PendingInspectionsCard } from "@/components/work-orders/PendingInspectionsCard";
 import { InspectionFindingsCard } from "@/components/work-orders/InspectionFindingsCard";
 import { InspectionProposalsCard } from "@/components/work-orders/InspectionProposalsCard";
 import { WorkOrderDetailHeader } from "@/components/work-orders/WorkOrderDetailHeader";
@@ -57,6 +58,9 @@ export default function WorkOrderDetailPage() {
   // Post-aprobación: se pueden cargar ADICIONALES (nacen Pending, requieren OK del cliente)
   const isPostApproval =
     status === WorkOrderStatus.Approved || status === WorkOrderStatus.InProgress;
+  // Ventana del canal de inspección tardía: un área postergada todavía se puede revisar,
+  // y sus hallazgos tienen cómo entrar al presupuesto. Espeja WorkOrder.AcceptsLateInspection.
+  const acceptsLateInspection = isDiagnosing || isPostApproval;
 
   return (
     <div className="space-y-6">
@@ -78,9 +82,15 @@ export default function WorkOrderDetailPage() {
           {/* Panel de inspección colectiva (solo cuando aplica) */}
           {isUnderInspection && <InspectionPanel order={order} />}
 
-          {/* Hallazgos + propuestas de los mecánicos — contexto para armar el presupuesto */}
-          {isDiagnosing && <InspectionFindingsCard workOrderId={order.id} />}
-          {isDiagnosing && <InspectionProposalsCard workOrderId={order.id} />}
+          {/* Áreas que quedaron postergadas y todavía se pueden revisar. Se muestra con la
+              inspección ya cerrada: el auto sigue en el taller y el especialista se liberó. */}
+          {acceptsLateInspection && <PendingInspectionsCard order={order} />}
+
+          {/* Hallazgos + propuestas de los mecánicos — contexto para armar el presupuesto.
+              Siguen visibles después de aprobar: una inspección tardía puede sumar propuestas
+              nuevas, y sin estas cards no habría cómo volcarlas al presupuesto. */}
+          {acceptsLateInspection && <InspectionFindingsCard workOrderId={order.id} />}
+          {acceptsLateInspection && <InspectionProposalsCard workOrderId={order.id} />}
 
           {/* Presupuesto: una card con servicios + repuestos + total (editable en Diagnosing) */}
           {((order.services?.length ?? 0) > 0 || (order.parts?.length ?? 0) > 0 || isDiagnosing) && (

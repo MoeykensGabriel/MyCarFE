@@ -14,6 +14,8 @@ export const inspectionKeys = {
   byWorkOrder: (workOrderId: string) =>
     [...inspectionKeys.all, "by-work-order", workOrderId] as const,
   myPending: () => [...inspectionKeys.all, "my-pending"] as const,
+  /** Prefijo de la deuda de áreas: invalida la de TODOS los vehículos de una. */
+  skippedAll: () => [...inspectionKeys.all, "skipped-by-vehicle"] as const,
   skippedByVehicle: (vehicleId: string) =>
     [...inspectionKeys.all, "skipped-by-vehicle", vehicleId] as const,
 };
@@ -46,6 +48,8 @@ export function useCreateInspectionReport() {
     onSuccess: (report) => {
       qc.invalidateQueries({ queryKey: inspectionKeys.myPending() });
       qc.invalidateQueries({ queryKey: inspectionKeys.byWorkOrder(report.workOrderId) });
+      // El reporte puede estar saldando un área que quedó postergada.
+      qc.invalidateQueries({ queryKey: inspectionKeys.skippedAll() });
       toast.success("Reporte enviado");
     },
     onError: () => toast.error("No se pudo enviar el reporte"),
@@ -60,6 +64,7 @@ export function useUpdateInspectionReport() {
     onSuccess: (report) => {
       qc.invalidateQueries({ queryKey: inspectionKeys.byWorkOrder(report.workOrderId) });
       qc.invalidateQueries({ queryKey: inspectionKeys.myPending() });
+      qc.invalidateQueries({ queryKey: inspectionKeys.skippedAll() });
       toast.success("Reporte actualizado");
     },
     onError: () => toast.error("No se pudo actualizar el reporte"),
@@ -75,6 +80,7 @@ export function useMarkAreaNoFindings(workOrderId: string) {
       inspectionsService.markAreaNoFindings(workOrderId, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: inspectionKeys.byWorkOrder(workOrderId) });
+      qc.invalidateQueries({ queryKey: inspectionKeys.skippedAll() });
       toast.success("Área marcada sin novedades");
     },
     onError: () => toast.error("No se pudo marcar el área"),
@@ -88,6 +94,7 @@ export function useMarkAreaSkipped(workOrderId: string) {
       inspectionsService.markAreaSkipped(workOrderId, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: inspectionKeys.byWorkOrder(workOrderId) });
+      qc.invalidateQueries({ queryKey: inspectionKeys.skippedAll() });
       toast.success("Área postergada — queda registrada para revisar en la próxima visita");
     },
     onError: () => toast.error("No se pudo postergar el área"),
@@ -104,6 +111,7 @@ export function useReopenArea(workOrderId: string) {
     mutationFn: (areaId: string) => inspectionsService.reopenArea(workOrderId, areaId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: inspectionKeys.byWorkOrder(workOrderId) });
+      qc.invalidateQueries({ queryKey: inspectionKeys.skippedAll() });
       toast.success("Área reabierta — quedó otra vez pendiente");
     },
     onError: () => toast.error("No se pudo deshacer"),
