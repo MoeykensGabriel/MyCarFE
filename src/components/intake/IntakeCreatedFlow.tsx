@@ -6,6 +6,7 @@ import { CheckCircle2, Printer, Plus, AlertCircle, Camera, Trash2, RefreshCw, Up
 import { toast } from "sonner";
 import { WorkOrder } from "@/types/api.types";
 import { workOrdersService } from "@/services/work-orders.service";
+import { formatOrderNumber } from "@/lib/format";
 import { PhotoType } from "@/lib/enums";
 import { IntakeCredentials, clearIntakeCredentials } from "@/lib/intake-credentials";
 import { SendCredentialsWhatsappButton } from "@/components/shared/SendCredentialsWhatsappButton";
@@ -282,7 +283,7 @@ export function IntakeCreatedFlow({ order, loading, error, role, credentials }: 
 
           {order && (
             <div className="bg-[#f8f9fa] rounded-xl p-4 border border-[#c4c6cd]/50 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
-              <Row label="ID de orden"      value={order.id} mono />
+              <Row label="N° de orden"      value={formatOrderNumber(order)} mono />
               <Row label="Vehículo"         value={[order.vehicleBrand, order.vehicleModel].filter(Boolean).join(" ") || "—"} />
               <Row label="Patente"          value={order.vehicleLicensePlate ?? "—"} />
               <Row label="Propietario"      value={order.ownerName ?? "—"} />
