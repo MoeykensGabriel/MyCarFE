@@ -272,6 +272,11 @@ export const ValidTransitions: Record<WorkOrderStatus, WorkOrderStatus[]> = {
     WorkOrderStatus.Cancelled,
   ],
   [WorkOrderStatus.Diagnosing]: [
+    // "Cerrar sin presupuesto": el cliente solo quería inspección, o no había nada que
+    // cotizar. Solo válido si no hay servicios/repuestos cargados — el backend lo exige
+    // (WorkOrder.ChangeStatus); acá el ChangeStatusModal no filtra por eso, así que un
+    // intento inválido vuelve con el mensaje del servidor.
+    WorkOrderStatus.Completed,
     WorkOrderStatus.Cancelled,
   ],
   [WorkOrderStatus.AwaitingApproval]: [

@@ -32,7 +32,7 @@ export const STATUS_BANNERS: Partial<Record<WorkOrderStatus, {
     iconColor: "text-amber-700",
     pulse: true,
     title: "En diagnóstico — armando presupuesto",
-    message: "Cargá los servicios y repuestos en base a los hallazgos. Cuando el presupuesto esté listo, enviáselo al cliente.",
+    message: "Cargá los servicios y repuestos en base a los hallazgos. Si no hay nada que cotizar, cerrá la orden sin presupuesto desde \"Cambiar estado\".",
   },
   [WorkOrderStatus.AwaitingApproval]: {
     color: "bg-purple-50 border-purple-200",
@@ -62,8 +62,12 @@ export const STATUS_BANNERS: Partial<Record<WorkOrderStatus, {
     color: "bg-green-50 border-green-200",
     iconColor: "text-green-700",
     pulse: true,
-    title: "¡Trabajo finalizado!",
-    message: "Todos los servicios fueron completados. Registrá la entrega cuando el cliente retire el vehículo.",
+    title: "¡Listo!",
+    // Genérico a propósito: llega acá tanto la orden con servicios ya completados como
+    // la que se cerró sin presupuesto (inspección sin hallazgos, o el cliente solo
+    // quería eso). "Todos los servicios fueron completados" sonaba a falso en el
+    // segundo caso, que hoy puede tener cero servicios.
+    message: "La orden está lista. Registrá la entrega cuando el cliente retire el vehículo.",
     actionLabel: "Registrar entrega al cliente",
   },
 };
