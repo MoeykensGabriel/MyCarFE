@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useDebouncedCallback } from "use-debounce";
-import { ClipboardList, ChevronRight, Tag, User } from "lucide-react";
+import { AlertTriangle, ClipboardList, ChevronRight, Tag, User } from "lucide-react";
 
 import { PageHeader } from "@/components/shared/PageHeader";
 import { BackButton } from "@/components/shared/BackButton";
@@ -224,6 +224,7 @@ export default function WorkOrdersPage() {
                       <p className="text-sm font-semibold text-[#041627] truncate">
                         {order.vehicleBrand} {order.vehicleModel}
                       </p>
+                      {order.hasLateFindings && <LateFindingBadge />}
                     </div>
                     <span className="inline-flex items-center gap-1 text-xs font-mono text-[#44474c]">
                       <Tag className="w-3 h-3" />
@@ -306,6 +307,26 @@ export default function WorkOrdersPage() {
   );
 }
 
+/**
+ * Aviso de que llegó un hallazgo con la inspección ya cerrada.
+ *
+ * Va en el LISTADO y no solo en la ficha porque el problema es justamente que la oficina
+ * no se entera: el área desaparece de "sin inspeccionar" y el hallazgo aparece en otra card,
+ * en silencio. Si la orden ya está aprobada, ese hallazgo puede necesitar que el cliente
+ * autorice un adicional.
+ */
+function LateFindingBadge() {
+  return (
+    <span
+      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-amber-100 border border-amber-300 text-amber-800 shrink-0"
+      title="Se inspeccionó un área que había quedado postergada y apareció un hallazgo"
+    >
+      <AlertTriangle className="w-3 h-3" />
+      Novedad
+    </span>
+  );
+}
+
 // ─── Card de orden para mobile / tablet ───────────────────────────────────────
 // Misma información que una fila de la tabla, reorganizada para pantalla angosta:
 // la tabla de 6 columnas no entra en un celular, así que abajo de lg mostramos
@@ -327,6 +348,7 @@ function WorkOrderMobileCard({ order }: { order: WorkOrder }) {
             <p className="text-sm font-semibold text-[#041627] truncate">
               {order.vehicleBrand} {order.vehicleModel}
             </p>
+            {order.hasLateFindings && <LateFindingBadge />}
           </div>
           <span className="inline-flex items-center gap-1 text-xs font-mono text-[#44474c] mt-0.5">
             <Tag className="w-3 h-3 shrink-0" />

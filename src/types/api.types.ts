@@ -337,6 +337,12 @@ export interface InspectionReport {
   isSkipped: boolean;
   /** Motivo de la omisión (obligatorio cuando isSkipped=true) */
   skipReason?: string | null;
+  /**
+   * Se cargó por el canal tardío: el área estaba postergada y se revisó con la inspección
+   * ya cerrada. Un hallazgo así puede cambiar un presupuesto en armado, o necesitar que el
+   * cliente autorice un adicional.
+   */
+  isLate?: boolean;
   createdAt: string;
   updatedAt: string;
   photos: InspectionReportPhoto[];
@@ -618,6 +624,12 @@ export interface WorkOrder {
    * Opcional porque las respuestas cacheadas de antes de la migración no lo traen.
    */
   number?: number;
+  /**
+   * Llegó un hallazgo con la inspección ya cerrada. Solo viene en el LISTADO de órdenes
+   * (el detalle no lo calcula): puede cambiar un presupuesto en armado, o obligar a
+   * pedirle al cliente que autorice un adicional.
+   */
+  hasLateFindings?: boolean;
   vehicleId: string;
   // Campos enriquecidos presentes en la lista (pueden faltar en el detalle)
   vehicleBrand?: string;

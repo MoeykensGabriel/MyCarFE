@@ -138,6 +138,13 @@ function FindingRow({
               <AlertTriangle className="w-2.5 h-2.5" />
               {finding.areaName}
             </span>
+            {/* Llegó después de cerrada la inspección: puede cambiar un presupuesto ya
+                armado o, con la orden aprobada, necesitar el OK del cliente. */}
+            {finding.isLate && (
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-300">
+                Novedad — llegó después del cierre
+              </span>
+            )}
             {finding.mechanicFullName && (
               <span className="text-xs text-gray-600 inline-flex items-center gap-1">
                 <User className="w-3 h-3" />
