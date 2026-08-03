@@ -461,6 +461,12 @@ export interface PendingInspection {
   vehicleModel: string;
   vehicleLicensePlate: string;
   pendingAreas: PendingInspectionArea[];
+  /**
+   * La inspección inicial de esta orden ya cerró y estas áreas quedaron postergadas.
+   * No es lo mismo para el mecánico que "te toca inspeccionar este auto": acá el auto
+   * ya está en trabajo y su área fue la que quedó esperando a que se liberara.
+   */
+  isLateInspection?: boolean;
 }
 
 // ─── Mechanic ─────────────────────────────────────────────────────────────────

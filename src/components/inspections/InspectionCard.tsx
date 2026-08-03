@@ -1,6 +1,6 @@
 "use client";
 
-import { ClipboardCheck, Calendar } from "lucide-react";
+import { ClipboardCheck, Calendar, Clock } from "lucide-react";
 
 import { formatDateTime } from "@/lib/format";
 import { PendingInspection, PendingInspectionArea } from "@/types/api.types";
@@ -15,7 +15,24 @@ export function InspectionCard({ inspection, onPickArea }: Props) {
   const initials = `${inspection.vehicleBrand?.charAt(0) || ""}${inspection.vehicleModel?.charAt(0) || ""}`.toUpperCase();
 
   return (
-    <article className="bg-white rounded-2xl border border-[#041627]/10 p-5 shadow-sm hover:border-[#fea520]/30 hover:shadow-md transition-all duration-300 relative overflow-hidden">
+    <article
+      className={`bg-white rounded-2xl border p-5 shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden ${
+        inspection.isLateInspection
+          ? "border-amber-300 hover:border-amber-400"
+          : "border-[#041627]/10 hover:border-[#fea520]/30"
+      }`}
+    >
+      {/* El auto ya está en trabajo: su área quedó postergada y lo estaban esperando.
+          Se marca distinto porque la urgencia es otra — no es un auto que recién entró. */}
+      {inspection.isLateInspection && (
+        <div className="flex items-center gap-1.5 mb-3 -mt-1">
+          <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+          <span className="text-[10px] font-extrabold uppercase tracking-widest text-amber-700">
+            Quedó postergada — el auto sigue en el taller
+          </span>
+        </div>
+      )}
+
       {/* Vehículo Info */}
       <div className="flex items-center gap-3.5 mb-4">
         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#041627] to-[#0a2540] border border-[#fea520]/20 flex items-center justify-center shrink-0 shadow-sm">
@@ -57,7 +74,9 @@ export function InspectionCard({ inspection, onPickArea }: Props) {
       {/* Áreas pendientes */}
       <div className="space-y-2.5 pt-1.5 border-t border-[#041627]/5">
         <p className="text-[10px] font-extrabold uppercase tracking-widest text-[#44474c]/75">
-          Áreas pendientes de tu reporte
+          {inspection.isLateInspection
+            ? "Quedó pendiente de tu reporte"
+            : "Áreas pendientes de tu reporte"}
         </p>
         <div className="flex flex-wrap gap-2">
           {inspection.pendingAreas.map((area) => (
