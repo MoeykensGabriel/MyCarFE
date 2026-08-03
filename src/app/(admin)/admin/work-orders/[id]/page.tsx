@@ -89,7 +89,7 @@ export default function WorkOrderDetailPage() {
           {/* Hallazgos + propuestas de los mecánicos — contexto para armar el presupuesto.
               Siguen visibles después de aprobar: una inspección tardía puede sumar propuestas
               nuevas, y sin estas cards no habría cómo volcarlas al presupuesto. */}
-          {acceptsLateInspection && <InspectionFindingsCard workOrderId={order.id} />}
+          {acceptsLateInspection && <InspectionFindingsCard order={order} />}
           {acceptsLateInspection && <InspectionProposalsCard workOrderId={order.id} />}
 
           {/* Presupuesto: una card con servicios + repuestos + total (editable en Diagnosing) */}

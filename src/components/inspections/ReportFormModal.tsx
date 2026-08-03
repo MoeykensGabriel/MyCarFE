@@ -68,7 +68,9 @@ function splitDuration(minutes?: number | null): { estimatedDays: number; estima
  * cubiertas, batería, aceite. Las fotos se suben después de crear el reporte.
  *
  * Con `existingReport` funciona como editor: el mecánico corrige lo suyo y el admin
- * corrige el de cualquiera, siempre que la orden siga en fase de inspección.
+ * corrige el de cualquiera. Se puede editar mientras la orden siga en inspección, y también
+ * después si el reporte es TARDÍO (el área estaba postergada y se revisó con la inspección
+ * ya cerrada) — ver UpdateInspectionReportCommandHandler.
  */
 export function ReportFormModal({ inspection, area, existingReport, onClose }: Props) {
   const isEditing = !!existingReport;

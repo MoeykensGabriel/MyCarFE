@@ -1,18 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, ClipboardCheck, Plus, Package, Wrench, User } from "lucide-react";
+import { AlertTriangle, ClipboardCheck, Pencil, Plus, Package, Wrench, User } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { ReportFormModal } from "@/components/inspections/ReportFormModal";
 import { formatDateTime } from "@/lib/format";
+import { useAreas } from "@/hooks/useAreas";
 import { useInspectionReportsByWorkOrder } from "@/hooks/useInspections";
-import { InspectionReport } from "@/types/api.types";
+import { InspectionReport, PendingInspection, WorkOrder } from "@/types/api.types";
 import { AddServiceFromFindingDialog } from "./AddServiceFromFindingDialog";
 import { AddPartFromFindingDialog } from "./AddPartFromFindingDialog";
 
 interface Props {
-  workOrderId: string;
+  /** La orden entera: el editor de un hallazgo tardío necesita su contexto (vehículo, km). */
+  order: WorkOrder;
 }
 
 /**
@@ -24,11 +27,17 @@ interface Props {
  * Si no hubo hallazgos (todas las áreas marcadas sin problema), muestra un
  * mensaje informativo en vez de la card vacía.
  */
-export function InspectionFindingsCard({ workOrderId }: Props) {
+export function InspectionFindingsCard({ order }: Props) {
+  const workOrderId = order.id;
   const { data: reports, isLoading } = useInspectionReportsByWorkOrder(workOrderId);
+  const { data: areas }              = useAreas(false);
 
   const [serviceFinding, setServiceFinding] = useState<InspectionReport | null>(null);
   const [partFinding, setPartFinding]       = useState<InspectionReport | null>(null);
+  // Corrección de un hallazgo tardío: se cargó con el auto en el elevador y puede tener
+  // errores. Solo los tardíos — los de la inspección inicial fueron el insumo del
+  // presupuesto y el backend no deja editarlos con la orden avanzada.
+  const [editing, setEditing] = useState<InspectionReport | null>(null);
 
   if (isLoading) {
     return (
@@ -92,6 +101,7 @@ export function InspectionFindingsCard({ workOrderId }: Props) {
               finding={f}
               onCreateService={() => setServiceFinding(f)}
               onCreatePart={() => setPartFinding(f)}
+              onEdit={f.isLate ? () => setEditing(f) : undefined}
             />
           ))}
         </CardContent>
@@ -114,8 +124,44 @@ export function InspectionFindingsCard({ workOrderId }: Props) {
           onClose={() => setPartFinding(null)}
         />
       )}
+
+      {/* Corrección del hallazgo tardío — mismo formulario del mecánico, en modo edición. */}
+      {editing && (() => {
+        const area = (areas ?? []).find((a) => a.id === editing.areaId);
+        if (!area) return null;
+
+        return (
+          <ReportFormModal
+            inspection={buildInspectionContext(order)}
+            area={{
+              areaId:        area.id,
+              areaName:      area.name,
+              isTireArea:    area.isTireArea,
+              isBatteryArea: area.isBatteryArea,
+              isOilArea:     area.isOilArea,
+            }}
+            existingReport={editing}
+            onClose={() => setEditing(null)}
+          />
+        );
+      })()}
     </>
   );
+}
+
+/** Igual que en InspectionPanel: adapta la orden al contrato que espera ReportFormModal. */
+function buildInspectionContext(order: WorkOrder): PendingInspection {
+  return {
+    workOrderId:         order.id,
+    workOrderCreatedAt:  order.createdAt,
+    serviceReason:       order.serviceReason,
+    mileageAtEntry:      order.mileageAtEntry ?? 0,
+    vehicleId:           order.vehicleId,
+    vehicleBrand:        order.vehicleBrand ?? "",
+    vehicleModel:        order.vehicleModel ?? "",
+    vehicleLicensePlate: order.vehicleLicensePlate ?? "",
+    pendingAreas:        [],
+  };
 }
 
 // ─── Fila ─────────────────────────────────────────────────────────────────────
@@ -124,10 +170,13 @@ function FindingRow({
   finding,
   onCreateService,
   onCreatePart,
+  onEdit,
 }: {
   finding: InspectionReport;
   onCreateService: () => void;
   onCreatePart: () => void;
+  /** Solo viene para hallazgos tardíos: son los únicos que el backend deja corregir acá. */
+  onEdit?: () => void;
 }) {
   return (
     <div className="rounded-md border border-red-200 bg-red-50/40 px-3 py-2.5">
@@ -190,6 +239,17 @@ function FindingRow({
           <Plus className="w-3 h-3 -ml-0.5 mr-1" />
           Repuesto
         </Button>
+        {onEdit && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onEdit}
+            className="bg-white hover:bg-amber-50 hover:border-amber-300 hover:text-amber-700"
+            title="Corregir este hallazgo"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+          </Button>
+        )}
       </div>
     </div>
   );
