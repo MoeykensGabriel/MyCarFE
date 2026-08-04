@@ -82,10 +82,58 @@ export const STATUS_ICONS: Partial<Record<WorkOrderStatus, typeof Car>> = {
   [WorkOrderStatus.Completed]:        PackageCheck,
 };
 
+/**
+ * Overrides para las órdenes de SOLO INSPECCIÓN. Los banners de arriba están indexados solo
+ * por estado y para este tipo de orden dicen cosas falsas: en inspección prometen pasar a
+ * Diagnóstico (no pasa) y al completarse hablan de servicios terminados (no hubo ninguno).
+ *
+ * Solo se sobrescriben los dos estados por los que realmente pasa. Ojo con `actionLabel`:
+ * alimenta el botón del encabezado, y en inspección el cierre va por su botón propio.
+ */
+const INSPECTION_ONLY_BANNERS: Partial<Record<WorkOrderStatus, {
+  color: string;
+  iconColor: string;
+  pulse: boolean;
+  title: string;
+  message: string;
+  actionLabel?: string;
+}>> = {
+  [WorkOrderStatus.UnderInspection]: {
+    color: "bg-[#fea520]/10 border-[#fea520]/40",
+    iconColor: "text-[#865300]",
+    pulse: false,
+    title: "Solo inspección — revisando el vehículo",
+    message: "El cliente pidió saber qué tiene el vehículo. Cuando cierres la inspección la orden se completa: no se presupuesta ni se arregla.",
+  },
+  [WorkOrderStatus.Completed]: {
+    color: "bg-emerald-50 border-emerald-200",
+    iconColor: "text-emerald-700",
+    pulse: false,
+    title: "Inspección terminada",
+    message: "El resultado quedó registrado y el cliente puede verlo. Si acepta arreglar lo que se encontró, convertila en orden de trabajo.",
+  },
+};
+
+/**
+ * Resuelve el banner que corresponde a ESTA orden. Usarlo siempre en vez de indexar
+ * STATUS_BANNERS a mano: el encabezado saca de acá el label del botón de estado, y para
+ * una orden de solo inspección el label por defecto ("Pasar a Diagnóstico") es mentira.
+ */
+export function getStatusBanner(status: WorkOrderStatus, isInspectionOnly = false) {
+  return (isInspectionOnly ? INSPECTION_ONLY_BANNERS[status] : undefined)
+    ?? STATUS_BANNERS[status];
+}
+
 // ─── Banner contextual ────────────────────────────────────────────────────────
 
-export function StatusBanner({ status }: { status: WorkOrderStatus }) {
-  const banner = STATUS_BANNERS[status];
+export function StatusBanner({
+  status,
+  isInspectionOnly = false,
+}: {
+  status: WorkOrderStatus;
+  isInspectionOnly?: boolean;
+}) {
+  const banner = getStatusBanner(status, isInspectionOnly);
   const BannerIcon = STATUS_ICONS[status];
   if (!banner) return null;
 

@@ -3,10 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Info, AlertTriangle, ArrowRight } from "lucide-react";
+import { Info, AlertTriangle, ArrowRight, ClipboardCheck } from "lucide-react";
 import Link from "next/link";
 import { AxiosError } from "axios";
-import { DocumentType, DocumentTypeLabel } from "@/lib/enums";
+import { DocumentType, DocumentTypeLabel, WorkOrderPurpose } from "@/lib/enums";
 import { Customer, MaintenanceAlertItemInput, ProblemDetails } from "@/types/api.types";
 
 /** Saca el mensaje de error más útil de una respuesta del backend. */
@@ -155,6 +155,9 @@ export function StepConfirm({
           contactPersonName:  vehicleDraft.contactPersonName?.trim() || undefined,
           contactPersonPhone: vehicleDraft.contactPersonPhone?.trim() || undefined,
           serviceReason:      vehicleDraft.serviceReason?.trim() || undefined,
+          purpose:            vehicleDraft.isInspectionOnly
+            ? WorkOrderPurpose.InspectionOnly
+            : WorkOrderPurpose.Repair,
         }, skipAuthHeader);
       } catch (err) {
         if (redirectIfSessionExpired(err)) return;
@@ -289,6 +292,20 @@ export function StepConfirm({
           />
         </div>
       </div>
+
+      {/* Es lo que más cambia el resto de la visita, así que va destacado y arriba. */}
+      {vehicleDraft.isInspectionOnly && (
+        <div className="flex items-start gap-2.5 rounded-lg border border-[#fea520]/50 bg-[#fea520]/10 px-4 py-3">
+          <ClipboardCheck className="w-4 h-4 text-[#865300] shrink-0 mt-0.5" />
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-[#041627]">Solo inspección</p>
+            <p className="text-xs text-[#44474c] mt-0.5 leading-relaxed">
+              Se revisa el vehículo y se le entrega el resultado. No se presupuesta ni se
+              arregla — al cerrar la inspección la orden se completa.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Motivo de visita (obligatorio) */}
       {vehicleDraft.serviceReason?.trim() && (

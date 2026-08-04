@@ -9,9 +9,9 @@ import Link from "next/link";
 
 import { BackButton } from "@/components/shared/BackButton";
 import { StepVehicle } from "@/components/intake/StepVehicle";
-import { OpenOrderModal } from "@/components/shared/OpenOrderModal";
+import { OpenOrderModal, type OpenOrderData } from "@/components/shared/OpenOrderModal";
 import { useFleet } from "@/hooks/useFleets";
-import { DocumentType } from "@/lib/enums";
+import { DocumentType, WorkOrderPurpose } from "@/lib/enums";
 import { vehiclesService } from "@/services/vehicles.service";
 import { workOrdersService } from "@/services/work-orders.service";
 import { VehicleDraft } from "@/components/intake/types";
@@ -59,13 +59,8 @@ export default function AddVehicleToFleetPage() {
     customerNote,
     contactPersonName,
     contactPersonPhone,
-  }: {
-    mileageAtEntry: number;
-    serviceReason: string;
-    customerNote: string;
-    contactPersonName?: string;
-    contactPersonPhone?: string;
-  }) {
+    isInspectionOnly,
+  }: OpenOrderData) {
     if (!pendingOrderVehicle) return;
     try {
       const order = await workOrdersService.create({
@@ -75,6 +70,7 @@ export default function AddVehicleToFleetPage() {
         customerNote:      customerNote || undefined,
         contactPersonName: contactPersonName || undefined,
         contactPersonPhone: contactPersonPhone || undefined,
+        purpose: isInspectionOnly ? WorkOrderPurpose.InspectionOnly : WorkOrderPurpose.Repair,
       });
       toast.success("Vehículo registrado y orden abierta");
       router.push(`/admin/work-orders/${order.id}`);

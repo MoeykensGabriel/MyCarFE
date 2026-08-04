@@ -10,6 +10,11 @@ export type VehicleDraft  = Omit<CreateVehicleRequest, "customerId" | "fleetId">
   contactPersonPhone?: string;
   /** Motivo por el que el cliente trae el vehículo. Obligatorio en S3-14. */
   serviceReason:       string;
+  /**
+   * El cliente solo quiere saber qué tiene el vehículo: se inspecciona y se le entrega el
+   * resultado, sin presupuestar ni arreglar. Si después acepta, la orden se promueve.
+   */
+  isInspectionOnly?:   boolean;
 };
 
 export interface FleetAndContactDraft {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { BackButton } from "@/components/shared/BackButton";
 import { DocumentType } from "@/lib/enums";
 import { StepIndicator } from "@/components/intake/StepIndicator";
@@ -31,6 +32,9 @@ const STEP_TITLES = [
 export default function IntakePage() {
   const [mode, setMode] = useState<IntakeMode | null>(null);
   const [step, setStep] = useState(0);
+
+  // Atajo "Solo inspección" del menú: entra al ingreso ya sabiendo a qué viene el vehículo.
+  const soloInspeccion = useSearchParams().get("tipo") === "inspeccion";
 
   const [customerDraft,    setCustomerDraft]    = useState<CustomerDraft | undefined>();
   const [existingCustomer, setExistingCustomer] = useState<Customer | undefined>();
@@ -135,6 +139,7 @@ export default function IntakePage() {
                   customerDocumentType={ownerDocumentType}
                   customerDocumentNumber={ownerDocumentNumber}
                   defaultValues={vehicleDraft}
+                  defaultInspectionOnly={soloInspeccion}
                   onNext={(d) => { setVehicleDraft(d); setStep(3); }}
                   onBack={() => setStep(1)}
                 />

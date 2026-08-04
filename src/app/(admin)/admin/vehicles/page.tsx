@@ -15,10 +15,10 @@ import { BackButton } from "@/components/shared/BackButton";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Pagination } from "@/components/shared/Pagination";
 import { SearchInput } from "@/components/shared/SearchInput";
-import { OpenOrderModal } from "@/components/shared/OpenOrderModal";
+import { OpenOrderModal, type OpenOrderData } from "@/components/shared/OpenOrderModal";
 import { DetailSheet } from "@/components/shared/DetailSheet";
 import { PlateBadge } from "@/components/shared/PlateBadge";
-import { FuelTypeLabel, VehicleBodyTypeLabel } from "@/lib/enums";
+import { FuelTypeLabel, VehicleBodyTypeLabel, WorkOrderPurpose } from "@/lib/enums";
 import { useVehicle, useVehicles } from "@/hooks/useVehicles";
 import { workOrdersService } from "@/services/work-orders.service";
 import { Vehicle } from "@/types/api.types";
@@ -182,13 +182,8 @@ export default function VehiclesPage() {
     customerNote,
     contactPersonName,
     contactPersonPhone,
-  }: {
-    mileageAtEntry: number;
-    serviceReason: string;
-    customerNote: string;
-    contactPersonName?: string;
-    contactPersonPhone?: string;
-  }) {
+    isInspectionOnly,
+  }: OpenOrderData) {
     if (!pendingOrder) return;
     try {
       const order = await workOrdersService.create({
@@ -198,6 +193,7 @@ export default function VehiclesPage() {
         customerNote: customerNote || undefined,
         contactPersonName: contactPersonName || undefined,
         contactPersonPhone: contactPersonPhone || undefined,
+        purpose: isInspectionOnly ? WorkOrderPurpose.InspectionOnly : WorkOrderPurpose.Repair,
       });
       toast.success("Orden de trabajo abierta");
       // Continuamos al paso de fotos del ingreso (registro cosmético) — el mismo

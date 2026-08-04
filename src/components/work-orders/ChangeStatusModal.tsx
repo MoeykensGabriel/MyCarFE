@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ValidTransitions, WorkOrderStatus, WorkOrderStatusConfig, PhotoType } from "@/lib/enums";
+import { getValidTransitions, WorkOrderStatus, WorkOrderStatusConfig, PhotoType } from "@/lib/enums";
 import { WorkOrder } from "@/types/api.types";
 import { useUpdateWorkOrderStatus, workOrderKeys } from "@/hooks/useWorkOrders";
 import { AfterPhotosUploader } from "./AfterPhotosUploader";
@@ -32,7 +32,9 @@ interface ChangeStatusModalProps {
 
 export function ChangeStatusModal({ workOrder, open, onClose }: ChangeStatusModalProps) {
   const numericStatus = Number(workOrder.currentStatus) as WorkOrderStatus;
-  const validNext = ValidTransitions[numericStatus] ?? [];
+  // No indexamos la tabla directo: en una orden de solo inspección, ofrecer "En diagnóstico"
+  // sería una promoción encubierta que además saltea el chequeo de áreas cubiertas.
+  const validNext = getValidTransitions(numericStatus, !!workOrder.isInspectionOnly);
   const [selectedStatus, setSelectedStatus] = useState<WorkOrderStatus | "">("");
   const [note, setNote] = useState("");
 

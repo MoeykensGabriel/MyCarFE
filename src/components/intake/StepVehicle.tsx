@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { AlertCircle, Check } from "lucide-react";
+import { AlertCircle, Check, ClipboardCheck, Wrench, type LucideIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -55,6 +55,7 @@ const vehicleDraftSchema = z
       .string()
       .min(1, "Indicá por qué viene el vehículo")
       .max(2000, "Máximo 2000 caracteres"),
+    isInspectionOnly:    z.boolean().optional(),
   })
   .superRefine((data, ctx) => {
     if (
@@ -78,6 +79,11 @@ interface Props {
   customerDocumentType?:   DocumentType;
   customerDocumentNumber?: string;
   defaultValues?:          VehicleDraft;
+  /**
+   * Arranca con "Solo inspección" preseleccionado. Lo usa el atajo del menú, que entra
+   * al ingreso ya sabiendo a qué viene el vehículo.
+   */
+  defaultInspectionOnly?:  boolean;
   loading?:                boolean;
   onNext: (data: VehicleDraft) => void;
   onBack: () => void;
@@ -89,6 +95,7 @@ export function StepVehicle({
   customerDocumentType,
   customerDocumentNumber,
   defaultValues,
+  defaultInspectionOnly = false,
   loading = false,
   onNext,
   onBack,
@@ -104,12 +111,14 @@ export function StepVehicle({
         vehicleUseType:                    VehicleUseType.Personal,
         registrationHolderDocumentType:    DocumentType.DNI,
         currentMileage:                    0,
+        isInspectionOnly:                  defaultInspectionOnly,
       },
     });
 
   const currentBrand  = watch("brand")  ?? "";
   const currentModel  = watch("model")  ?? "";
   const modelOptions  = getModels(currentBrand);
+  const isInspectionOnly = watch("isInspectionOnly");
 
   function handleBrandChange(brand: string) {
     setValue("brand", brand, { shouldValidate: true });
@@ -356,7 +365,38 @@ export function StepVehicle({
       </Section>
 
       <Section title="Motivo de visita">
+        {/* Va primero porque condiciona todo lo que sigue: una orden de solo inspección
+            no se presupuesta ni se arregla. */}
         <div className="space-y-1.5">
+          <label className="text-[11px] font-bold uppercase tracking-widest text-[#041627]">
+            ¿Qué se le va a hacer?
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <PurposeOption
+              selected={!isInspectionOnly}
+              onSelect={() => setValue("isInspectionOnly", false)}
+              Icon={Wrench}
+              title="Orden de trabajo"
+              description="Se inspecciona, se presupuesta y se arregla."
+            />
+            <PurposeOption
+              selected={!!isInspectionOnly}
+              onSelect={() => setValue("isInspectionOnly", true)}
+              Icon={ClipboardCheck}
+              title="Solo inspección"
+              description="El cliente quiere saber qué tiene. No se presupuesta."
+            />
+          </div>
+          {isInspectionOnly && (
+            <p className="text-[10px] text-[#865300] bg-[#fea520]/10 border border-[#fea520]/30 rounded-lg px-3 py-2">
+              Al cerrar la inspección la orden se completa, sin presupuesto. Si después el
+              cliente acepta arreglar lo que se encontró, se convierte en orden de trabajo
+              sin volver a inspeccionar.
+            </p>
+          )}
+        </div>
+
+        <div className="space-y-1.5 mt-4">
           <label className="text-[11px] font-bold uppercase tracking-widest text-[#041627]">
             ¿Por qué trae el vehículo? <span className="text-red-500 normal-case">*</span>
           </label>
@@ -448,5 +488,44 @@ export function StepVehicle({
 
       <StepNav onBack={onBack} isSubmit loading={loading} />
     </form>
+  );
+}
+
+/**
+ * Una de las dos opciones de propósito de la visita. Botón y no radio nativo para poder
+ * usar toda la tarjeta como área táctil — en el mostrador esto se completa desde el celular.
+ */
+function PurposeOption({
+  selected,
+  onSelect,
+  Icon,
+  title,
+  description,
+}: {
+  selected:    boolean;
+  onSelect:    () => void;
+  Icon:        LucideIcon;
+  title:       string;
+  description: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      aria-pressed={selected}
+      className={`flex items-start gap-2.5 text-left px-3 py-2.5 rounded-lg border transition-all ${
+        selected
+          ? "border-[#fea520] bg-[#fea520]/10 ring-1 ring-[#fea520]/40"
+          : "border-[#c4c6cd] bg-white hover:border-[#fea520]/50"
+      }`}
+    >
+      <Icon className={`w-4 h-4 shrink-0 mt-0.5 ${selected ? "text-[#865300]" : "text-[#44474c]/50"}`} />
+      <span className="min-w-0">
+        <span className="block text-sm font-bold text-[#041627]">{title}</span>
+        <span className="block text-[11px] text-[#44474c]/70 leading-snug mt-0.5">
+          {description}
+        </span>
+      </span>
+    </button>
   );
 }

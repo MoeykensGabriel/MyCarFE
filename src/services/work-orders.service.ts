@@ -46,6 +46,9 @@ function normalizeWorkOrder(o: WorkOrder): WorkOrder {
   return {
     ...o,
     currentStatus: Number(o.currentStatus) as WorkOrder["currentStatus"],
+    // Mismo motivo que currentStatus: el backend puede mandar el enum como string y
+    // después comparamos con === contra el numérico.
+    purpose: o.purpose !== undefined ? (Number(o.purpose) as WorkOrder["purpose"]) : undefined,
     timeline: o.timeline?.map((entry) => ({
       ...entry,
       fromStatus: entry.fromStatus !== null ? Number(entry.fromStatus) as WorkOrder["currentStatus"] : null,
@@ -219,6 +222,18 @@ export const workOrdersService = {
     const response = await apiClient.post<WorkOrder>(`/api/work-orders/${id}/revise-quote`, {
       note: note ?? null,
     });
+    return normalizeWorkOrder(response.data);
+  },
+
+  /**
+   * El cliente aceptó arreglar lo que la inspección encontró: la orden de solo inspección
+   * vuelve a cotización con sus hallazgos y propuestas intactos.
+   */
+  promoteToWorkOrder: async (id: string, note?: string): Promise<WorkOrder> => {
+    const response = await apiClient.post<WorkOrder>(
+      `/api/work-orders/${id}/promote-to-work-order`,
+      { note: note ?? null },
+    );
     return normalizeWorkOrder(response.data);
   },
 

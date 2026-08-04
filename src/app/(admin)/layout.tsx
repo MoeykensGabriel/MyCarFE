@@ -23,6 +23,7 @@ import {
   CalendarDays,
   Building2,
   ChevronDown,
+  ClipboardCheck,
   Receipt,
   type LucideIcon,
 } from "lucide-react";
@@ -64,6 +65,8 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 const INTAKE_HREF = "/admin/intake";
+/** Mismo wizard, con "Solo inspección" ya elegido. Lo lee la página del ingreso. */
+const INSPECTION_INTAKE_HREF = "/admin/intake?tipo=inspeccion";
 
 // ─── Sidebar (contenido compartido entre desktop y drawer móvil) ──────────────
 
@@ -126,8 +129,10 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
         <p className="text-[11px] text-white/40 mt-0.5 ml-7">{isAdmin ? "Panel Admin" : "Oficina"}</p>
       </div>
 
-      {/* CTA */}
-      <div className="px-4 pb-4">
+      {/* CTA. El atajo de solo inspección va acá y no enterrado en el wizard: es el
+          arranque de una visita distinta (el cliente solo quiere saber qué tiene) y el
+          mostrador tiene que poder elegirlo de una. Entra al mismo ingreso, preseleccionado. */}
+      <div className="px-4 pb-4 space-y-2">
         <Link
           href={INTAKE_HREF}
           onClick={onNavClick}
@@ -135,6 +140,14 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
         >
           <Plus className="w-4 h-4" />
           Nuevo ingreso
+        </Link>
+        <Link
+          href={INSPECTION_INTAKE_HREF}
+          onClick={onNavClick}
+          className="flex items-center justify-center gap-1.5 w-full px-3 py-2 rounded-md text-sm font-semibold border border-white/20 text-white/80 hover:bg-white/10 hover:text-white transition-colors"
+        >
+          <ClipboardCheck className="w-4 h-4" />
+          Solo inspección
         </Link>
       </div>
 

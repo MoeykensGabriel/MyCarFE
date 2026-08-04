@@ -39,6 +39,9 @@ export function InspectionFindingsCard({ order }: Props) {
   // presupuesto y el backend no deja editarlos con la orden avanzada.
   const [editing, setEditing] = useState<InspectionReport | null>(null);
 
+  /** Una orden de solo inspección todavía no tiene presupuesto donde volcar el hallazgo. */
+  const canAddToQuote = !order.isInspectionOnly;
+
   if (isLoading) {
     return (
       <Card>
@@ -99,8 +102,11 @@ export function InspectionFindingsCard({ order }: Props) {
             <FindingRow
               key={f.id}
               finding={f}
-              onCreateService={() => setServiceFinding(f)}
-              onCreatePart={() => setPartFinding(f)}
+              // En una orden de solo inspección no hay presupuesto donde cargar el trabajo:
+              // el backend rechaza agregar servicios y repuestos. Ofrecer los botones sería
+              // prometer algo que falla — para eso está "Convertir en orden de trabajo".
+              onCreateService={canAddToQuote ? () => setServiceFinding(f) : undefined}
+              onCreatePart={canAddToQuote ? () => setPartFinding(f) : undefined}
               onEdit={f.isLate ? () => setEditing(f) : undefined}
             />
           ))}
@@ -173,8 +179,9 @@ function FindingRow({
   onEdit,
 }: {
   finding: InspectionReport;
-  onCreateService: () => void;
-  onCreatePart: () => void;
+  /** Sin esto no hay presupuesto donde cargar el trabajo (orden de solo inspección). */
+  onCreateService?: () => void;
+  onCreatePart?: () => void;
   /** Solo viene para hallazgos tardíos: son los únicos que el backend deja corregir acá. */
   onEdit?: () => void;
 }) {
@@ -218,27 +225,31 @@ function FindingRow({
         </div>
       </div>
 
-      <div className="flex gap-2 mt-3 pt-2 border-t border-red-200/60">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onCreateService}
-          className="flex-1 bg-white hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700"
-        >
-          <Wrench className="w-3.5 h-3.5 mr-1.5" />
-          <Plus className="w-3 h-3 -ml-0.5 mr-1" />
-          Servicio
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onCreatePart}
-          className="flex-1 bg-white hover:bg-purple-50 hover:border-purple-300 hover:text-purple-700"
-        >
-          <Package className="w-3.5 h-3.5 mr-1.5" />
-          <Plus className="w-3 h-3 -ml-0.5 mr-1" />
-          Repuesto
-        </Button>
+      <div className="flex flex-wrap gap-2 mt-3 pt-2 border-t border-red-200/60">
+        {onCreateService && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onCreateService}
+            className="flex-1 min-w-[7rem] bg-white hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700"
+          >
+            <Wrench className="w-3.5 h-3.5 mr-1.5" />
+            <Plus className="w-3 h-3 -ml-0.5 mr-1" />
+            Servicio
+          </Button>
+        )}
+        {onCreatePart && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onCreatePart}
+            className="flex-1 min-w-[7rem] bg-white hover:bg-purple-50 hover:border-purple-300 hover:text-purple-700"
+          >
+            <Package className="w-3.5 h-3.5 mr-1.5" />
+            <Plus className="w-3 h-3 -ml-0.5 mr-1" />
+            Repuesto
+          </Button>
+        )}
         {onEdit && (
           <Button
             variant="outline"

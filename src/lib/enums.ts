@@ -304,6 +304,34 @@ export const ValidTransitions: Record<WorkOrderStatus, WorkOrderStatus[]> = {
   ],
 };
 
+/** Para qué entró el vehículo al taller. Se declara en el ingreso. */
+export enum WorkOrderPurpose {
+  /** Orden de trabajo normal: se inspecciona, se cotiza y se arregla. */
+  Repair = 0,
+  /** El cliente solo quiere saber qué tiene el vehículo. No se presupuesta ni se arregla. */
+  InspectionOnly = 1,
+}
+
+/**
+ * Transiciones que el modal genérico puede ofrecer para ESTA orden.
+ *
+ * Existe porque la tabla de arriba solo indexa por estado y no alcanza para las órdenes de
+ * solo inspección: con la inspección abierta, ofrecer "En diagnóstico" sería una promoción
+ * encubierta (además de saltear el chequeo de áreas cubiertas). El backend la rechaza igual,
+ * pero la opción no tiene que estar.
+ */
+export function getValidTransitions(
+  status: WorkOrderStatus,
+  isInspectionOnly: boolean,
+): WorkOrderStatus[] {
+  const posibles = ValidTransitions[status] ?? [];
+
+  if (isInspectionOnly && status === WorkOrderStatus.UnderInspection)
+    return posibles.filter((s) => s !== WorkOrderStatus.Diagnosing);
+
+  return posibles;
+}
+
 /**
  * Devuelve la config de un status normalizando el valor a número.
  * Útil cuando el backend devuelve el enum como string en el JSON.

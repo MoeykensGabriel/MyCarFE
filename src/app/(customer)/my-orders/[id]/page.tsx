@@ -308,7 +308,9 @@ export default function MyOrderDetailPage() {
       )}
 
       {/* ── Botón descargar PDF del presupuesto ─────────────────────────────── */}
-      {quotePdfAvailable && (order.services?.length ?? 0) > 0 && (
+      {/* En una orden de solo inspección no hay presupuesto que bajar — el backend lo
+          rechaza, así que el botón no tiene que estar. */}
+      {quotePdfAvailable && !order.isInspectionOnly && (order.services?.length ?? 0) > 0 && (
         <button
           onClick={handleDownloadQuote}
           disabled={downloadingPdf}

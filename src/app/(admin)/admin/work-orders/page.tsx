@@ -13,6 +13,7 @@ import { SearchInput } from "@/components/shared/SearchInput";
 import { StatusBadge } from "@/components/work-orders/StatusBadge";
 import { WorkOrderStatus, WorkOrderStatusConfig } from "@/lib/enums";
 import { formatCurrency, formatDate, formatOrderNumber } from "@/lib/format";
+import { InspectionOnlyBadge } from "@/components/work-orders/InspectionOnlyBadge";
 import { useWorkOrders } from "@/hooks/useWorkOrders";
 import { WorkOrdersParams } from "@/services/work-orders.service";
 import { WorkOrder } from "@/types/api.types";
@@ -224,6 +225,7 @@ export default function WorkOrdersPage() {
                       <p className="text-sm font-semibold text-[#041627] truncate">
                         {order.vehicleBrand} {order.vehicleModel}
                       </p>
+                      {order.isInspectionOnly && <InspectionOnlyBadge compact />}
                       {order.hasLateFindings && <LateFindingBadge />}
                     </div>
                     <span className="inline-flex items-center gap-1 text-xs font-mono text-[#44474c]">
@@ -348,6 +350,7 @@ function WorkOrderMobileCard({ order }: { order: WorkOrder }) {
             <p className="text-sm font-semibold text-[#041627] truncate">
               {order.vehicleBrand} {order.vehicleModel}
             </p>
+            {order.isInspectionOnly && <InspectionOnlyBadge compact />}
             {order.hasLateFindings && <LateFindingBadge />}
           </div>
           <span className="inline-flex items-center gap-1 text-xs font-mono text-[#44474c] mt-0.5">

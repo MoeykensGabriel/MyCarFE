@@ -13,7 +13,9 @@ import { workOrdersService } from "@/services/work-orders.service";
 import { useReviseQuote } from "@/hooks/useWorkOrders";
 import { StatusBadge } from "./StatusBadge";
 import { SendQuoteButton } from "./SendQuoteButton";
-import { STATUS_BANNERS } from "./work-order-status-ui";
+import { PromoteToWorkOrderButton } from "./PromoteToWorkOrderButton";
+import { InspectionOnlyBadge } from "./InspectionOnlyBadge";
+import { getStatusBanner } from "./work-order-status-ui";
 
 interface Props {
   order: WorkOrder;
@@ -41,7 +43,7 @@ export function WorkOrderDetailHeader({ order, status, isFinalState, onChangeSta
 
   const vehicleLabel =
     [order.vehicleBrand, order.vehicleModel].filter(Boolean).join(" ") || "—";
-  const banner = STATUS_BANNERS[status];
+  const banner = getStatusBanner(status, !!order.isInspectionOnly);
 
   const handleDownloadQuote = async () => {
     setDownloadingPdf(true);
@@ -77,6 +79,9 @@ export function WorkOrderDetailHeader({ order, status, isFinalState, onChangeSta
                     Orden {formatOrderNumber(order)}
                   </h1>
                   <StatusBadge status={status} />
+                  {/* Solo mientras siga siéndolo: una vez promovida ya es una orden de
+                      trabajo y el dato pasa a ser histórico. */}
+                  {order.isInspectionOnly && <InspectionOnlyBadge />}
                 </div>
                 <div className="flex flex-wrap items-center gap-2 text-xs md:text-sm text-slate-500 font-bold mt-1.5 leading-none">
                   <span>{vehicleLabel}</span>
@@ -121,6 +126,8 @@ export function WorkOrderDetailHeader({ order, status, isFinalState, onChangeSta
               {/* CTA principal en Diagnosing: enviar presupuesto al cliente.
                   El modal genérico de "Cambiar estado" ya no ofrece AwaitingApproval. */}
               <SendQuoteButton order={order} />
+              {/* CTA de una inspección ya cerrada: el cliente aceptó arreglar. */}
+              <PromoteToWorkOrderButton order={order} />
               {!isFinalState && (
                 <Button
                   variant={status === WorkOrderStatus.Diagnosing ? "outline" : "default"}

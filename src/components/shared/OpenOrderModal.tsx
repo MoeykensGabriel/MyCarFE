@@ -1,8 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import { X, ClipboardPlus, Gauge } from "lucide-react";
+import { X, ClipboardPlus, ClipboardCheck, Gauge } from "lucide-react";
 import { SkippedInspectionsAlert } from "@/components/inspections/SkippedInspectionsAlert";
+
+/**
+ * Lo que devuelve el modal al confirmar. Vive acá y no repetido en cada pantalla que
+ * abre órdenes: así un campo nuevo se agrega en un solo lugar y los call sites lo ven.
+ */
+export interface OpenOrderData {
+  mileageAtEntry: number;
+  serviceReason: string;
+  customerNote: string;
+  contactPersonName?: string;
+  contactPersonPhone?: string;
+  /** El cliente solo quiere saber qué tiene el vehículo: no se presupuesta ni se arregla. */
+  isInspectionOnly: boolean;
+}
 
 interface OpenOrderModalProps {
   /** Ej: "Toyota Hilux · ABC123" */
@@ -12,13 +26,7 @@ interface OpenOrderModalProps {
   initialMileage?: number;
   initialContactName?: string;
   initialContactPhone?: string;
-  onConfirm: (data: {
-    mileageAtEntry: number;
-    serviceReason: string;
-    customerNote: string;
-    contactPersonName?: string;
-    contactPersonPhone?: string;
-  }) => Promise<void>;
+  onConfirm: (data: OpenOrderData) => Promise<void>;
   onClose: () => void;
 }
 
@@ -38,6 +46,7 @@ export function OpenOrderModal({
   const [contactName,   setContactName]   = useState(initialContactName);
   const [contactPhone,  setContactPhone]  = useState(initialContactPhone);
   const [loading,       setLoading]       = useState(false);
+  const [soloInspeccion, setSoloInspeccion] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -54,6 +63,7 @@ export function OpenOrderModal({
         customerNote: note.trim(),
         contactPersonName: contactName.trim() || undefined,
         contactPersonPhone: contactPhone.trim() || undefined,
+        isInspectionOnly: soloInspeccion,
       });
     } finally {
       setLoading(false);
@@ -85,6 +95,30 @@ export function OpenOrderModal({
 
           {/* Áreas postergadas en la última visita — para que la postergación no se pierda */}
           <SkippedInspectionsAlert vehicleId={vehicleId} />
+
+          {/* Va primero porque condiciona el resto de la visita. Toda la fila es tocable:
+              esto se completa desde el celular en el mostrador. */}
+          <button
+            type="button"
+            onClick={() => setSoloInspeccion((v) => !v)}
+            aria-pressed={soloInspeccion}
+            disabled={loading}
+            className={`flex items-start gap-2.5 w-full text-left px-3 py-2.5 rounded-lg border transition-all ${
+              soloInspeccion
+                ? "border-[#fea520] bg-[#fea520]/10 ring-1 ring-[#fea520]/40"
+                : "border-[#c4c6cd] bg-white hover:border-[#fea520]/50"
+            }`}
+          >
+            <ClipboardCheck
+              className={`w-4 h-4 shrink-0 mt-0.5 ${soloInspeccion ? "text-[#865300]" : "text-[#44474c]/50"}`}
+            />
+            <span className="min-w-0">
+              <span className="block text-sm font-bold text-[#041627]">Solo inspección</span>
+              <span className="block text-[11px] text-[#44474c]/70 leading-snug mt-0.5">
+                El cliente quiere saber qué tiene. No se presupuesta ni se arregla.
+              </span>
+            </span>
+          </button>
 
           {/* Kilometraje */}
           <div className="space-y-1.5">

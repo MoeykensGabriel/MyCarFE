@@ -308,6 +308,26 @@ export function useReviseQuote(workOrderId: string) {
 }
 
 /**
+ * Promueve una orden de solo inspección a orden de trabajo: el cliente aceptó arreglar lo
+ * que se encontró. Vuelve a Diagnosticando con los hallazgos y propuestas ya cargados —
+ * no se re-inspecciona nada ni se abre una orden nueva.
+ */
+export function usePromoteToWorkOrder(workOrderId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (note?: string) => workOrdersService.promoteToWorkOrder(workOrderId, note),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(workOrderKeys.detail(workOrderId), updated);
+      queryClient.invalidateQueries({ queryKey: workOrderKeys.lists() });
+      toast.success("Convertida en orden de trabajo — armá el presupuesto con lo que se encontró");
+    },
+    onError: (err) => {
+      toast.error(extractError(err, "No se pudo convertir en orden de trabajo"));
+    },
+  });
+}
+
+/**
  * Registra la decisión del cliente sobre items adicionales (post-aprobación).
  * La orden no cambia de estado; los repuestos aprobados generan pedido al depósito.
  */

@@ -7,7 +7,7 @@ import { ChevronRight, ClipboardPlus, Car } from "lucide-react";
 import { toast } from "sonner";
 
 import { BackButton } from "@/components/shared/BackButton";
-import { OpenOrderModal } from "@/components/shared/OpenOrderModal";
+import { OpenOrderModal, type OpenOrderData } from "@/components/shared/OpenOrderModal";
 import { SkippedInspectionsAlert } from "@/components/inspections/SkippedInspectionsAlert";
 import { VehicleTiresCard } from "@/components/vehicle-tires/VehicleTiresCard";
 import { MaintenanceAlertsCard } from "@/components/vehicle-maintenance/MaintenanceAlertsCard";
@@ -17,6 +17,7 @@ import {
   FuelTypeLabel,
   VehicleBodyTypeLabel,
   VehicleUseTypeLabel,
+  WorkOrderPurpose,
 } from "@/lib/enums";
 import { useParams } from "next/navigation";
 import { useVehicle } from "@/hooks/useVehicles";
@@ -48,13 +49,8 @@ export default function VehicleDetailPage() {
     customerNote,
     contactPersonName,
     contactPersonPhone,
-  }: {
-    mileageAtEntry: number;
-    serviceReason: string;
-    customerNote: string;
-    contactPersonName?: string;
-    contactPersonPhone?: string;
-  }) {
+    isInspectionOnly,
+  }: OpenOrderData) {
     if (!vehicle) return;
     try {
       const order = await workOrdersService.create({
@@ -64,6 +60,7 @@ export default function VehicleDetailPage() {
         customerNote: customerNote || undefined,
         contactPersonName: contactPersonName || undefined,
         contactPersonPhone: contactPersonPhone || undefined,
+        purpose: isInspectionOnly ? WorkOrderPurpose.InspectionOnly : WorkOrderPurpose.Repair,
       });
       toast.success("Orden de trabajo abierta");
       // Continuamos al registro fotográfico de ingreso (mismo paso que el wizard).

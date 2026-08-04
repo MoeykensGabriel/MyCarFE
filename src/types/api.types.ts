@@ -13,6 +13,7 @@ import {
   VehicleDocumentType,
   VehicleTripStatus,
   VehicleUseType,
+  WorkOrderPurpose,
   WorkOrderServiceAssignmentStatus,
   WorkOrderStatus,
 } from "@/lib/enums";
@@ -630,6 +631,15 @@ export interface WorkOrder {
    * pedirle al cliente que autorice un adicional.
    */
   hasLateFindings?: boolean;
+  /** Para qué entró el vehículo. Se congela en el ingreso y no se reescribe al promover. */
+  purpose?: WorkOrderPurpose;
+  /**
+   * Sigue siendo solo inspección (no se promovió). Es lo que hay que mirar para decidir
+   * qué mostrar — `purpose` solo dice cómo ENTRÓ la orden.
+   */
+  isInspectionOnly?: boolean;
+  /** Cuándo se promovió a orden de trabajo. Null/undefined si nunca se promovió. */
+  promotedToRepairAt?: string | null;
   vehicleId: string;
   // Campos enriquecidos presentes en la lista (pueden faltar en el detalle)
   vehicleBrand?: string;
@@ -736,6 +746,8 @@ export interface CreateWorkOrderRequest {
   // Persona que trajo el vehículo (solo para flotas)
   contactPersonName?: string;
   contactPersonPhone?: string;
+  /** Para qué entra el vehículo. Sin esto el backend crea una orden de trabajo normal. */
+  purpose?: WorkOrderPurpose;
 }
 
 export interface UpdateWorkOrderStatusRequest {

@@ -13,10 +13,11 @@ import {
 import { Pagination } from "@/components/shared/Pagination";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { SearchInput } from "@/components/shared/SearchInput";
-import { OpenOrderModal } from "@/components/shared/OpenOrderModal";
+import { OpenOrderModal, type OpenOrderData } from "@/components/shared/OpenOrderModal";
 import { DetailSheet } from "@/components/shared/DetailSheet";
 import { useFleet, useFleets } from "@/hooks/useFleets";
 import { workOrdersService } from "@/services/work-orders.service";
+import { WorkOrderPurpose } from "@/lib/enums";
 import { Fleet } from "@/types/api.types";
 
 // ─── Panel de detalle de flota ────────────────────────────────────────────────
@@ -145,13 +146,8 @@ export default function FleetsPage() {
     customerNote,
     contactPersonName,
     contactPersonPhone,
-  }: {
-    mileageAtEntry: number;
-    serviceReason: string;
-    customerNote: string;
-    contactPersonName?: string;
-    contactPersonPhone?: string;
-  }) {
+    isInspectionOnly,
+  }: OpenOrderData) {
     if (!pendingOrder) return;
     try {
       const order = await workOrdersService.create({
@@ -161,6 +157,7 @@ export default function FleetsPage() {
         customerNote: customerNote || undefined,
         contactPersonName: contactPersonName || undefined,
         contactPersonPhone: contactPersonPhone || undefined,
+        purpose: isInspectionOnly ? WorkOrderPurpose.InspectionOnly : WorkOrderPurpose.Repair,
       });
       toast.success("Orden de trabajo abierta");
       router.push(`/admin/work-orders/${order.id}`);

@@ -61,6 +61,12 @@ export default function WorkOrderDetailPage() {
   // Ventana del canal de inspección tardía: un área postergada todavía se puede revisar,
   // y sus hallazgos tienen cómo entrar al presupuesto. Espeja WorkOrder.AcceptsLateInspection.
   const acceptsLateInspection = isDiagnosing || isPostApproval;
+  // Sigue siendo solo inspección (no se promovió). Es lo que decide qué mostrar.
+  const isInspectionOnly = !!order.isInspectionOnly;
+  // Los hallazgos son EL ENTREGABLE de una orden de solo inspección: se ven también con la
+  // orden ya cerrada, no solo dentro de la ventana de inspección tardía. Sin esto quedaría
+  // una orden completada sin rastro visible de lo que se encontró.
+  const showFindings = acceptsLateInspection || isInspectionOnly;
 
   return (
     <div className="space-y-6">
@@ -71,7 +77,7 @@ export default function WorkOrderDetailPage() {
         onChangeStatus={() => setStatusModalOpen(true)}
       />
 
-      <StatusBanner status={status} />
+      <StatusBanner status={status} isInspectionOnly={isInspectionOnly} />
 
       {/* ── Grid principal ──────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -89,7 +95,9 @@ export default function WorkOrderDetailPage() {
           {/* Hallazgos + propuestas de los mecánicos — contexto para armar el presupuesto.
               Siguen visibles después de aprobar: una inspección tardía puede sumar propuestas
               nuevas, y sin estas cards no habría cómo volcarlas al presupuesto. */}
-          {acceptsLateInspection && <InspectionFindingsCard order={order} />}
+          {showFindings && <InspectionFindingsCard order={order} />}
+          {/* Las propuestas solo tienen sentido si hay presupuesto donde volcarlas. En una
+              orden de solo inspección sin promover no lo hay — el backend las rechazaría. */}
           {acceptsLateInspection && <InspectionProposalsCard workOrderId={order.id} />}
 
           {/* Presupuesto: una card con servicios + repuestos + total (editable en Diagnosing) */}
