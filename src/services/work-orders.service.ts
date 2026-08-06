@@ -280,6 +280,21 @@ export const workOrdersService = {
     return response.data;
   },
 
+  /**
+   * Informe de cierre: todo lo que pasó con el vehículo en esta visita. Solo con la orden
+   * terminada — el backend rechaza el pedido antes de eso.
+   *
+   * `internal` pide la versión del taller (mecánicos, precios unitarios, códigos, ítems
+   * rechazados e historial completo). El backend la restringe a Admin.
+   */
+  downloadClosingReport: async (id: string, internal = false): Promise<Blob> => {
+    const response = await apiClient.get(`/api/work-orders/${id}/closing-report`, {
+      params: internal ? { internal: true } : undefined,
+      responseType: "blob",
+    });
+    return response.data;
+  },
+
   // ─── Aprobación pública (sin auth, por token) ────────────────────────────
 
   getApprovePreview: async (token: string): Promise<ApproveQuotePreview> => {
