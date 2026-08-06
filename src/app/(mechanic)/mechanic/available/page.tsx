@@ -20,7 +20,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, formatDuration } from "@/lib/format";
 import { useAvailableServices, useClaimService } from "@/hooks/useMechanicTasks";
 import { AvailableService } from "@/types/api.types";
 
@@ -144,7 +144,7 @@ function AvailableServiceCard({
         <Meta icon={<Package className="w-3 h-3" />} label={service.vehicleLicensePlate} mono />
         {/* Sin propietario/cliente/flota: el mecánico no ve para quién es el trabajo. */}
         {service.estimatedDurationMinutes > 0 && (
-          <Meta icon={<Clock className="w-3 h-3" />} label={`${service.estimatedDurationMinutes} min`} />
+          <Meta icon={<Clock className="w-3 h-3" />} label={formatDuration(service.estimatedDurationMinutes)} />
         )}
         {service.quantity > 1 && (
           <Meta icon={<Sparkles className="w-3 h-3" />} label={`x${service.quantity}`} />

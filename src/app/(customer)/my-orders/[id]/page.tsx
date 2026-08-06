@@ -12,7 +12,7 @@ import { CustomerInspectionFindingsCard } from "@/components/work-orders/Custome
 import { OrderStatusStepper } from "@/components/customer-orders/OrderStatusStepper";
 import { StatusBadge } from "@/components/work-orders/StatusBadge";
 import { WorkOrderStatus, WorkOrderStatusConfig, getWorkOrderStatusConfig } from "@/lib/enums";
-import { formatCurrency, formatDate, formatDateTime, formatEstimatedDuration, formatOrderNumber } from "@/lib/format";
+import { formatCurrency, formatDate, formatDateTime, formatDuration, formatOrderNumber } from "@/lib/format";
 import { useWorkOrder, useApproveAsCustomer } from "@/hooks/useWorkOrders";
 import { workOrdersService } from "@/services/work-orders.service";
 import { WorkOrderService, WorkOrderTimelineEntry } from "@/types/api.types";
@@ -226,7 +226,7 @@ export default function MyOrderDetailPage() {
     status !== WorkOrderStatus.Completed &&
     status !== WorkOrderStatus.Delivered &&
     status !== WorkOrderStatus.Cancelled;
-  const etaLabel = formatEstimatedDuration(totalEstimatedMinutes);
+  const etaLabel = formatDuration(totalEstimatedMinutes);
 
   return (
     <div className="space-y-4 pb-12">

@@ -5,7 +5,7 @@ import { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, formatDuration } from "@/lib/format";
 import { useCatalogServices } from "@/hooks/useCatalog";
 import { useAddWorkOrderService } from "@/hooks/useWorkOrders";
 import { CatalogService } from "@/types/api.types";
@@ -84,7 +84,7 @@ export function CatalogServiceForm({ workOrderId, onSuccess }: Props) {
               <p className="text-xs text-muted-foreground">
                 {formatCurrency(selected.defaultPrice)}
                 {selected.estimatedDurationMinutes > 0 && (
-                  <> · {selected.estimatedDurationMinutes} min</>
+                  <> · {formatDuration(selected.estimatedDurationMinutes)}</>
                 )}
               </p>
             </div>

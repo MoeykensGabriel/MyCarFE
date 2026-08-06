@@ -16,7 +16,7 @@ import {
   ListChecks,
 } from "lucide-react";
 
-import { formatCurrency } from "@/lib/format";
+import { formatCurrency, formatDuration } from "@/lib/format";
 import { DetailSheet } from "@/components/shared/DetailSheet";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { SearchInput } from "@/components/shared/SearchInput";
@@ -42,15 +42,6 @@ const serviceSchema = z.object({
     .min(1, "La duración debe ser al menos 1 minuto")
     .max(1440, "La duración no puede superar 24 horas (1440 min)"),
 });
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function formatDuration(minutes: number): string {
-  if (minutes < 60) return `${minutes} min`;
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return m > 0 ? `${h}h ${m}min` : `${h}h`;
-}
 
 // ─── Panel de formulario (crear / editar) ─────────────────────────────────────
 

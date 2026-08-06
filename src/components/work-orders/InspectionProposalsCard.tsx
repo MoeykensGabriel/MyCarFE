@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useInspectionReportsByWorkOrder } from "@/hooks/useInspections";
 import { useConvertProposals } from "@/hooks/useWorkOrders";
-import { formatCurrency, formatWorkDuration } from "@/lib/format";
+import { formatCurrency, formatDuration } from "@/lib/format";
 
 interface Props {
   workOrderId: string;
@@ -167,7 +167,7 @@ export function InspectionProposalsCard({ workOrderId }: Props) {
                     <p className="text-xs text-gray-600 mt-0.5">
                       Mano de obra aprox: <strong>{formatCurrency(s.estimatedLaborCost)}</strong>
                       {s.estimatedDurationMinutes ? (
-                        <> · Duración estim: <strong>{formatWorkDuration(s.estimatedDurationMinutes)}</strong></>
+                        <> · Duración estim: <strong>{formatDuration(s.estimatedDurationMinutes)}</strong></>
                       ) : null}
                     </p>
                   </div>

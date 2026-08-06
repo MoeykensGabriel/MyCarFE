@@ -3,7 +3,7 @@
 import { Users, Activity } from "lucide-react";
 
 import { DashboardWorkshopLoad } from "@/types/api.types";
-import { formatEstimatedDuration } from "@/lib/format";
+import { formatDuration } from "@/lib/format";
 
 interface Props {
   load: DashboardWorkshopLoad;
@@ -39,7 +39,7 @@ export function WorkshopLoadCard({ load }: Props) {
         </div>
         <p className="text-2xl font-bold text-[#041627] tabular-nums">
           {load.totalPendingMinutes > 0
-            ? formatEstimatedDuration(load.totalPendingMinutes)
+            ? formatDuration(load.totalPendingMinutes)
             : "—"}
         </p>
         <p className="text-[10px] text-[#44474c]/60 mt-2">
@@ -118,7 +118,7 @@ function MechanicLoadList({
             </div>
             <p className="text-[10px] text-[#44474c]/70 tabular-nums">
               {m.pendingMinutes > 0
-                ? `${formatEstimatedDuration(m.pendingMinutes)} de trabajo pendiente`
+                ? `${formatDuration(m.pendingMinutes)} de trabajo pendiente`
                 : "Sin trabajo asignado"}
             </p>
           </div>

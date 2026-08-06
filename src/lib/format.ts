@@ -23,32 +23,36 @@ export function formatDateTime(iso: string): string {
   });
 }
 
+/** Minutos por jornada laboral. 1 día = 8 hs = 480 min. */
+export const MINUTES_PER_WORKDAY = 480;
+
 /**
- * Convierte minutos en una duración legible para el cliente.
- * Casos:
- *   - 0   → "" (el caller debe chequear y no mostrar nada)
- *   - <60 → "30 min"
- *   - múltiplo exacto de 60 → "2 hs"
- *   - mezcla → "1 hs 30 min"
+ * ÚNICO formateador de duraciones de la app — cliente, oficina y mecánico ven lo mismo.
  *
- * Para órdenes largas (>= 8 hs) lo simplificamos a "X jornadas" porque el
- * cliente no piensa en horas continuas y "12 hs" cuando son 2 días confunde.
+ * Siempre días → horas → minutos, de mayor a menor, salteando lo que da cero:
+ *   0    → ""  (el caller chequea y no muestra nada)
+ *   45   → "45 min"
+ *   120  → "2 h"
+ *   150  → "2 h 30 min"
+ *   540  → "1 día 1 h"
+ *   1000 → "2 días 0 h 40 min" → en realidad "2 días 40 min" (la hora en cero se saltea)
+ *
+ * Nadie lee "1000 min" y entiende cuánto es. Antes había tres funciones distintas y una
+ * redondeaba a "jornadas", así que la misma duración se leía distinto según la pantalla.
  */
-export function formatEstimatedDuration(minutes: number): string {
+export function formatDuration(minutes: number | null | undefined): string {
   if (!minutes || minutes <= 0) return "";
 
-  if (minutes >= 60 * 8) {
-    const days = Math.ceil(minutes / (60 * 8));
-    return days === 1 ? "Aprox. 1 jornada" : `Aprox. ${days} jornadas`;
-  }
+  const days   = Math.floor(minutes / MINUTES_PER_WORKDAY);
+  const hours  = Math.floor((minutes % MINUTES_PER_WORKDAY) / 60);
+  const remMin = minutes % 60;
 
-  if (minutes < 60) return `${minutes} min`;
+  const parts: string[] = [];
+  if (days > 0)   parts.push(days === 1 ? "1 día" : `${days} días`);
+  if (hours > 0)  parts.push(`${hours} h`);
+  if (remMin > 0) parts.push(`${remMin} min`);
 
-  const hours    = Math.floor(minutes / 60);
-  const remMin   = minutes % 60;
-  const hoursStr = hours === 1 ? "1 h" : `${hours} hs`;
-
-  return remMin === 0 ? hoursStr : `${hoursStr} ${remMin} min`;
+  return parts.join(" ");
 }
 
 /**
@@ -68,26 +72,3 @@ export function formatOrderNumber(
   return order.id ? `#${order.id.slice(0, 8).toUpperCase()}` : "—";
 }
 
-/** Minutos por jornada laboral. 1 día = 8 hs = 480 min. */
-export const MINUTES_PER_WORKDAY = 480;
-
-/**
- * Formato preciso días + horas para uso interno (taller/admin/mecánico), a
- * diferencia de formatEstimatedDuration que redondea a "jornadas" para el cliente.
- * Ej: 480 → "1d", 960 → "2d", 240 → "4h", 540 → "1d 1h", 45 → "45 min".
- * Devuelve "" para 0/null.
- */
-export function formatWorkDuration(minutes: number | null | undefined): string {
-  if (!minutes || minutes <= 0) return "";
-
-  const days  = Math.floor(minutes / MINUTES_PER_WORKDAY);
-  const hours  = Math.floor((minutes % MINUTES_PER_WORKDAY) / 60);
-  const remMin = minutes % 60;
-
-  const parts: string[] = [];
-  if (days > 0)  parts.push(`${days}d`);
-  if (hours > 0) parts.push(`${hours}h`);
-  if (remMin > 0) parts.push(`${remMin} min`);
-
-  return parts.join(" ");
-}
