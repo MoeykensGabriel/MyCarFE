@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { AxiosError } from "axios";
 
@@ -45,6 +45,11 @@ export function useWorkOrders(params: WorkOrdersParams = {}) {
   return useQuery({
     queryKey: workOrderKeys.list(params),
     queryFn: () => workOrdersService.getAll(params),
+    // Cada filtro (y cada tecla del buscador) arma una queryKey nueva, que no tiene nada
+    // cacheado: sin esto la tabla desaparece, entra el esqueleto y vuelve con otra altura.
+    // Con keepPreviousData las filas viejas se quedan en pantalla hasta que llegan las
+    // nuevas, así filtrar no mueve la página abajo del cursor.
+    placeholderData: keepPreviousData,
   });
 }
 

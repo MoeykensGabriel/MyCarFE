@@ -58,7 +58,10 @@ export default function WorkOrdersPage() {
     vehicleId:  urlVehicleId,
   });
 
-  const { data, isLoading, isError } = useWorkOrders({ ...filters, page, pageSize: 20 });
+  // isLoading es la PRIMERA carga (no hay nada que mostrar). isFetching es cualquier
+  // refresco, incluido el de cambiar un filtro: ahí ya hay filas viejas en pantalla y solo
+  // las atenuamos, en vez de sacarlas y volver a meterlas.
+  const { data, isLoading, isFetching, isError } = useWorkOrders({ ...filters, page, pageSize: 20 });
 
   function applyFilter(patch: Omit<WorkOrdersParams, "page" | "pageSize">) {
     setPage(1);
@@ -182,15 +185,20 @@ export default function WorkOrdersPage() {
               className="w-full lg:w-auto min-w-0 px-2 py-1.5 text-sm rounded-lg border border-[#c4c6cd] bg-white text-[#041627] focus:outline-none focus:ring-2 focus:ring-[#041627]/20 focus:border-[#041627] transition-all cursor-pointer"
             />
           </div>
-          {(filters.from || filters.to) && (
-            <button
-              type="button"
-              onClick={() => applyFilter({ from: undefined, to: undefined })}
-              className="text-xs text-[#44474c]/70 hover:text-red-500 font-medium underline underline-offset-2 shrink-0"
-            >
-              Limpiar
-            </button>
-          )}
+          {/* Siempre montado, invisible cuando no hay fechas: si apareciera y desapareciera,
+              la barra de filtros se reacomodaría sola y movería la tabla de abajo. */}
+          <button
+            type="button"
+            onClick={() => applyFilter({ from: undefined, to: undefined })}
+            aria-hidden={!filters.from && !filters.to}
+            tabIndex={!filters.from && !filters.to ? -1 : 0}
+            className={cn(
+              "text-xs text-[#44474c]/70 hover:text-red-500 font-medium underline underline-offset-2 shrink-0",
+              !filters.from && !filters.to && "invisible pointer-events-none",
+            )}
+          >
+            Limpiar
+          </button>
         </div>
       </div>
 
@@ -219,7 +227,9 @@ export default function WorkOrdersPage() {
           <p className="text-xs text-[#44474c]">No hay órdenes para los filtros seleccionados.</p>
         </div>
       ) : (
-        <>
+        // Mientras llegan los resultados del filtro nuevo, las filas viejas siguen ahí y
+        // solo se atenúan. Es el aviso de "estoy actualizando" sin mover nada de lugar.
+        <div className={cn("transition-opacity duration-200", isFetching && "opacity-50")}>
           {/* ── Tabla (desktop) ─────────────────────────────────────────────── */}
           <div className="hidden lg:block bg-white rounded-xl border border-[#c4c6cd] shadow-sm overflow-hidden">
             {/* Cabecera */}
@@ -269,7 +279,7 @@ export default function WorkOrdersPage() {
               </p>
             )}
           </div>
-        </>
+        </div>
       )}
 
       {data && (
